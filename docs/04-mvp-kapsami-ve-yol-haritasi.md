@@ -160,5 +160,5 @@ Log dosyası analizi (cPanel erişim logları) · GA4 · semantik benzerlik ve i
 
 1. ~~MVP'deki müşteri raporu PDF mi olsun, paylaşılabilir bir web linki mi, yoksa ikisi de mi?~~ **Karar (24.10.2026):** Paylaşılabilir web linki + PDF export.
 2. ~~Kural kataloğundaki eşikler (title uzunluğu, düşük kelime sayısı vb.) için senin kullandığın standartlar var mı?~~ **Karar (24.10.2026):** Özel standart yok; güncel global standartlar (Google dokümantasyonu ve sektörde yaygın araç varsayılanları) izlenir. Eşikler kod içine gömülmez, kural kataloğunda tek yerden yönetilir; her eşiğin kaynağı ve son gözden geçirme tarihi kayıtlı tutulur ki standartlar değiştikçe kolayca güncellensin.
-3. WordPress dışındaki siteler (Shopify, özel yazılım) için de aynı derinlik gerekiyor mu, yoksa onlar genel kurallarla yetinebilir mi?
+3. ~~WordPress dışındaki siteler (Shopify, özel yazılım) için de aynı derinlik gerekiyor mu, yoksa onlar genel kurallarla yetinebilir mi?~~ **Karar (24.10.2026):** Şimdilik WordPress'e özel bir çözüme odaklanılıyor. Diğer altyapılar gerektiğinde ayrı modüllerle eklenecek; bu yüzden platforma özgü kurallar mimaride takılıp çıkarılabilir bir "platform modülü" olarak tasarlanmalı (genel kurallar her sitede, WordPress modülü yalnızca WordPress tespit edilince çalışır).
 4. Uygulama hangi adreste çalışsın? (örn. `seo.senindomainin.com`)
