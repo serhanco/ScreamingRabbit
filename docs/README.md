@@ -13,8 +13,8 @@ ScreamingRabbit, SEO danışmanının müşteri sitelerini kendi sunucusunda sü
 ## Yol haritası
 
 1. Araştırma ve özellik dokümanları ✓
-2. **Mimari ve sunucu kararı** ← onay bekliyor
-3. MVP: crawler ve temel denetimler
+2. Mimari ve sunucu kararı ✓
+3. **MVP: crawler ve temel denetimler** ← sırada
 4. GSC, aksiyon listeleri ve otomasyon
 
 ## Öncelik etiketleri

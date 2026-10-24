@@ -224,3 +224,22 @@ Onayından sonra 3. adım şu sırayla, her biri ayrı ve incelenebilir PR olara
 1. Teknoloji seçimi (§ 1): PHP 8.3+ / Laravel 13 / Filament 5 / MySQL / cron tabanlı kuyruk.
 2. Sunucu hazırlık listesindeki (§ 3.1) yedi sorunun cevabı. İstersen SSH erişimiyle ben kontrol edebilirim.
 3. ~~Panelin adresi~~ **Karar:** `seo.hekimdijital.com` (Hostinger), sonra VPS.
+
+## 9. Hostinger kontrol sonucu (24.10.2026)
+
+`tools/sunucu-kontrol.php` hekimdijital.com üzerinde çalıştırıldı:
+
+| Konu | Sonuç | Değerlendirme |
+|---|---|---|
+| PHP (web) | 8.3.x, LiteSpeed | ✅ Laravel 13 için uygun |
+| PHP (CLI) | 8.5.x | ✅ Laravel 13 8.5'i destekliyor. Cron komutlarında PHP yolu açıkça yazılacak. |
+| PHP eklentileri | Gerekenlerin hepsi + opcache + redis | ✅ |
+| memory_limit / max_execution_time | 512M / 300 sn | ✅ Batch işleri bu sınırın çok altında kalacak |
+| Composer / Git | 2.9 / 2.52 | ✅ SSH ile dağıtım mümkün |
+| Veritabanı | MariaDB 11.8 | ✅ |
+| Dışa HTTPS + curl_multi | Var | ✅ Crawler çalışır |
+| crontab komutu | Yok | Normal: Hostinger'da cron hPanel → Advanced → Cron Jobs ekranından eklenir |
+| Node.js | Yok | MVP'de gerekmiyor. JS render ileride VPS'te. |
+| RAM / CPU | Fiziksel sunucunun tamamı görünüyor (paylaşımlı) | Bize düşen pay plan limitleriyle sınırlı. Eşzamanlılık düşük tutulacak. |
+
+**Sonuç:** Hostinger, MVP için teknik olarak hazır. Ek kurulum gerekmiyor.
