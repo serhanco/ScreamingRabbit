@@ -1,7 +1,7 @@
 # 05 · Mimari ve Sunucu Kararı
 
 > Durum tarihi: 24 Ekim 2026 · Durum: **Öneri, Serhan'ın onayını bekliyor**
-> **Barındırma kararı (24.10.2026):** MVP ve ilk testler Hostinger paylaşımlı hostingte (`seo.hekimdijital.com`) yapılacak. Büyük siteler (10.000+ URL) gündeme gelince GoDaddy WHM VPS'e taşınacak. Cron tabanlı kuyruk modeli (§ 5.1) iki ortamda da aynı şekilde çalışır. Taşıma § 5.7'deki adımlarla yapılır.
+> **Barındırma kararı (24.10.2026):** MVP ve ilk testler Hostinger paylaşımlı hostingte (`hekimdijital.com`) yapılacak. Büyük siteler (10.000+ URL) gündeme gelince GoDaddy WHM VPS'e taşınacak. Cron tabanlı kuyruk modeli (§ 5.1) iki ortamda da aynı şekilde çalışır. Taşıma § 5.7'deki adımlarla yapılır.
 > Girdiler: [04 § 6 mimari kısıtları](04-mvp-kapsami-ve-yol-haritasi.md#6-mimari-için-girdiler-2-adıma-devredilen-kısıtlar) ve 04 § 7'deki kararlar.
 
 Bu doküman iki okuyucu için yazıldı. **Bölüm 1-3** Serhan için sade bir dille yazıldı: ne seçtik, neden seçtik, senden ne lazım. **Bölüm 4 ve sonrası** geliştirme için teknik ayrıntılar.
@@ -223,7 +223,7 @@ Onayından sonra 3. adım şu sırayla, her biri ayrı ve incelenebilir PR olara
 
 1. Teknoloji seçimi (§ 1): PHP 8.3+ / Laravel 13 / Filament 5 / MySQL / cron tabanlı kuyruk.
 2. Sunucu hazırlık listesindeki (§ 3.1) yedi sorunun cevabı. İstersen SSH erişimiyle ben kontrol edebilirim.
-3. ~~Panelin adresi~~ **Karar:** `seo.hekimdijital.com` (Hostinger), sonra VPS.
+3. ~~Panelin adresi~~ **Karar (güncel):** Alt domain yerine ana domain `hekimdijital.com` kullanılacak (Hostinger, boş PHP sitesi olarak hazırlandı), sonra VPS.
 
 ## 9. Hostinger kontrol sonucu (24.10.2026)
 
