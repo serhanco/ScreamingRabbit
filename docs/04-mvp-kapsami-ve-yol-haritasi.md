@@ -56,7 +56,7 @@ Hedef: Serhan'ın bir müşteri sitesini tarayıp **Screaming Frog'u açmadan** 
 - URL tablosu: filtrelenebilir, aranabilir, CSV/XLSX export.
 - Sorunlar ekranı: kategoriye ve önem derecesine göre gruplu, her kuralın açıklaması ve çözüm önerisiyle.
 - Basit sağlık skoru (0-100).
-- Basit müşteri raporu (HTML → PDF): özet skor, kategori başına sorun sayısı, ilk 10 öncelikli aksiyon.
+- Basit müşteri raporu: **paylaşılabilir web linki** (giriş gerektirmeyen, tahmin edilemez token'lı URL; istenirse iptal edilebilir) + aynı sayfadan **PDF export**. İçerik: özet skor, kategori başına sorun sayısı, ilk 10 öncelikli aksiyon.
 
 ### 3.2 MVP kural kataloğu (ilk sürüm, ~45 kural)
 
@@ -158,7 +158,7 @@ Log dosyası analizi (cPanel erişim logları) · GA4 · semantik benzerlik ve i
 
 ## 7. Açık sorular (Serhan'a)
 
-1. MVP'deki müşteri raporu PDF mi olsun, paylaşılabilir bir web linki mi, yoksa ikisi de mi?
+1. ~~MVP'deki müşteri raporu PDF mi olsun, paylaşılabilir bir web linki mi, yoksa ikisi de mi?~~ **Karar (24.10.2026):** Paylaşılabilir web linki + PDF export.
 2. Kural kataloğundaki eşikler (title uzunluğu, düşük kelime sayısı vb.) için senin kullandığın standartlar var mı?
 3. WordPress dışındaki siteler (Shopify, özel yazılım) için de aynı derinlik gerekiyor mu, yoksa onlar genel kurallarla yetinebilir mi?
 4. Uygulama hangi adreste çalışsın? (örn. `seo.senindomainin.com`)
