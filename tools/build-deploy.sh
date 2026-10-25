@@ -42,9 +42,8 @@ echo "==> Filament dosyaları hazırlanıyor"
 echo "==> Web klasörü hazırlanıyor"
 cp -a "$APP/public/." "$OUT/"
 rm -rf "$APP/public"
-for file in index.php install.php robots.txt favicon.ico; do
-    cp "$ROOT/public/$file" "$OUT/$file"
-done
+# Every tracked file under public/ (entry points, favicons, logo images) goes to the web root.
+(cd "$ROOT/public" && git ls-files -z --cached --others --exclude-standard . | xargs -0 cp --parents -t "$OUT")
 
 {
     echo '# Never serve repository metadata or environment files.'
