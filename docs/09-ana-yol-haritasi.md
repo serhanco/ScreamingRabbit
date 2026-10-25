@@ -94,10 +94,10 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 ## 4. Faz 3 · GSC ve iş listesi (ana farklılaştırıcı)
 
 **GSC bağlantısı ([04 §4.1](04-mvp-kapsami-ve-yol-haritasi.md))**
-- ○ Google OAuth, proje başına property seçimi
-- ○ Search Analytics günlük senkron (sayfa × sorgu × gün, 16 aya kadar geçmiş)
+- ✓ Google OAuth (panelden tek hesap bağlama), proje başına property seçimi
+- ◐ Search Analytics senkronu: sayfa × gün ✓ (10 dakikada bir, 16 aya kadar geriye parça parça); sorgu boyutu ○
 - ○ URL Inspection: öncelikli sayfalar için sırayla (günlük 2.000 kota)
-- ○ Sayfa tablosuna GSC sütunları: tıklama, gösterim, CTR, pozisyon
+- ✓ Sayfa tablosuna GSC sütunları: tıklama, gösterim, CTR, pozisyon (son 28 gün)
 
 **GSC'den türeyen analizler ([04 §4.2](04-mvp-kapsami-ve-yol-haritasi.md))**
 - ○ Trafik alan sayfada teknik sorun (öncelik yükseltme)

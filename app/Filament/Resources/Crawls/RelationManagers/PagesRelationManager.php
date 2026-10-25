@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Crawls\RelationManagers;
 
 use App\Filament\Resources\Crawls\CrawlColors;
 use App\Filament\Resources\Crawls\Support\PageDetail;
+use App\Google\GscSync;
 use App\Models\CrawlPage;
 use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -25,8 +26,16 @@ class PagesRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $projectId = $this->getOwnerRecord()->project_id;
+        $hasGsc = filled($this->getOwnerRecord()->project?->gsc_property);
+
         return $table
             ->recordTitleAttribute('url')
+            // Search Console totals for the latest 28 days, matched to the crawled URL.
+            ->modifyQueryUsing(fn ($query) => $hasGsc
+                ? $query->leftJoinSub(GscSync::last28($projectId), 'gsc', 'gsc.page_hash', '=', 'crawl_pages.url_hash')
+                    ->select('crawl_pages.*', 'gsc.gsc_clicks', 'gsc.gsc_impressions', 'gsc.gsc_position')
+                : $query)
             ->columns([
                 TextColumn::make('url')->label('URL')->limit(70)->tooltip(fn (CrawlPage $record): string => $record->url)
                     ->url(fn (CrawlPage $record): string => $record->url, shouldOpenInNewTab: true)->searchable(),
@@ -39,6 +48,11 @@ class PagesRelationManager extends RelationManager
                 TextColumn::make('inlinks')->label('İç link')->numeric()->sortable()->toggleable(),
                 TextColumn::make('response_ms')->label('Süre (ms)')->numeric()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('schema_types')->label('Şema')->limit(40)->placeholder('—')->toggleable(),
+                TextColumn::make('gsc_clicks')->label('Tıklama (28 g)')->numeric()->placeholder('0')->sortable()->visible($hasGsc),
+                TextColumn::make('gsc_impressions')->label('Gösterim (28 g)')->numeric()->placeholder('0')->sortable()->visible($hasGsc),
+                TextColumn::make('gsc_ctr')->label('CTR')->visible($hasGsc)->toggleable()
+                    ->state(fn (CrawlPage $record): ?string => $record->gsc_impressions > 0 ? '%'.number_format($record->gsc_clicks / $record->gsc_impressions * 100, 1, ',', '.') : null)->placeholder('—'),
+                TextColumn::make('gsc_position')->label('Ort. pozisyon')->numeric(decimalPlaces: 1)->placeholder('—')->sortable()->visible($hasGsc)->toggleable(),
                 IconColumn::make('in_sitemap')->label('Sitemap')->boolean()->toggleable(),
                 TextColumn::make('redirect_to')->label('Yönlendirme')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings'])]
+#[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings', 'gsc_property'])]
 class Project extends Model
 {
     use HasFactory;
@@ -22,6 +22,7 @@ class Project extends Model
     {
         return [
             'crawl_settings' => 'array',
+            'gsc_synced_at' => 'datetime',
         ];
     }
 
