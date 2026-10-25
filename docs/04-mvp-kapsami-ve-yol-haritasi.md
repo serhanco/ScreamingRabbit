@@ -98,7 +98,7 @@ Hedef: Serhan'ın bir müşteri sitesini tarayıp **Screaming Frog'u açmadan** 
 - Etiket / yazar / tarih arşivleri indekslenebilir ve ince içerikli
 - `/wp-json/` veya `xmlrpc.php` erişim kontrolü (bilgilendirme)
 - Birden fazla SEO eklentisi izi (Yoast + RankMath çakışması)
-- Genişletilmiş WordPress güvenlik/SEO kontrolleri ve bağlantı eklentisi: [07 · WordPress modülü](07-wordpress-modulu.md) (WP-1 bu adımın sonunda)
+- Genişletilmiş WordPress güvenlik/SEO kontrolleri ve bağlantı eklentisi: [07 · WordPress modülü](07-wordpress-modulu.md) (WP-1: Faz 2)
 
 ### 3.3 MVP'de olmayanlar (bilinçli)
 
@@ -135,7 +135,7 @@ JS render, GSC, zamanlama, karşılaştırma, hreflang, yapısal veri, PSI. Heps
 
 ### 4.4 Otomasyon
 
-- WordPress modülü WP-2 ve WP-3: açık veritabanı eşleştirmesi, salt okunur bağlantı eklentisi, onaylı değişiklikler ([07](07-wordpress-modulu.md)).
+- WordPress bağlantı eklentisi (WP-2, WP-3): Faz 6 ([07](07-wordpress-modulu.md)).
 - Proje başına zamanlanmış tarama (günlük / haftalık / aylık).
 - **Kritik sayfa izleme** (Lumar Protect fikri): seçili 5-50 URL saatlik veya günlük kontrol edilir (durum kodu, noindex, canonical, title değişimi).
 - Otomatik tarama karşılaştırma: yeni / kaybolan sayfalar, yeni sorunlar, düzelen sorunlar.

@@ -150,10 +150,10 @@ Bulgular mevcut kural/bulgu/aksiyon akışına girer. Eklentiden gelen veri yeni
 
 | Faz | Kapsam | Yol haritasındaki yeri | Ön koşul |
 |---|---|---|---|
-| **WP-1** | Dış kontroller: §2.2 ve §2.3'teki WP-1 kuralları, envanter tespiti, wordpress.org sürüm karşılaştırması, WP raporu bölümü | 3. adımın sonu (crawler MVP'si biter bitmez) | Crawler ve kural kataloğu (mevcut) |
-| **WP-2** | Açık veritabanı eşleştirmesi; eklenti v1 salt okunur; bağlantı ekranı; §2.3 WP-2 kuralları | 4. adımla birlikte (GSC'ye paralel) | WP-1 |
-| **WP-3** | Eklenti olayları, onaylı yazma listesi, değişiklik günlüğü ve geri alma, eklenti güncelleme kontrolü | 4. adımın sonu | WP-2, iş listesi (04 §4.3) |
-| **WP-4** | AI önerileri → onay → uygulama → GSC ile etki ölçümü | P2 | WP-3, GSC |
+| **WP-1** | Dış kontroller: §2.2 ve §2.3'teki WP-1 kuralları, envanter tespiti, wordpress.org sürüm karşılaştırması, WP raporu bölümü | [Faz 2](09-ana-yol-haritasi.md) (crawler MVP'si biter bitmez) | Crawler ve kural kataloğu (mevcut) |
+| **WP-2** | Açık veritabanı eşleştirmesi; eklenti v1 salt okunur; bağlantı ekranı; §2.3 WP-2 kuralları | Faz 6 (açık eşleştirmesinin dış envanter kısmı Faz 2 sonunda öne çekilebilir) | WP-1 |
+| **WP-3** | Eklenti olayları, onaylı yazma listesi, değişiklik günlüğü ve geri alma, eklenti güncelleme kontrolü | Faz 6 | WP-2, iş listesi (04 §4.3) |
+| **WP-4** | AI önerileri → onay → uygulama → GSC ile etki ölçümü | Faz 7 | WP-3, GSC |
 
 İlk pilot: Serhan'ın kendi kontrolündeki bir WordPress sitesi (müşteri sitesi değil). Eklenti orada en az iki hafta salt okunur çalıştıktan sonra müşteri sitelerine geçilir.
 

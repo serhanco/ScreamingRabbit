@@ -109,9 +109,9 @@ Bu ayki uptime: %99,72
 
 | Faz | Kapsam | Yol haritasındaki yeri |
 |---|---|---|
-| **M-1** | Uptime izleyici (§2), kesinti kaydı, e-posta + Telegram, SSL bitiş uyarısı, dış kalp atışı, panelde uptime ekranı | 4. adımın **ilk** işi (bağımsız ve hızlı değer; crawler MVP'si bitince) |
-| **M-2** | Bildirim merkezi (§3): tüm olay türleri, yönlendirme, bastırma, haftalık özet; müşteri raporuna erişilebilirlik bölümü | 4. adım, GSC ve kritik sayfa izlemeyle birlikte |
-| **M-3** | Müşteriye uptime bildirimi, bakım modu, alan adı bitiş (RDAP), WhatsApp/Slack | P2 |
+| **M-1** | Uptime izleyici (§2), kesinti kaydı, e-posta + Telegram, SSL bitiş uyarısı, dış kalp atışı, panelde uptime ekranı | [Faz 2](09-ana-yol-haritasi.md) (bağımsız ve hızlı değer; crawler MVP'si bitince) |
+| **M-2** | Bildirim merkezi (§3): tüm olay türleri, yönlendirme, bastırma, haftalık özet; müşteri raporuna erişilebilirlik bölümü | Faz 4, kritik sayfa izlemeyle birlikte |
+| **M-3** | Müşteriye uptime bildirimi, bakım modu, alan adı bitiş (RDAP), WhatsApp/Slack | Faz 4 sonrası |
 
 ## 6. Kararlar
 
