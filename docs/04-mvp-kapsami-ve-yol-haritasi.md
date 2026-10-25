@@ -138,6 +138,7 @@ JS render, GSC, zamanlama, karşılaştırma, hreflang, yapısal veri, PSI. Heps
 - **Kritik sayfa izleme** (Lumar Protect fikri): seçili 5-50 URL saatlik veya günlük kontrol edilir (durum kodu, noindex, canonical, title değişimi).
 - Otomatik tarama karşılaştırma: yeni / kaybolan sayfalar, yeni sorunlar, düzelen sorunlar.
 - E-posta bildirimi: kritik değişiklikte anında, diğerleri için haftalık özet.
+- Erişilebilirlik (uptime) izleyici, kesinti süresi raporu ve Telegram dahil bildirim merkezi: [08 · İzleme ve bildirimler](08-izleme-ve-bildirimler.md).
 - Aylık müşteri raporu otomatik üretilir, Serhan onaylayıp gönderir. **Müşteriye otomatik gönderim yok:** dışarıya giden her şey onaydan geçer.
 
 ### 4.5 Ek P1 kontroller

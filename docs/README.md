@@ -11,13 +11,14 @@ ScreamingRabbit, SEO danışmanının müşteri sitelerini kendi sunucusunda sü
 | 05 | [Mimari ve sunucu](05-mimari-ve-sunucu.md) | Teknoloji seçimi, sunucu hazırlık listesi, crawler ve veri tasarımı, dağıtım, riskler |
 | 06 | [Kurulum kılavuzu (Hostinger)](06-kurulum-hostinger.md) | Adım adım kurulum, cron, güncelleme ve taşıma (taslak) |
 | 07 | [WordPress modülü](07-wordpress-modulu.md) | WP'ye özel dış SEO/güvenlik kontrolleri, bağlantı eklentisi, güvenlik modeli, fazlar |
+| 08 | [İzleme ve bildirimler](08-izleme-ve-bildirimler.md) | Erişilebilirlik (uptime) izleyici, kesinti kaydı, e-posta/Telegram uyarıları, uptime raporu |
 
 ## Yol haritası
 
 1. Araştırma ve özellik dokümanları ✓
 2. Mimari ve sunucu kararı ✓
 3. **MVP: crawler ve temel denetimler** ← sırada (sonunda WordPress WP-1)
-4. GSC, aksiyon listeleri ve otomasyon (WordPress WP-2, WP-3)
+4. GSC, aksiyon listeleri ve otomasyon (önce uptime izleyici M-1; WordPress WP-2, WP-3; bildirim merkezi M-2)
 
 ## Öncelik etiketleri
 
