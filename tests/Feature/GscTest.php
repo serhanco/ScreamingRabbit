@@ -160,4 +160,43 @@ class GscTest extends TestCase
         $html = view('crawls.page-detail', ['detail' => \App\Filament\Resources\Crawls\Support\PageDetail::for($page)])->render();
         $this->assertStringContainsString('20.10.2026', $html);
     }
+
+    public function test_insights_list_what_to_work_on(): void
+    {
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
+        $day = fn (int $ago) => now()->subDays($ago)->toDateString();
+        $rows = [];
+        foreach (range(3, 100) as $ago) {
+            // /low: position 2, 1% CTR. /drop: 2 clicks a day before, none in the latest 28 days. /orphan: shown but not linked.
+            $rows[] = ['day' => $day($ago), 'page' => 'https://example.com/low', 'clicks' => 0, 'impressions' => 10, 'position' => 2];
+            $rows[] = ['day' => $day($ago), 'page' => 'https://example.com/drop', 'clicks' => $ago > 30 ? 2 : 0, 'impressions' => 5, 'position' => 15];
+            $rows[] = ['day' => $day($ago), 'page' => 'https://example.com/orphan', 'clicks' => 1, 'impressions' => 3, 'position' => 9];
+        }
+        DB::table('gsc_page_days')->insert(array_map(fn ($r) => $r + ['project_id' => $project->id, 'page_hash' => sha1($r['page'])], $rows));
+        DB::table('gsc_queries')->insert([
+            ['project_id' => $project->id, 'page_hash' => sha1('https://example.com/low'), 'page' => 'https://example.com/low', 'query' => 'implant', 'clicks' => 1, 'impressions' => 400, 'position' => 12],
+            ['project_id' => $project->id, 'page_hash' => sha1('https://example.com/drop'), 'page' => 'https://example.com/drop', 'query' => 'implant', 'clicks' => 0, 'impressions' => 80, 'position' => 15],
+        ]);
+        DB::table('gsc_inspections')->insert(['project_id' => $project->id, 'page_hash' => sha1('https://example.com/low'), 'url' => 'https://example.com/low', 'verdict' => 'PASS', 'coverage_state' => 'Dizinde', 'google_canonical' => 'https://example.com/other', 'user_canonical' => 'https://example.com/low', 'inspected_at' => now()]);
+
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'settings' => []]);
+        CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/', 'url_hash' => sha1('https://example.com/'), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html', 'depth' => 0]);
+        foreach (['/low', '/drop', '/dead'] as $path) {
+            CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com'.$path, 'url_hash' => sha1('https://example.com'.$path), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html', 'depth' => 1, 'inlinks' => 1]);
+        }
+
+        $insights = (new \App\Google\GscInsights($project))->all();
+        $this->assertSame(['https://example.com/low'], $insights['low_ctr']->pluck('page')->all());
+        $this->assertSame(['implant', 'implant'], $insights['opportunities']->pluck('query')->all());
+        $this->assertSame(['implant'], $insights['cannibalization']->pluck('query')->all());
+        $this->assertSame(['https://example.com/drop'], $insights['declining']->pluck('page')->all());
+        $this->assertSame(['https://example.com/orphan'], $insights['orphans']->pluck('page')->all());
+        $this->assertSame(['https://example.com/', 'https://example.com/dead'], $insights['zombies']->pluck('url')->all());
+        $this->assertSame(['https://example.com/low'], $insights['index']->pluck('url')->all());
+
+        $this->get(\App\Filament\Resources\Projects\ProjectResource::getUrl('insights', ['record' => $project]))
+            ->assertOk()
+            ->assertSee('Fırsat sorguları')
+            ->assertSee('https://example.com/orphan');
+    }
 }
