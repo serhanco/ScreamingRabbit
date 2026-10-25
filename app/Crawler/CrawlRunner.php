@@ -23,6 +23,8 @@ class CrawlRunner
 
     private const MAX_BODY_BYTES = 2_000_000;
 
+    private const MAX_IMAGES_PER_PAGE = 100;
+
     private array $settings;
 
     private ?UrlFilter $filter = null;
@@ -75,9 +77,20 @@ class CrawlRunner
                 ->get();
 
             if ($pages->isEmpty()) {
-                $this->finish();
+                // Pages are done; check the images they use, then finish.
+                $images = $this->crawl->images()->where('state', 'queued')->orderBy('id')
+                    ->limit(max(1, (int) $this->settings['concurrency']) * 2)->get();
 
-                return false;
+                if ($images->isEmpty()) {
+                    $this->finish();
+
+                    return false;
+                }
+
+                $this->fetchImages($images);
+                usleep(max(0, (int) $this->settings['delay_ms']) * 1000);
+
+                continue;
             }
 
             $this->fetchBatch($pages);
@@ -207,6 +220,7 @@ class CrawlRunner
             ];
 
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
+            $this->storeImages($page, $parsed['images']);
         }
 
         $page->update($update);
@@ -249,6 +263,65 @@ class CrawlRunner
         }
 
         return $httpLinks;
+    }
+
+    /**
+     * Records the site's own images used on a page so they can be checked once each after the pages are crawled.
+     *
+     * @param  array<int, string>  $urls
+     */
+    private function storeImages(CrawlPage $page, array $urls): void
+    {
+        $urls = array_slice(array_filter($urls, fn (string $url) => UrlNormalizer::isInternal($url, $page->url)), 0, self::MAX_IMAGES_PER_PAGE);
+        if ($urls === []) {
+            return;
+        }
+
+        $hashes = array_map(UrlNormalizer::hash(...), $urls);
+        $known = DB::table('crawl_images')->where('crawl_id', $this->crawl->id)->count();
+        $room = max(0, (int) $this->settings['max_urls'] - $known);
+
+        $existing = DB::table('crawl_images')->where('crawl_id', $this->crawl->id)->whereIn('url_hash', $hashes)->pluck('url_hash')->all();
+        $rows = [];
+        foreach ($urls as $i => $url) {
+            if (! in_array($hashes[$i], $existing, true) && count($rows) < $room) {
+                $rows[] = ['crawl_id' => $this->crawl->id, 'url' => $url, 'url_hash' => $hashes[$i], 'state' => 'queued'];
+            }
+        }
+        DB::table('crawl_images')->insertOrIgnore($rows);
+
+        $ids = DB::table('crawl_images')->where('crawl_id', $this->crawl->id)->whereIn('url_hash', $hashes)->pluck('id');
+        DB::table('crawl_image_refs')->insert($ids->map(fn ($id) => ['crawl_id' => $this->crawl->id, 'image_id' => $id, 'page_id' => $page->id])->all());
+    }
+
+    /**
+     * HEAD requests are enough: the status code shows broken images and Content-Length shows their weight.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\CrawlImage>  $images
+     */
+    private function fetchImages($images): void
+    {
+        $responses = Http::pool(fn (Pool $pool) => $images->map(fn ($image) => $pool->as((string) $image->id)
+            ->withUserAgent($this->settings['user_agent'])
+            ->timeout(self::TIMEOUT_SECONDS)
+            ->head($image->url))->all());
+
+        foreach ($images as $image) {
+            $response = $responses[(string) $image->id] ?? null;
+
+            if ($response instanceof Response) {
+                $length = $response->header('Content-Length');
+                $image->update([
+                    'state' => 'done',
+                    'status_code' => $response->status(),
+                    'content_type' => mb_substr(strtolower(trim(explode(';', (string) $response->header('Content-Type'))[0])), 0, 250) ?: null,
+                    'size_bytes' => is_numeric($length) ? (int) $length : null,
+                ]);
+            } else {
+                $message = $response instanceof ConnectionException ? $response->getMessage() : 'Yanıt alınamadı';
+                $image->update(['state' => 'done', 'error' => mb_substr($message, 0, 250)]);
+            }
+        }
     }
 
     private function addPage(string $url, int $depth, bool $inSitemap = false): void

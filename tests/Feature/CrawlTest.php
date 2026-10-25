@@ -156,4 +156,29 @@ class CrawlTest extends TestCase
         $this->assertNull(\App\Crawler\UrlFilter::firstInvalid("/blog/\n^https"));
         $this->assertSame('(unclosed', \App\Crawler\UrlFilter::firstInvalid("/ok/\n(unclosed"));
     }
+
+    public function test_broken_and_large_images_are_reported(): void
+    {
+        Http::fake([
+            '*/robots.txt' => Http::response('', 404),
+            '*/sitemap*.xml' => Http::response('', 404),
+            '*/wp-sitemap.xml' => Http::response('', 404),
+            'example.com/img/ok.jpg' => Http::response('', 200, ['Content-Type' => 'image/jpeg', 'Content-Length' => '2048']),
+            'example.com/img/big.jpg' => Http::response('', 200, ['Content-Type' => 'image/jpeg', 'Content-Length' => (string) (300 * 1024)]),
+            'example.com/img/gone.jpg' => Http::response('', 404),
+            'cdn.other.com/*' => Http::response('', 404),
+            '*' => Http::response($this->page('T', '<img src="/img/ok.jpg" alt=""><img src="/img/big.jpg" alt=""><img src="/img/gone.jpg" alt=""><img src="https://cdn.other.com/x.jpg" alt="">'), 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+
+        $this->assertSame(3, $crawl->images()->count());
+        $this->assertSame(1, $crawl->issues()->where('rule', 'image_broken')->count());
+        $this->assertSame(1, $crawl->issues()->where('rule', 'image_too_large')->count());
+        $this->assertStringContainsString('/img/gone.jpg', $crawl->issues()->where('rule', 'image_broken')->value('detail'));
+    }
 }

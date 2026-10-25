@@ -33,6 +33,7 @@ class RuleCatalog
         'description_min' => ['value' => 70, 'source' => 'Screaming Frog varsayılanı', 'reviewed' => '2026-10-25'],
         'low_word_count' => ['value' => 200, 'source' => 'Screaming Frog "low content" varsayılanı', 'reviewed' => '2026-10-25'],
         'url_max_length' => ['value' => 115, 'source' => 'Screaming Frog varsayılanı', 'reviewed' => '2026-10-25'],
+        'image_max_kb' => ['value' => 100, 'source' => 'Screaming Frog "Over 100 KB" görsel varsayılanı', 'reviewed' => '2026-10-25'],
         'max_depth' => ['value' => 4, 'source' => 'Sektörde yaygın "ana sayfadan en fazla 4 tık" kuralı', 'reviewed' => '2026-10-25'],
     ];
 
@@ -79,6 +80,8 @@ class RuleCatalog
             'h1_missing' => ['category' => 'onpage', 'severity' => 'medium', 'title' => 'H1 eksik', 'description' => 'Sayfanın ana başlığı (H1) yok.', 'fix' => 'Sayfa konusunu anlatan tek bir H1 ekleyin.'],
             'h1_multiple' => ['category' => 'onpage', 'severity' => 'low', 'title' => 'Birden fazla H1', 'description' => 'Sayfada birden çok H1 var; konu odağı bulanıklaşır.', 'fix' => 'Tek H1 bırakın, diğerlerini H2/H3 yapın.'],
             'h1_duplicate' => ['category' => 'onpage', 'severity' => 'low', 'title' => 'H1 kopya', 'description' => 'Aynı H1 birden fazla sayfada kullanılıyor.', 'fix' => 'Her sayfaya özgü H1 yazın.'],
+            'image_broken' => ['category' => 'onpage', 'severity' => 'medium', 'title' => 'Bozuk görsel', 'description' => 'Sayfadaki görsel açılmıyor (4xx/5xx ya da yanıt yok); ziyaretçi boş kutu görür.', 'fix' => 'Görseli yeniden yükleyin ya da sayfadan kaldırın, adresini düzeltin.'],
+            'image_too_large' => ['category' => 'onpage', 'severity' => 'low', 'title' => 'Büyük görsel', 'description' => 'Görsel 100 KB\'tan büyük; sayfanın yüklenmesini yavaşlatır.', 'fix' => 'Görseli sıkıştırın, WebP/AVIF\'e çevirin ve gösterildiği boyuta küçültün.'],
             'images_missing_alt' => ['category' => 'onpage', 'severity' => 'low', 'title' => 'Alt özniteliği olmayan görsel', 'description' => 'Alt metni olmayan görseller erişilebilirliği ve görsel aramayı olumsuz etkiler.', 'fix' => 'Görsellere içeriği anlatan alt metin ekleyin (süs görsellerine boş alt="").'],
             'low_content' => ['category' => 'onpage', 'severity' => 'low', 'title' => 'Düşük kelime sayısı', 'description' => 'Sayfada çok az metin var; "ince içerik" sayılabilir.', 'fix' => 'İçeriği zenginleştirin ya da sayfayı birleştirin/noindex yapın.'],
             'duplicate_content' => ['category' => 'onpage', 'severity' => 'medium', 'title' => 'Birebir kopya içerik', 'description' => 'Bu sayfanın metni başka bir sayfayla birebir aynı.', 'fix' => 'Sayfaları birleştirin veya canonical ile asıl sayfayı gösterin.'],
