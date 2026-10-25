@@ -113,4 +113,16 @@ class CrawlPanelTest extends TestCase
             ->assertActionHidden('recrawl')
             ->assertActionVisible('cancel');
     }
+
+    public function test_share_action_creates_token_and_copies_link(): void
+    {
+        [, $crawl] = $this->crawlWithIssue();
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->getRouteKey()])
+            ->callAction('share')
+            ->assertHasNoActionErrors()
+            ->assertJs('navigator.clipboard?.writeText('.json_encode(route('report.show', $crawl->fresh()->share_token)).')');
+
+        $this->assertNotNull($crawl->fresh()->share_token);
+    }
 }

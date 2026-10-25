@@ -59,7 +59,19 @@ class ViewCrawl extends ViewRecord
                 ] : [])
                 ->action(function (Crawl $record): void {
                     $record->update(['share_token' => Str::random(40), 'shared_at' => now()]);
-                    Notification::make()->title('Rapor bağlantısı hazır')->body(route('report.show', $record->share_token))->success()->persistent()->send();
+                    $url = route('report.show', $record->share_token);
+                    $this->js('navigator.clipboard?.writeText('.json_encode($url).')');
+                    Notification::make()
+                        ->title('Rapor bağlantısı hazır ve panoya kopyalandı')
+                        ->body($url)
+                        ->success()
+                        ->persistent()
+                        ->actions([
+                            Action::make('copy')
+                                ->label('Tekrar kopyala')
+                                ->alpineClickHandler('navigator.clipboard.writeText('.json_encode($url).')'),
+                        ])
+                        ->send();
                 }),
             Action::make('pdf')
                 ->label('PDF indir')
