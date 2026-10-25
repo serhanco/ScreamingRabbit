@@ -29,19 +29,22 @@ class AlertsTest extends TestCase
     {
         Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
         Setting::put('telegram_bot_token', '123:abc');
-        Setting::put('telegram_chat_id', '42');
+        User::factory()->create(['telegram_chat_id' => '42']);
+        User::factory()->create(['telegram_chat_id' => '43', 'alert_kinds' => ['ssl']]);
 
-        Alerts::send('Erişilemiyor: Klinik', 'Site yanıt vermiyor.');
+        Alerts::send('down', 'Erişilemiyor: Klinik', 'Site yanıt vermiyor.');
 
         Http::assertSent(fn ($request) => $request->url() === 'https://api.telegram.org/bot123:abc/sendMessage'
             && $request['chat_id'] === '42' && str_contains($request['text'], 'Erişilemiyor: Klinik'));
+        Http::assertNotSent(fn ($request) => $request['chat_id'] === '43');
     }
 
     public function test_unconfigured_channels_are_skipped(): void
     {
         Http::fake();
+        $user = User::factory()->create();
 
-        $this->assertSame(['email' => null, 'telegram' => null], Channels::deliver('x', 'y'));
+        $this->assertSame([$user->id => ['email' => null, 'telegram' => null]], Channels::deliver('down', 'x', 'y'));
         Http::assertNothingSent();
     }
 
@@ -54,16 +57,19 @@ class AlertsTest extends TestCase
 
     public function test_settings_page_saves(): void
     {
-        $this->actingAs(User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
+        $this->actingAs($user = User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
 
         Livewire::test(NotificationSettings::class)
             ->assertSee('Bildirim ayarları')
-            ->fillForm(['alert_email' => 'serhan@example.com', 'telegram_chat_id' => '42'])
+            ->fillForm(['alert_email' => 'serhan@example.com', 'telegram_chat_id' => '42', 'alert_kinds' => ['down', 'up'], 'telegram_bot_token' => '123:abc'])
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $this->assertSame('serhan@example.com', Setting::get('alert_email'));
-        $this->assertSame('42', Setting::get('telegram_chat_id'));
+        $user->refresh();
+        $this->assertSame('serhan@example.com', $user->alert_email);
+        $this->assertSame('42', $user->telegram_chat_id);
+        $this->assertFalse($user->wantsAlert('slow'));
+        $this->assertSame('123:abc', Setting::get('telegram_bot_token'));
         $this->assertSame(config('screamingrabbit.alerts.smtp_host'), Setting::get('smtp_host'));
     }
 
@@ -80,11 +86,10 @@ class AlertsTest extends TestCase
     public function test_email_uses_the_mailbox_from_settings(): void
     {
         \Illuminate\Support\Facades\Mail::fake();
-        Setting::put('alert_email', 'serhan@example.com');
         Setting::put('smtp_username', 'bildirim@example.com');
         Setting::put('smtp_password', str_repeat('x', 8));
 
-        $this->assertTrue(Channels::email('Başlık', 'Gövde'));
+        $this->assertTrue(Channels::email('serhan@example.com', 'Başlık', 'Gövde'));
         $this->assertSame(config('screamingrabbit.alerts.smtp_host'), config('mail.mailers.alerts.host'));
         $this->assertSame('smtps', config('mail.mailers.alerts.scheme'));
         $this->assertSame(str_repeat('x', 8), config('mail.mailers.alerts.password'));

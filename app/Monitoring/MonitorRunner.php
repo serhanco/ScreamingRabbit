@@ -152,12 +152,12 @@ class MonitorRunner
         if ($result['ok']) {
             $slowStreak = $result['ms'] > self::SLOW_MS ? $monitor->slow_streak + 1 : 0;
             if ($slowStreak === self::SLOW_STREAK) {
-                Alerts::send("Yavaş: {$monitor->project->name}", "{$site} art arda ".self::SLOW_STREAK.' kontrolde '.round($result['ms'] / 1000, 1).' sn sürdü.');
+                Alerts::send('slow', "Yavaş: {$monitor->project->name}", "{$site} art arda ".self::SLOW_STREAK.' kontrolde '.round($result['ms'] / 1000, 1).' sn sürdü.');
             }
 
             if ($open) {
                 $open->update(['ended_at' => now(), 'notified_up_at' => now()]);
-                Alerts::send("Düzeldi: {$monitor->project->name}", "{$site} yeniden erişilebilir. Kesinti süresi: {$open->durationForHumans()}.");
+                Alerts::send('up', "Düzeldi: {$monitor->project->name}", "{$site} yeniden erişilebilir. Kesinti süresi: {$open->durationForHumans()}.");
             }
 
             $monitor->update(['status' => 'up', 'last_checked_at' => now(), 'last_response_ms' => $result['ms'], 'slow_streak' => $slowStreak]);
@@ -173,12 +173,12 @@ class MonitorRunner
 
         if ($open && ($open->reminded_at ?? $open->started_at)->lte(now()->subMinutes(self::REMIND_MINUTES))) {
             $open->update(['reminded_at' => now()]);
-            Alerts::send("Hâlâ erişilemiyor: {$monitor->project->name}", "{$site} {$open->durationForHumans()} süredir yanıt vermiyor.");
+            Alerts::send('down', "Hâlâ erişilemiyor: {$monitor->project->name}", "{$site} {$open->durationForHumans()} süredir yanıt vermiyor.");
         }
 
         if ($open === null) {
             Incident::create(['monitor_id' => $monitor->id, 'started_at' => now(), 'cause' => $result['error'], 'detail' => $result['detail'], 'notified_down_at' => now()]);
-            Alerts::send("Erişilemiyor: {$monitor->project->name}", "{$site} yanıt vermiyor. Neden: ".(Monitor::CAUSES[$result['error']] ?? $result['error']).($result['detail'] ? " ({$result['detail']})" : '').'.');
+            Alerts::send('down', "Erişilemiyor: {$monitor->project->name}", "{$site} yanıt vermiyor. Neden: ".(Monitor::CAUSES[$result['error']] ?? $result['error']).($result['detail'] ? " ({$result['detail']})" : '').'.');
         }
 
         $monitor->update(['status' => 'down']);
@@ -195,7 +195,7 @@ class MonitorRunner
         $monitor->update(['ssl_expires_at' => $expires, 'ssl_checked_at' => now()]);
 
         if ($expires && $expires->lt(now()->addDays(self::SSL_WARN_DAYS))) {
-            Alerts::send("SSL bitiyor: {$monitor->project->name}", "{$monitor->url} sertifikası {$expires->format('d.m.Y')} tarihinde bitiyor ({$expires->diffForHumans()}).");
+            Alerts::send('ssl', "SSL bitiyor: {$monitor->project->name}", "{$monitor->url} sertifikası {$expires->format('d.m.Y')} tarihinde bitiyor ({$expires->diffForHumans()}).");
         }
     }
 
