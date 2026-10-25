@@ -75,6 +75,7 @@ class CrawlReport
                 'count' => (int) $crawl->issues()->where('severity', $key)->count(),
             ])->all(),
             'findings' => $findings,
+            'bots' => \App\Crawler\BotAccess::present($crawl->bot_access),
             'brand' => config('screamingrabbit.brand'),
         ];
     }

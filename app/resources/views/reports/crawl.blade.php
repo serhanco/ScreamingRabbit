@@ -78,6 +78,22 @@
         <tr>@foreach ($report['by_severity'] as $row)<td class="num">{{ $row['count'] }}</td>@endforeach</tr>
     </table>
 
+    @if (! empty($report['bots']))
+        <h2>Arama motorları ve AI botları erişimi</h2>
+        <table class="grid">
+            <tr><th>Bot</th><th>Tür</th><th>robots.txt</th><th>Erişim testi</th></tr>
+            @foreach ($report['bots'] as $bot)
+                <tr>
+                    <td>{{ $bot['name'] }}</td>
+                    <td>{{ $bot['kind'] }}</td>
+                    <td style="{{ $bot['robots'] === 'Engelli' ? 'color:#b91c1c;font-weight:bold' : '' }}">{{ $bot['robots'] }}</td>
+                    <td style="{{ str_starts_with($bot['fetch'], 'Reddedildi') ? 'color:#b45309;font-weight:bold' : '' }}">{{ $bot['fetch'] }}</td>
+                </tr>
+            @endforeach
+        </table>
+        <p style="font-size:11px;color:#6b7280">Erişim testi ana sayfayı her botun kimliğiyle bir kez ister. "Reddedildi", güvenlik duvarının bu kimliği engellediğini gösterir; gerçek botlar IP doğrulamasıyla geçebilir.</p>
+    @endif
+
     <h2>Bulgular ve çözüm önerileri</h2>
     @forelse ($report['findings'] as $finding)
         <div class="finding" style="border-left-color: {{ $sevColor[$finding['severity']] ?? '#6b7280' }}">
