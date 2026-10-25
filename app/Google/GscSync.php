@@ -41,6 +41,7 @@ class GscSync
                 if ($project->gsc_queries_synced_on?->isToday() !== true) {
                     self::syncQueries($project);
                 }
+                UrlInspector::run($project);
             } catch (\Throwable $e) {
                 Log::error("GSC senkronu başarısız ({$project->name}): ".$e->getMessage());
             }

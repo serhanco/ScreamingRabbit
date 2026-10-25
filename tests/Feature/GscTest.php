@@ -129,4 +129,35 @@ class GscTest extends TestCase
         $this->assertStringContainsString('diş beyazlatma fiyat', $html);
         $this->assertStringContainsString('3,2', $html);
     }
+
+    public function test_url_inspection_checks_top_pages_and_shows_google_view(): void
+    {
+        $this->connect();
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'access-1', 'expires_in' => 3599]),
+            'searchconsole.googleapis.com/v1/urlInspection/index:inspect' => fn ($request) => str_ends_with($request['inspectionUrl'], '/b')
+                ? Http::response(['inspectionResult' => ['indexStatusResult' => ['verdict' => 'NEUTRAL', 'coverageState' => 'Taranmış - şu anda dizine eklenmemiş', 'googleCanonical' => null]]])
+                : Http::response(['inspectionResult' => ['indexStatusResult' => ['verdict' => 'PASS', 'coverageState' => 'Gönderildi ve dizine eklendi', 'googleCanonical' => $request['inspectionUrl'], 'lastCrawlTime' => '2026-10-20T10:00:00Z']]]),
+        ]);
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'settings' => []]);
+        foreach (['/a', '/b'] as $path) {
+            CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com'.$path, 'url_hash' => sha1('https://example.com'.$path), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html']);
+        }
+        CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/gone', 'url_hash' => sha1('https://example.com/gone'), 'state' => 'done', 'status_code' => 404]);
+
+        $this->assertSame(2, \App\Google\UrlInspector::run($project));
+        $this->assertSame(0, \App\Google\UrlInspector::run($project), 'checked pages wait a week');
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'urlInspection') && $request['siteUrl'] === 'sc-domain:example.com');
+
+        Livewire::test(PagesRelationManager::class, ['ownerRecord' => $crawl, 'pageClass' => ViewCrawl::class])
+            ->assertSee('Gönderildi ve dizine eklendi')
+            ->assertSee('Taranmış - şu anda dizine eklenmemiş')
+            ->searchTable('/b')
+            ->assertCanSeeTableRecords([CrawlPage::where('url', 'https://example.com/b')->first()]);
+
+        $page = CrawlPage::where('url', 'https://example.com/a')->first();
+        $html = view('crawls.page-detail', ['detail' => \App\Filament\Resources\Crawls\Support\PageDetail::for($page)])->render();
+        $this->assertStringContainsString('20.10.2026', $html);
+    }
 }
