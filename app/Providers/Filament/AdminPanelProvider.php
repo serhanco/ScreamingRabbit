@@ -7,6 +7,7 @@ use App\Http\Middleware\RunPendingMigrations;
 use App\Support\Palette;
 use Filament\Actions\Action;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Enums\UserMenuPosition;
 use Filament\Forms\Components\Radio;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -46,6 +47,10 @@ class AdminPanelProvider extends PanelProvider
             ], isRequired: true)
             ->renderHook(PanelsRenderHook::FOOTER, fn () => Blade::render('<x-brand-footer />'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => Blade::render('<x-brand-footer />'))
+            // No top bar: the logo, navigation and user menu all live in the collapsible sidebar to save vertical space.
+            ->topbar(false)
+            ->userMenu(position: UserMenuPosition::Sidebar)
+            ->renderHook(PanelsRenderHook::SIDEBAR_LOGO_BEFORE, fn () => Blade::render('<x-brand-mark-collapsed />'))
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->colors(Palette::colors(null))

@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Support\Palette;
 use Filament\Facades\Filament;
-use Filament\Livewire\Topbar;
+use Filament\Livewire\Sidebar;
 use Filament\Support\Colors\Color;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -60,7 +60,7 @@ class BrandingTest extends TestCase
         $this->actingAs($user);
         Filament::setCurrentPanel('admin');
 
-        Livewire::test(Topbar::class)
+        Livewire::test(Sidebar::class)
             ->callAction('palette', ['palette' => 'mor'])
             ->assertRedirect();
 
