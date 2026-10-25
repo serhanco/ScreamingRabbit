@@ -102,4 +102,31 @@ class GscTest extends TestCase
             ->assertSee('Tıklama (28 g)')
             ->assertSee('%5,0');
     }
+
+    public function test_queries_are_synced_and_shown_in_page_detail(): void
+    {
+        $this->connect();
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'access-1', 'expires_in' => 3599]),
+            'www.googleapis.com/webmasters/v3/sites/*/searchAnalytics/query' => Http::response(['rows' => [
+                ['keys' => ['https://example.com/a', 'diş beyazlatma'], 'clicks' => 12, 'impressions' => 300, 'position' => 3.2],
+                ['keys' => ['https://example.com/a', 'diş beyazlatma fiyat'], 'clicks' => 2, 'impressions' => 90, 'position' => 9.7],
+            ]]),
+        ]);
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
+
+        GscSync::runAll();
+        $this->assertSame(2, DB::table('gsc_queries')->where('project_id', $project->id)->count());
+        $this->assertTrue($project->fresh()->gsc_queries_synced_on->isToday());
+
+        GscSync::syncQueries($project);
+        $this->assertSame(2, DB::table('gsc_queries')->count(), 'a resync replaces the rows');
+
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'settings' => []]);
+        $page = CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/a', 'url_hash' => sha1('https://example.com/a'), 'state' => 'done', 'status_code' => 200]);
+
+        $html = view('crawls.page-detail', ['detail' => \App\Filament\Resources\Crawls\Support\PageDetail::for($page)])->render();
+        $this->assertStringContainsString('diş beyazlatma fiyat', $html);
+        $this->assertStringContainsString('3,2', $html);
+    }
 }

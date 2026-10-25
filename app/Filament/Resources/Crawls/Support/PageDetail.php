@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Crawls\Support;
 
 use App\Audit\RuleCatalog;
 use App\Models\CrawlPage;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Collects what the per-URL detail modal shows: findings, incoming and outgoing links.
@@ -12,8 +13,10 @@ class PageDetail
 {
     private const LINK_LIMIT = 100;
 
+    private const QUERY_LIMIT = 20;
+
     /**
-     * @return array{page: CrawlPage, findings: array<int, array<string, string>>, inlinks: \Illuminate\Support\Collection, outlinks: \Illuminate\Support\Collection}
+     * @return array{page: CrawlPage, findings: array<int, array<string, string>>, inlinks: \Illuminate\Support\Collection, outlinks: \Illuminate\Support\Collection, queries: \Illuminate\Support\Collection}
      */
     public static function for(CrawlPage $page): array
     {
@@ -44,6 +47,14 @@ class PageDetail
             ->limit(self::LINK_LIMIT)
             ->pluck('crawl_pages.url');
 
-        return compact('page', 'findings', 'inlinks', 'outlinks');
+        // Search Console queries this URL was shown for in the latest 28 days, most clicked first.
+        $queries = DB::table('gsc_queries')
+            ->where('project_id', $page->crawl->project_id)
+            ->where('page_hash', $page->url_hash)
+            ->orderByDesc('clicks')->orderByDesc('impressions')
+            ->limit(self::QUERY_LIMIT)
+            ->get(['query', 'clicks', 'impressions', 'position']);
+
+        return compact('page', 'findings', 'inlinks', 'outlinks', 'queries');
     }
 }
