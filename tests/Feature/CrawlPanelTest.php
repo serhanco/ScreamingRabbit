@@ -125,4 +125,26 @@ class CrawlPanelTest extends TestCase
 
         $this->assertNotNull($crawl->fresh()->share_token);
     }
+
+    public function test_csv_exports_download_urls_and_issues(): void
+    {
+        [, $crawl] = $this->crawlWithIssue();
+
+        $pages = (new \App\Exports\CrawlCsv($crawl))->pages();
+        ob_start();
+        $pages->sendContent();
+        $csv = ob_get_clean();
+        $this->assertStringStartsWith("\xEF\xBB\xBFURL;", $csv);
+        $this->assertStringContainsString('https://example.com/x;404', $csv);
+
+        ob_start();
+        (new \App\Exports\CrawlCsv($crawl))->issues()->sendContent();
+        $csv = ob_get_clean();
+        $this->assertStringContainsString('https://example.com/x', $csv);
+        $this->assertStringContainsString('HTTP 404', $csv);
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->getKey()])
+            ->callAction('csvPages')
+            ->assertHasNoActionErrors();
+    }
 }

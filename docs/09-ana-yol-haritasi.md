@@ -58,7 +58,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ◐ Tarama sonuçları: URL tablosu ve sorunlar ekranı
 - ✓ Sağlık skoru (0-100): her tetiklenen kural önem ağırlığının %30'unu, kalanını etkilediği sayfa oranıyla orantılı düşürür
 - ○ Her URL'nin ayrıntı sayfası: başlıklar, gelen/giden linkler, bulgular
-- ○ CSV/XLSX export (tablo ve sorun bazında)
+- ○ CSV export (done) (tablo ve sorun bazında)
 - ○ Müşteri raporu: paylaşılabilir link (iptal edilebilir token) + PDF
 
 ## 3. Faz 2 · Hızlı kazançlar

@@ -4,9 +4,11 @@ namespace App\Filament\Resources\Crawls\Pages;
 
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Crawler\CrawlRunner;
+use App\Exports\CrawlCsv;
 use App\Models\Crawl;
 use App\Reports\CrawlReport;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
@@ -83,6 +85,19 @@ class ViewCrawl extends ViewRecord
 
                     return response()->streamDownload(fn () => print ($report->pdf()), $report->filename(), ['Content-Type' => 'application/pdf']);
                 }),
+            ActionGroup::make([
+                Action::make('csvPages')
+                    ->label('URL listesi (CSV)')
+                    ->action(fn (Crawl $record) => (new CrawlCsv($record))->pages()),
+                Action::make('csvIssues')
+                    ->label('Sorunlar (CSV)')
+                    ->action(fn (Crawl $record) => (new CrawlCsv($record))->issues()),
+            ])
+                ->label('Dışa aktar')
+                ->icon(Heroicon::OutlinedTableCells)
+                ->color('gray')
+                ->button()
+                ->visible(fn (): bool => ! $this->record->isActive()),
             Action::make('cancel')
                 ->label('Taramayı durdur')
                 ->icon(Heroicon::OutlinedStop)
