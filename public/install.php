@@ -2,7 +2,7 @@
 
 /**
  * One-time browser installer for hosting without a terminal (docs/06).
- * It stays locked until the install.key file next to the app is entered, and locks itself for good afterwards.
+ * It stays locked until the key stored in storage/app/install.key is entered, and locks itself for good afterwards.
  */
 
 use App\Support\Installer;
@@ -10,7 +10,7 @@ use App\Support\Installer;
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
-$basePath = is_file(__DIR__.'/../vendor/autoload.php') ? realpath(__DIR__.'/..') : realpath(__DIR__.'/../screamingrabbit');
+$basePath = is_file(__DIR__.'/../vendor/autoload.php') ? realpath(__DIR__.'/..') : realpath(__DIR__.'/app');
 
 header('Content-Type: text/html; charset=utf-8');
 header('X-Robots-Tag: noindex, nofollow');
@@ -37,12 +37,13 @@ function page(string $title, string $body): never
 }
 
 if ($basePath === false || ! is_file($basePath.'/vendor/autoload.php')) {
-    page('Kurulum', '<h1>Kurulum yapılamıyor</h1><div class="err">Uygulama klasörü (<code>screamingrabbit</code>) bulunamadı. ZIP içindeki iki klasörün de yüklendiğinden ve <code>public_html</code> ile aynı seviyede olduğundan emin olun.</div>');
+    page('Kurulum', '<h1>Kurulum yapılamıyor</h1><div class="err">Uygulama klasörü (<code>app</code>) bulunamadı. Hostinger\'daki Git ekranından <code>deploy</code> dalının çekildiğinden emin olun.</div>');
 }
 
 require $basePath.'/vendor/autoload.php';
 
 $installer = new Installer($basePath);
+$installer->ensureKey();
 
 if ($installer->isInstalled()) {
     page('Kurulum tamam', '<h1>Kurulum zaten tamamlanmış</h1><p><a href="/admin">Yönetim paneline git</a></p>');
@@ -77,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         usleep(random_int(300000, 600000)); // makes guessing the install key slower
 
         if (! $installer->verifyKey($input['key'])) {
-            throw new RuntimeException('Kurulum anahtarı hatalı. Anahtar, uygulama klasöründeki install.key dosyasının içindedir.');
+            throw new RuntimeException('Kurulum anahtarı hatalı. Anahtar, app/storage/app/install.key dosyasının içindedir.');
         }
         if ($input['db_name'] === '' || $input['db_user'] === '') {
             throw new RuntimeException('Veritabanı adı ve kullanıcı adı gerekli.');
@@ -156,7 +157,7 @@ $field = fn (string $name, string $label, string $type = 'text', string $hint = 
 page('ScreamingRabbit kurulumu', '<h1>ScreamingRabbit kurulumu</h1>'
     .($error !== null ? '<div class="err">'.e($error).'</div>' : '')
     .'<form method="post" autocomplete="off">'
-    .$field('key', 'Kurulum anahtarı', 'text', 'Dosya Yöneticisi\'nde screamingrabbit klasöründeki install.key dosyasını açın, içindeki metni buraya yapıştırın.')
+    .$field('key', 'Kurulum anahtarı', 'text', 'Dosya Yöneticisi\'nde app/storage/app/install.key dosyasını açın, içindeki metni buraya yapıştırın.')
     .'<h2>Veritabanı</h2>'
     .$field('db_host', 'Sunucu', 'text', 'Hostinger\'da genellikle localhost')
     .$field('db_name', 'Veritabanı adı')

@@ -17,9 +17,25 @@ class Installer
         return is_file($this->basePath.'/storage/app/installed');
     }
 
+    public function keyPath(): string
+    {
+        return $this->basePath.'/storage/app/install.key';
+    }
+
+    /**
+     * Creates the install key on first use. It can only be read through the hosting file manager,
+     * so whoever completes the installer is someone with access to the hosting account.
+     */
+    public function ensureKey(): void
+    {
+        if (! is_file($this->keyPath())) {
+            file_put_contents($this->keyPath(), bin2hex(random_bytes(8))."\n", LOCK_EX);
+        }
+    }
+
     public function verifyKey(string $given): bool
     {
-        $file = $this->basePath.'/install.key';
+        $file = $this->keyPath();
 
         if (! is_file($file) || $given === '') {
             return false;
@@ -127,7 +143,7 @@ class Installer
     public function markInstalled(): void
     {
         file_put_contents($this->basePath.'/storage/app/installed', date('c')."\n");
-        @unlink($this->basePath.'/install.key');
+        @unlink($this->keyPath());
     }
 
     private function quote(string $value): string
