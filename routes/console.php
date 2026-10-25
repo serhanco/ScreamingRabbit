@@ -1,11 +1,12 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
-// Hosting without a long-running process manager (Hostinger shared hosting) only has cron.
-// A single cron entry runs `schedule:run` every minute, and this drains the database queue
-// for up to 50 seconds so workers never overlap (docs/05, section 5.1).
-Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
+// Hosting without a long-running process manager (Hostinger shared hosting) only has cron, and it does not allow
+// starting sub-processes (proc_open). A single cron entry runs `schedule:run` every minute, and this drains the
+// database queue inside that same PHP process for up to 50 seconds, so workers never overlap (docs/05, section 5.1).
+Schedule::call(fn () => Artisan::call('queue:work', ['--stop-when-empty' => true, '--max-time' => 50, '--tries' => 3]))
+    ->name('queue-worker')
     ->everyMinute()
-    ->withoutOverlapping()
-    ->runInBackground();
+    ->withoutOverlapping(3);

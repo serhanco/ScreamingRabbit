@@ -10,10 +10,12 @@ class SchedulerTest extends TestCase
     public function test_queue_worker_is_scheduled_every_minute_without_overlap(): void
     {
         $event = collect(app(Schedule::class)->events())
-            ->first(fn ($event) => str_contains($event->command, 'queue:work'));
+            ->first(fn ($event) => $event->description === 'queue-worker');
 
-        $this->assertNotNull($event, 'queue:work must be scheduled');
+        $this->assertNotNull($event, 'the queue worker must be scheduled');
         $this->assertSame('* * * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
+        // It must run inside the cron process: sub-processes are not available on the shared host.
+        $this->assertNull($event->command);
     }
 }
