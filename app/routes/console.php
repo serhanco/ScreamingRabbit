@@ -1,8 +1,15 @@
 <?php
 
 use App\Crawler\CrawlMaintenance;
+use App\Monitoring\MonitorRunner;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+
+// Uptime checks first: the queue worker below can keep this process busy for up to 50 seconds (docs/08 §2.3).
+Schedule::call(fn () => MonitorRunner::run())
+    ->name('monitors')
+    ->everyMinute()
+    ->withoutOverlapping(2);
 
 // Hosting without a long-running process manager (Hostinger shared hosting) only has cron, and it does not allow
 // starting sub-processes (proc_open). A single cron entry runs `schedule:run` every minute, and this drains the
@@ -15,3 +22,5 @@ Schedule::call(fn () => Artisan::call('queue:work', ['--stop-when-empty' => true
 Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')->everyFiveMinutes();
 
 Schedule::call(fn () => CrawlMaintenance::prune())->name('crawl-prune')->dailyAt('04:00');
+
+Schedule::call(fn () => MonitorRunner::prune())->name('monitor-prune')->dailyAt('04:30');

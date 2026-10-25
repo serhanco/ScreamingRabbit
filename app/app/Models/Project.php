@@ -30,6 +30,17 @@ class Project extends Model
         return $this->belongsTo(Client::class);
     }
 
+    protected static function booted(): void
+    {
+        // Every new site is watched for downtime from the start (docs/08 §2.1: default target is the home page).
+        static::created(fn (Project $project) => $project->monitors()->create(['url' => $project->base_url]));
+    }
+
+    public function monitors(): HasMany
+    {
+        return $this->hasMany(Monitor::class);
+    }
+
     public function crawls(): HasMany
     {
         return $this->hasMany(Crawl::class)->latest();
