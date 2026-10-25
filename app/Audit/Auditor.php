@@ -58,6 +58,9 @@ class Auditor
         $this->auditImages();
         $this->auditBotAccess();
         $this->auditAiReadiness();
+        if ($platform) {
+            $this->auditWordPress();
+        }
         $this->flush();
 
         $crawl->update(['health_score' => $this->healthScore()]);
@@ -409,6 +412,99 @@ class Auditor
             $this->emit('llms_txt_missing', $home);
         } elseif ($llms === 'invalid') {
             $this->emit('llms_txt_invalid', $home);
+        }
+    }
+
+    private function auditWordPress(): void
+    {
+        $home = $this->crawl->pages()->where('depth', 0)->orderBy('id')->first();
+        if ($home === null) {
+            return;
+        }
+
+        if ($home->status_code === 200 && str_contains(strtolower((string) $home->meta_robots.' '.$home->x_robots), 'noindex')) {
+            $this->emit('wp_search_engines_discouraged', $home);
+        }
+
+        $defaults = '/^(Merhaba dünya!|Hello world!|Örnek sayfa|Sample Page)( [|–-] |$)|Bir başka WordPress sitesi|Just another WordPress site/u';
+        $this->crawl->pages()->where('status_code', 200)->whereNotNull('title')->select('id', 'title')->chunkById(500, function ($pages) use ($defaults) {
+            foreach ($pages as $page) {
+                if (preg_match($defaults, $page->title)) {
+                    $this->emitFor('wp_default_content', $page->id, $page->title);
+                }
+            }
+        });
+
+        foreach ($this->crawl->pages()->where(fn ($q) => $q->where('url', 'like', '%/category/uncategorized/%')->orWhere('url', 'like', '%/kategorilenmemis/%'))->where('status_code', 200)->limit(1)->get() as $page) {
+            $this->emit('wp_uncategorized', $page);
+        }
+        foreach ($this->crawl->pages()->where('url', 'like', '%replytocom=%')->select('id', 'url')->get() as $page) {
+            $this->emitFor('wp_replytocom', $page->id);
+        }
+
+        $checks = $this->crawl->wp_checks ?? [];
+        $probes = $checks['probes'] ?? [];
+        if ($probes === []) {
+            return;
+        }
+        $found = fn (string $key): bool => (bool) ($probes[$key]['finding'] ?? false);
+        $value = fn (string $key) => $probes[$key]['value'] ?? null;
+
+        $version = $value('feed') ?? $value('readme');
+        $latest = $value('core_latest');
+        if ($version) {
+            $this->emit('wp_version_exposed', $home, 'Sürüm '.$version);
+            if ($latest && version_compare($version, $latest, '<')) {
+                $this->emit('wp_core_outdated', $home, "Sitede {$version}, güncel {$latest}");
+            }
+        }
+
+        $plugins = $checks['inventory']['plugins'] ?? [];
+        $themes = $checks['inventory']['themes'] ?? [];
+        if ($plugins !== [] || $themes !== []) {
+            $this->emit('wp_inventory', $home, 'Eklentiler: '.(implode(', ', array_keys($plugins)) ?: '—').' · Temalar: '.(implode(', ', array_keys($themes)) ?: '—'));
+        }
+        $outdated = [];
+        foreach ($plugins as $slug => $seen) {
+            $current = $value('plugin:'.$slug);
+            // An asset ?ver= equal to the core version is WordPress's own default, not the plugin's.
+            if ($seen && $current && $seen !== $version && version_compare($seen, $current, '<')) {
+                $outdated[] = "{$slug} {$seen} → {$current}";
+            }
+        }
+        if ($outdated !== []) {
+            $this->emit('wp_plugin_outdated', $home, implode(', ', $outdated));
+        }
+
+        if ($found('rest_users') || $found('author_redirect')) {
+            $this->emit('wp_user_enumeration', $home, 'Görünen: '.collect([$value('rest_users'), $value('author_redirect')])->filter()->unique()->implode(', '));
+        }
+        if ($found('xmlrpc')) {
+            $this->emit('wp_xmlrpc_enabled', $home);
+        }
+        $files = array_keys(array_filter(['readme.html' => $found('readme'), 'license.txt' => $found('license')]));
+        if ($files !== []) {
+            $this->emit('wp_default_files', $home, implode(', ', $files));
+        }
+        if ($found('debug_log')) {
+            $this->emit('wp_debug_log_public', $home, '/wp-content/debug.log');
+        }
+        $listings = array_keys(array_filter(['/wp-content/uploads/' => $found('uploads_index'), '/wp-content/plugins/' => $found('plugins_index')]));
+        if ($listings !== []) {
+            $this->emit('wp_directory_listing', $home, implode(', ', $listings));
+        }
+        $backups = collect($probes)->filter(fn ($probe, $key) => str_starts_with($key, 'backup:') && ($probe['finding'] ?? false))->keys()->map(fn ($key) => '/'.substr($key, 7));
+        if ($backups->isNotEmpty()) {
+            $this->emit('wp_config_backup_exposed', $home, $backups->implode(', '));
+        }
+        if ($found('login_http')) {
+            $this->emit('wp_login_http', $home);
+        }
+        if ($found('search')) {
+            $this->emit('wp_search_indexable', $home, '/?s=…');
+        }
+        if ($found('wp_sitemap') && $found('sitemap_index')) {
+            $this->emit('wp_double_sitemap', $home, '/wp-sitemap.xml + /sitemap_index.xml');
         }
     }
 
