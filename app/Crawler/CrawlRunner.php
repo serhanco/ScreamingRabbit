@@ -27,6 +27,8 @@ class CrawlRunner
 
     private const BOT_TIMEOUT_SECONDS = 8;
 
+    private const MAX_EXTERNAL_PER_PAGE = 100;
+
     private array $settings;
 
     private ?UrlFilter $filter = null;
@@ -84,7 +86,7 @@ class CrawlRunner
                     ->limit(max(1, (int) $this->settings['concurrency']) * 2)->get();
 
                 if ($images->isEmpty()) {
-                    if ($this->checkBots() || $this->checkWordPress()) {
+                    if ($this->checkExternal() || $this->checkBots() || $this->checkWordPress()) {
                         continue;
                     }
 
@@ -238,6 +240,7 @@ class CrawlRunner
 
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
             $this->storeImages($page, $parsed['images']);
+            $this->storeExternal($page, $parsed['links']);
         }
 
         $page->update($update);
@@ -339,6 +342,77 @@ class CrawlRunner
                 $image->update(['state' => 'done', 'error' => mb_substr($message, 0, 250)]);
             }
         }
+    }
+
+    /**
+     * Records the outgoing links to other sites on a page, each checked once after the pages are crawled.
+     *
+     * @param  array<int, array{url: string, nofollow: bool}>  $links
+     */
+    private function storeExternal(CrawlPage $page, array $links): void
+    {
+        if (! ($this->settings['check_external'] ?? true)) {
+            return;
+        }
+
+        $urls = collect($links)->pluck('url')
+            ->filter(fn (string $url) => preg_match('#^https?://#i', $url) && ! UrlNormalizer::isInternal($url, $page->url))
+            ->unique()->take(self::MAX_EXTERNAL_PER_PAGE)->values()->all();
+        if ($urls === []) {
+            return;
+        }
+
+        $hashes = array_map(UrlNormalizer::hash(...), $urls);
+        $known = DB::table('crawl_external_links')->where('crawl_id', $this->crawl->id)->count();
+        $room = max(0, (int) ($this->settings['max_external'] ?? 500) - $known);
+
+        $existing = DB::table('crawl_external_links')->where('crawl_id', $this->crawl->id)->whereIn('url_hash', $hashes)->pluck('url_hash')->all();
+        $rows = [];
+        foreach ($urls as $i => $url) {
+            if (! in_array($hashes[$i], $existing, true) && count($rows) < $room) {
+                $rows[] = ['crawl_id' => $this->crawl->id, 'url' => $url, 'url_hash' => $hashes[$i], 'state' => 'queued'];
+            }
+        }
+        DB::table('crawl_external_links')->insertOrIgnore($rows);
+
+        $ids = DB::table('crawl_external_links')->where('crawl_id', $this->crawl->id)->whereIn('url_hash', $hashes)->pluck('id');
+        DB::table('crawl_external_refs')->insert($ids->map(fn ($id) => ['crawl_id' => $this->crawl->id, 'link_id' => $id, 'page_id' => $page->id])->all());
+    }
+
+    /**
+     * Checks one round of queued external links; false once none are left. HEAD first, GET when a server refuses HEAD.
+     */
+    private function checkExternal(): bool
+    {
+        $links = DB::table('crawl_external_links')->where('crawl_id', $this->crawl->id)->where('state', 'queued')
+            ->orderBy('id')->limit(max(1, (int) $this->settings['concurrency']) * 3)->get();
+        if ($links->isEmpty()) {
+            return false;
+        }
+
+        $request = fn (Pool $pool, $link, string $method) => $pool->as((string) $link->id)
+            ->withUserAgent($this->settings['user_agent'])
+            ->timeout(self::BOT_TIMEOUT_SECONDS)
+            ->{$method}($link->url);
+
+        $responses = Http::pool(fn (Pool $pool) => $links->map(fn ($link) => $request($pool, $link, 'head'))->all());
+        $retry = $links->filter(fn ($link) => ($responses[(string) $link->id] ?? null) instanceof Response
+            && in_array($responses[(string) $link->id]->status(), [400, 403, 404, 405, 501], true));
+        if ($retry->isNotEmpty()) {
+            foreach (Http::pool(fn (Pool $pool) => $retry->map(fn ($link) => $request($pool, $link, 'get'))->all()) as $id => $response) {
+                $responses[$id] = $response;
+            }
+        }
+
+        foreach ($links as $link) {
+            $response = $responses[(string) $link->id] ?? null;
+            $update = $response instanceof Response
+                ? ['state' => 'done', 'status_code' => $response->status()]
+                : ['state' => 'done', 'error' => mb_substr($response instanceof ConnectionException ? $response->getMessage() : 'Yanıt alınamadı', 0, 250)];
+            DB::table('crawl_external_links')->where('id', $link->id)->update($update);
+        }
+
+        return true;
     }
 
     private function addPage(string $url, int $depth, bool $inSitemap = false): void

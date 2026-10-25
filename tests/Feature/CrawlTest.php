@@ -81,6 +81,7 @@ class CrawlTest extends TestCase
             'example.com/b' => Http::response($this->page('', '<h1>One</h1><h1>Two</h1>short'), 200, ['Content-Type' => 'text/html']),
             'example.com/missing' => Http::response('nope', 404, ['Content-Type' => 'text/html']),
             'example.com/old' => Http::response('', 301, ['Location' => '/a']),
+            'elsewhere.com/*' => Http::response('', 200),
             'example.com/' => Http::response($this->page('Home', '<a href="/a">a</a><a href="/b">b</a><a href="/missing">m</a><a href="/old">o</a><a href="/private">p</a><a href="https://elsewhere.com/">e</a>'), 200, ['Content-Type' => 'text/html']),
         ]);
 
@@ -109,7 +110,9 @@ class CrawlTest extends TestCase
         $this->assertSame(['single_inlink'], $rules('/a'));
         $this->assertSame(1, $byPath('/a')->inlinks);
         $this->assertSame(1, $byPath('/old')->inlinks);
-        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'elsewhere.com'));
+        // Other sites are never crawled, only checked once with HEAD for the broken external link rule.
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'elsewhere.com') && $request->method() !== 'HEAD');
+        Http::assertSent(fn ($request) => $request->url() === 'https://elsewhere.com/' && $request->method() === 'HEAD');
         Http::assertNotSent(fn ($request) => $request->url() === 'https://example.com/private');
     }
 
@@ -180,6 +183,28 @@ class CrawlTest extends TestCase
         $this->assertSame(1, $crawl->issues()->where('rule', 'image_broken')->count());
         $this->assertSame(1, $crawl->issues()->where('rule', 'image_too_large')->count());
         $this->assertStringContainsString('/img/gone.jpg', $crawl->issues()->where('rule', 'image_broken')->value('detail'));
+    }
+
+    public function test_broken_external_links_are_reported(): void
+    {
+        Http::fake([
+            '*/robots.txt' => Http::response('', 404),
+            '*/sitemap*.xml' => Http::response('', 404),
+            '*/wp-sitemap.xml' => Http::response('', 404),
+            'gone.other.com/*' => Http::response('', 404),
+            'blocked.other.com/*' => Http::response('', 403),
+            'nohead.other.com/*' => fn ($request) => Http::response('', $request->method() === 'HEAD' ? 405 : 200),
+            '*' => Http::response($this->page('T', '<a href="https://gone.other.com/x">a</a><a href="https://blocked.other.com/x">b</a><a href="https://nohead.other.com/x">c</a><a href="mailto:a@b.c">m</a>'), 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+
+        $this->assertSame(3, \Illuminate\Support\Facades\DB::table('crawl_external_links')->where('crawl_id', $crawl->id)->count());
+        $this->assertSame(['HTTP 404: https://gone.other.com/x'], $crawl->issues()->where('rule', 'external_link_broken')->pluck('detail')->all());
     }
 
     public function test_bot_access_is_checked_and_reported(): void
