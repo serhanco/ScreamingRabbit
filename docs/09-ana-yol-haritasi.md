@@ -83,8 +83,8 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ◐ Raporda bot erişim tablosu ✓; tam "AI arama görünürlüğü" bölümü ○
 
 **Erişilebilirlik izleyici (M-1, [08 §2](08-izleme-ve-bildirimler.md))**
-- ○ Dakikada bir kontrol: durum kodu, zaman aşımı, DNS, SSL, beklenen kelime, yanıt süresi
-- ○ Yanlış alarm koruması (tekrar deneme + kanarya), kesinti kaydı ve süresi
+- ✓ Dakikada bir kontrol (1/5/15 dk): durum kodu, zaman aşımı, DNS, SSL, beklenen kelime, yanıt süresi
+- ✓ Yanlış alarm koruması (tekrar deneme + kanarya), kesinti kaydı ve süresi
 - ○ E-posta + Telegram: "düştü", "düzeldi (süre)", saatlik hatırlatma
 - ○ SSL bitiş uyarısı, dış kalp atışı servisi (uygulamanın kendisi için)
 - ○ Panelde 90 günlük uptime şeridi
