@@ -7,8 +7,11 @@ use DOMXPath;
 
 class HtmlParser
 {
+    /** Below this many words in the raw HTML, a JavaScript app shell has no readable content without rendering. */
+    private const JS_SHELL_WORDS = 50;
+
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, js_shell: bool}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -90,6 +93,13 @@ class HtmlParser
             }
         }
 
+        // An empty app mount point or an "enable JavaScript" notice means the content is drawn by JavaScript.
+        $spaRoot = $xpath->query('//*[@id="root" or @id="app" or @id="__next" or @id="__nuxt" or @id="___gatsby"][not(normalize-space())][not(.//img)]')->length > 0;
+        $noscriptJs = false;
+        foreach ($xpath->query('//noscript') as $node) {
+            $noscriptJs = $noscriptJs || stripos($node->textContent, 'javascript') !== false;
+        }
+
         foreach ($xpath->query('//script|//style|//noscript|//head') as $node) {
             $node->parentNode?->removeChild($node);
         }
@@ -120,6 +130,7 @@ class HtmlParser
             'seo_plugin' => $seoPlugins === [] ? null : implode(',', $seoPlugins),
             'schema_types' => $schemaTypes,
             'schema_errors' => $schemaErrors,
+            'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
             'wordpress_hint' => (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
                 || ($generator !== null && stripos($generator, 'wordpress') !== false),
         ];
