@@ -10,16 +10,22 @@ use PDO;
  */
 class Installer
 {
-    public function __construct(private string $basePath) {}
+    private string $dataPath;
+
+    /** @param  string|null  $dataPath  Folder holding .env and storage/; the project folder when null. */
+    public function __construct(private string $basePath, ?string $dataPath = null)
+    {
+        $this->dataPath = $dataPath ?? $basePath;
+    }
 
     public function isInstalled(): bool
     {
-        return is_file($this->basePath.'/storage/app/installed');
+        return is_file($this->dataPath.'/storage/app/installed');
     }
 
     public function keyPath(): string
     {
-        return $this->basePath.'/storage/app/install.key';
+        return $this->dataPath.'/storage/app/install.key';
     }
 
     /**
@@ -126,7 +132,7 @@ class Installer
 
     public function writeEnv(string $contents): void
     {
-        $path = $this->basePath.'/.env';
+        $path = $this->dataPath.'/.env';
 
         if (file_put_contents($path, $contents, LOCK_EX) === false) {
             throw new \RuntimeException('.env dosyası yazılamadı.');
@@ -142,7 +148,7 @@ class Installer
 
     public function markInstalled(): void
     {
-        file_put_contents($this->basePath.'/storage/app/installed', date('c')."\n");
+        file_put_contents($this->dataPath.'/storage/app/installed', date('c')."\n");
         @unlink($this->keyPath());
     }
 

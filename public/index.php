@@ -9,12 +9,6 @@ define('LARAVEL_START', microtime(true));
 // is the repository's `deploy` branch, which keeps the application in an `app` folder next to this file.
 $basePath = is_file(__DIR__.'/../vendor/autoload.php') ? __DIR__.'/..' : __DIR__.'/app';
 
-// Before the first installation there is no .env yet: send visitors to the installer instead of an error page.
-if (! is_file($basePath.'/.env') && is_file(__DIR__.'/install.php')) {
-    header('Location: /install.php');
-    exit;
-}
-
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) {
     require $maintenance;
@@ -22,6 +16,13 @@ if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) 
 
 // Register the Composer autoloader...
 require $basePath.'/vendor/autoload.php';
+
+// Before the first installation there is no .env yet: send visitors to the installer instead of an error page.
+$dataPath = App\Support\DataDir::resolve($basePath) ?? $basePath;
+if (! is_file($dataPath.'/.env') && is_file(__DIR__.'/install.php')) {
+    header('Location: /install.php');
+    exit;
+}
 
 // Bootstrap Laravel and handle the request...
 /** @var Application $app */
