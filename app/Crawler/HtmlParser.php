@@ -8,7 +8,7 @@ use DOMXPath;
 class HtmlParser
 {
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, mixed_content: int, page_type: ?string, seo_plugin: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -54,6 +54,14 @@ class HtmlParser
         }
 
         $imagesMissingAlt = $xpath->query('//img[not(@alt)]')->length;
+
+        $images = [];
+        foreach ($xpath->query('//img/@src') as $attribute) {
+            $src = UrlNormalizer::resolve($attribute->nodeValue, $pageUrl);
+            if ($src !== null && ! in_array($src, $images, true)) {
+                $images[] = $src;
+            }
+        }
 
         $mixedContent = 0;
         if (str_starts_with($pageUrl, 'https://')) {
@@ -101,6 +109,7 @@ class HtmlParser
             'meta_refresh' => $metaRefresh,
             'generator' => $generator,
             'images_missing_alt' => $imagesMissingAlt,
+            'images' => $images,
             'mixed_content' => $mixedContent,
             'page_type' => $pageType,
             'seo_plugin' => $seoPlugins === [] ? null : implode(',', $seoPlugins),

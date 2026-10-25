@@ -43,6 +43,11 @@ class Crawl extends Model
         return $this->hasMany(CrawlIssue::class);
     }
 
+    public function images(): HasMany
+    {
+        return $this->hasMany(CrawlImage::class);
+    }
+
     public function isActive(): bool
     {
         return in_array($this->status, ['pending', 'running'], true);
