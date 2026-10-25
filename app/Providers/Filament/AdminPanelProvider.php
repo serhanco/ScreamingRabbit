@@ -2,8 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\ApplyUserPalette;
 use App\Http\Middleware\RunPendingMigrations;
+use App\Support\Palette;
+use Filament\Actions\Action;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Forms\Components\Radio;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -11,17 +15,18 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
-use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Livewire\Component;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -33,6 +38,9 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('ScreamingRabbit')
+            ->brandLogo(fn () => view('components.brand-logo'))
+            ->brandLogoHeight('2rem')
+            ->favicon(asset('favicon.svg'))
             ->multiFactorAuthentication([
                 AppAuthentication::make()->recoverable(),
             ], isRequired: true)
@@ -40,8 +48,9 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => Blade::render('<x-brand-footer />'))
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
-            ->colors([
-                'primary' => Color::Orange,
+            ->colors(Palette::colors(null))
+            ->userMenuItems([
+                'palette' => fn (): Action => $this->paletteAction(),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -66,6 +75,31 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                ApplyUserPalette::class,
             ]);
+    }
+
+    // User menu entry that lets each user pick a colour palette; saved on the user and applied on the next page load.
+    private function paletteAction(): Action
+    {
+        return Action::make('palette')
+            ->label('Renk paleti')
+            ->icon(Heroicon::OutlinedSwatch)
+            ->modalHeading('Renk paleti')
+            ->modalDescription('Panelin renklerini değiştirir; düzen aynı kalır. Seçim yalnızca senin hesabın için geçerlidir.')
+            ->modalSubmitActionLabel('Uygula')
+            ->modalWidth(Width::Medium)
+            ->fillForm(fn (): array => ['palette' => Palette::resolve(auth()->user()->color_palette)])
+            ->schema([
+                Radio::make('palette')
+                    ->hiddenLabel()
+                    ->options(Palette::options())
+                    ->required(),
+            ])
+            ->action(function (array $data, Component $livewire): void {
+                auth()->user()->forceFill(['color_palette' => Palette::resolve($data['palette'])])->save();
+
+                $livewire->redirect(request()->header('Referer') ?: filament()->getUrl());
+            });
     }
 }
