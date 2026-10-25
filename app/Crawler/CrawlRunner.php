@@ -121,6 +121,7 @@ class CrawlRunner
 
         $this->addPage($start, 0);
         $this->crawl->bot_access = BotAccess::fromRobots($robotsBody, $start);
+        $this->crawl->llms_txt = LlmsTxt::analyze($this->fetchText($origin.'/llms.txt'));
 
         $candidates = $robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml'];
         $limit = (int) $this->settings['max_urls'];
@@ -224,6 +225,8 @@ class CrawlRunner
                 'meta_refresh' => $parsed['meta_refresh'] ? mb_substr($parsed['meta_refresh'], 0, 250) : null,
                 'page_type' => $parsed['page_type'],
                 'seo_plugin' => $parsed['seo_plugin'],
+                'schema_types' => $parsed['schema_types'] === [] ? null : mb_substr(implode(',', $parsed['schema_types']), 0, 250),
+                'schema_errors' => $parsed['schema_errors'],
             ];
 
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);

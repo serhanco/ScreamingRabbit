@@ -8,7 +8,7 @@ use DOMXPath;
 class HtmlParser
 {
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -79,6 +79,8 @@ class HtmlParser
             default => null,
         };
 
+        [$schemaTypes, $schemaErrors] = self::jsonLd($xpath);
+
         $seoPlugins = [];
         foreach (['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math', 'aioseo' => 'All in One SEO'] as $key => $needle) {
             if (stripos($html, $needle) !== false) {
@@ -113,9 +115,43 @@ class HtmlParser
             'mixed_content' => $mixedContent,
             'page_type' => $pageType,
             'seo_plugin' => $seoPlugins === [] ? null : implode(',', $seoPlugins),
+            'schema_types' => $schemaTypes,
+            'schema_errors' => $schemaErrors,
             'wordpress_hint' => (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
                 || ($generator !== null && stripos($generator, 'wordpress') !== false),
         ];
+    }
+
+    /**
+     * Schema.org types found in JSON-LD blocks (including @graph and nested items) and the number of blocks that are not valid JSON.
+     *
+     * @return array{0: array<int, string>, 1: int}
+     */
+    private static function jsonLd(DOMXPath $xpath): array
+    {
+        $types = [];
+        $errors = 0;
+
+        foreach ($xpath->query('//script[@type]') as $script) {
+            if (strtolower(trim($script->getAttribute('type'))) !== 'application/ld+json') {
+                continue;
+            }
+
+            $data = json_decode(trim($script->textContent), true);
+            if (! is_array($data)) {
+                $errors++;
+
+                continue;
+            }
+
+            array_walk_recursive($data, function ($value, $key) use (&$types) {
+                if ($key === '@type' && is_string($value)) {
+                    $types[] = preg_replace('#^https?://schema\.org/#', '', $value);
+                }
+            });
+        }
+
+        return [array_values(array_unique($types)), $errors];
     }
 
     private static function meta(DOMXPath $xpath, string $name): ?string

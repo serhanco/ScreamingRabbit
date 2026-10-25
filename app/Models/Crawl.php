@@ -24,6 +24,7 @@ class Crawl extends Model
             'settings' => 'array',
             'sitemap_found' => 'boolean',
             'bot_access' => 'array',
+            'llms_txt' => 'array',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];
