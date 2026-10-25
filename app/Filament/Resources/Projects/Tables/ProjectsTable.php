@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Projects\Tables;
 
+use App\Filament\Resources\Projects\Actions\StartCrawlAction;
 use App\Models\Project;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -40,6 +41,7 @@ class ProjectsTable
             ])
             ->defaultSort('name')
             ->recordActions([
+                StartCrawlAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
