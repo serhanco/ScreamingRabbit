@@ -23,6 +23,7 @@ class Project extends Model
         return [
             'crawl_settings' => 'array',
             'gsc_synced_at' => 'datetime',
+            'gsc_queries_synced_on' => 'date',
         ];
     }
 

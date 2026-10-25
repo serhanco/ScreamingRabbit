@@ -38,6 +38,9 @@ class GscSync
         Project::query()->whereNotNull('gsc_property')->each(function (Project $project) {
             try {
                 self::run($project);
+                if ($project->gsc_queries_synced_on?->isToday() !== true) {
+                    self::syncQueries($project);
+                }
             } catch (\Throwable $e) {
                 Log::error("GSC senkronu başarısız ({$project->name}): ".$e->getMessage());
             }
@@ -99,6 +102,49 @@ class GscSync
         $project->forceFill(['gsc_synced_at' => now()])->save();
 
         return $stored;
+    }
+
+    /**
+     * Replaces the project's page × query totals for the latest 28 days (once a day).
+     *
+     * @return int rows stored
+     */
+    public static function syncQueries(Project $project): int
+    {
+        $end = CarbonImmutable::today()->subDays(self::LAG_DAYS);
+        $rows = [];
+        for ($page = 0; $page < self::MAX_PAGES; $page++) {
+            $batch = GoogleClient::searchAnalytics($project->gsc_property, [
+                'startDate' => $end->subDays(27)->toDateString(),
+                'endDate' => $end->toDateString(),
+                'dimensions' => ['page', 'query'],
+                'rowLimit' => self::ROW_LIMIT,
+                'startRow' => $page * self::ROW_LIMIT,
+                'dataState' => 'all',
+            ]);
+            array_push($rows, ...$batch);
+            if (count($batch) < self::ROW_LIMIT) {
+                break;
+            }
+        }
+
+        DB::transaction(function () use ($project, $rows) {
+            DB::table('gsc_queries')->where('project_id', $project->id)->delete();
+            foreach (array_chunk($rows, 500) as $chunk) {
+                DB::table('gsc_queries')->insert(array_map(fn ($row) => [
+                    'project_id' => $project->id,
+                    'page_hash' => UrlNormalizer::hash($row['keys'][0]),
+                    'page' => $row['keys'][0],
+                    'query' => mb_substr($row['keys'][1], 0, 500),
+                    'clicks' => (int) $row['clicks'],
+                    'impressions' => (int) $row['impressions'],
+                    'position' => round((float) $row['position'], 2),
+                ], $chunk));
+            }
+        });
+        $project->forceFill(['gsc_queries_synced_on' => now()->toDateString()])->save();
+
+        return count($rows);
     }
 
     /**
