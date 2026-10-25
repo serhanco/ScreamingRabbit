@@ -73,9 +73,15 @@ class UrlNormalizer
         return self::bareHost($url) === self::bareHost($baseUrl);
     }
 
+    /** True for URLs that are not crawlable pages: files, and Cloudflare helper paths. */
     public static function isAsset(string $url): bool
     {
         $path = parse_url($url, PHP_URL_PATH) ?? '';
+
+        // Cloudflare injects /cdn-cgi/ helper URLs (e-mail obfuscation etc.) that are not pages of the site.
+        if (str_starts_with($path, '/cdn-cgi/')) {
+            return true;
+        }
 
         return (bool) preg_match('/\.('.self::ASSET_EXTENSIONS.')$/i', $path);
     }
