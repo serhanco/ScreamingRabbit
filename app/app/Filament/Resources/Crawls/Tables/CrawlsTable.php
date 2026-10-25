@@ -20,7 +20,8 @@ class CrawlsTable
                     ->label('Durum')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => Crawl::STATUSES[$state] ?? $state)
-                    ->color(fn (string $state): string => CrawlColors::status($state)),
+                    ->color(fn (string $state): string => CrawlColors::status($state))
+                    ->description(fn (Crawl $record): ?string => $record->isActive() ? (fn (array $p) => "%{$p['percent']} · {$p['phase']}")($record->progress()) : null),
                 TextColumn::make('health_score')->label('Skor')->placeholder('-')->badge()
                     ->color(fn (?int $state): string => CrawlColors::health($state)),
                 TextColumn::make('pages_count')->label('URL')->numeric(),

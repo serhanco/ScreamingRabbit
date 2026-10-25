@@ -18,6 +18,12 @@ class ViewCrawl extends ViewRecord
 {
     protected static string $resource = CrawlResource::class;
 
+    /** Polled by the progress bar while the crawl runs; stops re-rendering once it has finished. */
+    public function refreshProgress(): void
+    {
+        $this->record->refresh();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
