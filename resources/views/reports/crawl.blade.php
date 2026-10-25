@@ -2,7 +2,8 @@
     $color = fn (?int $s) => $s === null ? '#6b7280' : ($s >= 80 ? '#15803d' : ($s >= 50 ? '#b45309' : '#b91c1c'));
     $sevColor = ['high' => '#b91c1c', 'medium' => '#b45309', 'low' => '#1d4ed8', 'info' => '#6b7280'];
     // Embedded so the PDF renderer, which never fetches remote files, shows it too.
-    $logo = 'data:image/svg+xml;base64,'.base64_encode(file_get_contents(public_path('images/logo-mark.svg')));
+    $logoFile = public_path('images/logo-mark.svg');
+    $logo = is_file($logoFile) ? 'data:image/svg+xml;base64,'.base64_encode(file_get_contents($logoFile)) : null;
 @endphp
 <!doctype html>
 <html lang="tr">
@@ -43,7 +44,7 @@
     @endunless
 
     <table class="brandbar" style="width:100%"><tr>
-        <td style="width:40px"><img src="{{ $logo }}" width="34" height="34" alt=""></td>
+        <td style="width:40px">@if ($logo)<img src="{{ $logo }}" width="34" height="34" alt="">@endif</td>
         <td><span class="wordmark">Screaming<span style="color:#ea580c">Rabbit</span></span></td>
         <td style="text-align:right" class="muted">Bir <a href="{{ $report['brand']['url'] }}">{{ $report['brand']['name'] }}</a> ürünü</td>
     </tr></table>
@@ -94,7 +95,7 @@
     @endforelse
 
     <div class="footer">
-        <img src="{{ $logo }}" width="14" height="14" alt="" style="vertical-align:middle">
+        @if ($logo)<img src="{{ $logo }}" width="14" height="14" alt="" style="vertical-align:middle">@endif
         Bu rapor {{ $report['brand']['product'] }} ile hazırlanmıştır ·
         <a href="{{ $report['brand']['url'] }}">Bir {{ $report['brand']['name'] }} ürünü</a> ·
         <a href="{{ $report['brand']['url'] }}">{{ preg_replace('#^https?://#', '', $report['brand']['url']) }}</a>
