@@ -1,6 +1,7 @@
 <?php
 
 use App\Crawler\CrawlMaintenance;
+use App\Google\GscSync;
 use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
 use Illuminate\Support\Facades\Artisan;
@@ -22,6 +23,9 @@ Schedule::call(fn () => Artisan::call('queue:work', ['--stop-when-empty' => true
     ->name('queue-worker')
     ->everyMinute()
     ->withoutOverlapping(3);
+
+// Search Console numbers: one short window per project each run, so the 16-month backfill spreads over many runs.
+Schedule::call(fn () => GscSync::runAll())->name('gsc-sync')->everyTenMinutes()->withoutOverlapping(10);
 
 Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')->everyFiveMinutes();
 

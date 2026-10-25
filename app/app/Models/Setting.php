@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Setting extends Model
 {
-    public const SECRETS = ['smtp_password', 'telegram_bot_token'];
+    public const SECRETS = ['smtp_password', 'telegram_bot_token', 'google_client_secret', 'google_refresh_token'];
 
     protected $primaryKey = 'key';
 
