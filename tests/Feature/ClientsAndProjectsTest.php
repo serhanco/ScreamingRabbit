@@ -89,6 +89,16 @@ class ClientsAndProjectsTest extends TestCase
             ->assertHasFormErrors(['base_url']);
     }
 
+    public function test_invalid_exclude_pattern_is_rejected(): void
+    {
+        $client = Client::factory()->create();
+
+        Livewire::test(CreateProject::class)
+            ->fillForm(['client_id' => $client->id, 'name' => 'X', 'base_url' => 'https://example.com', 'platform' => 'wordpress', 'crawl_settings.exclude' => '(unclosed'])
+            ->call('create')
+            ->assertHasFormErrors(['crawl_settings.exclude']);
+    }
+
     public function test_blank_settings_fall_back_but_false_is_kept(): void
     {
         $project = Project::factory()->create(['crawl_settings' => ['concurrency' => null, 'delay_ms' => '', 'respect_robots' => false]]);

@@ -25,6 +25,8 @@ class CrawlRunner
 
     private array $settings;
 
+    private ?UrlFilter $filter = null;
+
     private ?RobotsTxt $robots = null;
 
     private int $pageCount = 0;
@@ -251,6 +253,11 @@ class CrawlRunner
 
     private function addPage(string $url, int $depth, bool $inSitemap = false): void
     {
+        // The start URL is always crawled; the project's include/exclude rules apply to everything found from it.
+        if ($depth > 0 && ! $this->filter()->allows($url)) {
+            return;
+        }
+
         $hash = UrlNormalizer::hash($url);
 
         if ($this->pageCount >= (int) $this->settings['max_urls']) {
@@ -275,6 +282,11 @@ class CrawlRunner
         } elseif ($inSitemap) {
             CrawlPage::where('crawl_id', $this->crawl->id)->where('url_hash', $hash)->update(['in_sitemap' => true]);
         }
+    }
+
+    private function filter(): UrlFilter
+    {
+        return $this->filter ??= new UrlFilter($this->settings['include'] ?? '', $this->settings['exclude'] ?? '');
     }
 
     private function finish(): void
