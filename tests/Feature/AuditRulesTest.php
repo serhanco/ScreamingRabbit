@@ -52,6 +52,15 @@ class AuditRulesTest extends TestCase
         return $page->issues()->pluck('rule')->all();
     }
 
+    public function test_parser_detects_javascript_only_pages(): void
+    {
+        $shell = '<html><head><title>App</title></head><body><div id="root"></div><noscript>You need to enable JavaScript to run this app.</noscript><script src="/app.js"></script></body></html>';
+        $rendered = '<html><head><title>App</title></head><body><div id="__next"><h1>Merhaba</h1><p>'.str_repeat('kelime ', 80).'</p></div></body></html>';
+
+        $this->assertTrue(HtmlParser::parse($shell, 'https://example.com/')['js_shell']);
+        $this->assertFalse(HtmlParser::parse($rendered, 'https://example.com/')['js_shell']);
+    }
+
     public function test_parser_collects_image_mixed_content_and_wordpress_signals(): void
     {
         $html = '<!-- This site is optimized with the Yoast SEO plugin --><html><head><title>t</title></head>'
@@ -72,7 +81,7 @@ class AuditRulesTest extends TestCase
         $home = $this->page('/', ['depth' => 0]);
         $clean = $this->page('/clean');
         $messy = $this->page('/messy', [
-            'images_missing_alt' => 2, 'images_missing_size' => 1, 'mixed_content' => 1, 'http_internal_links' => 1,
+            'images_missing_alt' => 2, 'images_missing_size' => 1, 'js_shell' => true, 'mixed_content' => 1, 'http_internal_links' => 1,
             'meta_refresh' => '0;url=/x', 'inlinks' => 1, 'seo_plugin' => 'yoast',
         ]);
         $attachment = $this->page('/photo', ['page_type' => 'attachment', 'seo_plugin' => 'rankmath']);
@@ -85,7 +94,7 @@ class AuditRulesTest extends TestCase
         (new Auditor)->run($this->crawl);
 
         $this->assertSame([], $this->rules($clean));
-        foreach (['images_missing_alt', 'images_missing_size', 'mixed_content', 'https_to_http_link', 'meta_refresh', 'single_inlink'] as $rule) {
+        foreach (['images_missing_alt', 'images_missing_size', 'content_requires_js', 'mixed_content', 'https_to_http_link', 'meta_refresh', 'single_inlink'] as $rule) {
             $this->assertContains($rule, $this->rules($messy), $rule);
         }
         $this->assertContains('wp_attachment_page', $this->rules($attachment));

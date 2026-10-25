@@ -76,10 +76,10 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Arama motoru + AI botları erişim tablosu (19 bot): robots.txt'de GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended, Bingbot, CCBot, Bytespider, Meta-ExternalAgent için izinli/engelli; eğitim botu ile arama botu ayrımı ve öneri
 - ✓ Cloudflare/WAF "AI botlarını engelle" izi (bot user-agent'ıyla 403/challenge yanıtı)
 - ✓ `llms.txt` varlığı ve biçim kontrolü (başlık, özet, bağlantı listesi)
-- ○ `llms-full.txt` ve llms.txt içindeki linklerin durumu
+- ◐ `llms-full.txt` varlığı ✓; llms.txt içindeki linklerin durumu ○
 - ✓ JSON-LD çıkarma: sayfa başına şema türleri (URL tablosu ve CSV'de), bozuk JSON bulgusu
 - ✓ Ana sayfada Organization/LocalBusiness/Person şeması yok bulgusu
-- ○ İçeriğin JS olmadan erişilebilirliği: ham HTML'deki metin miktarı (JS ile yüklenen içerik AI botlarının çoğunca okunmaz)
+- ✓ İçeriğin JS olmadan erişilebilirliği: ham HTML'deki metin miktarı (JS ile yüklenen içerik AI botlarının çoğunca okunmaz)
 - ✓ Raporda "AI arama görünürlüğü" bölümü: bot türü başına erişim, llms.txt, kurum şeması, JSON-LD kapsamı, bot tablosu
 
 **Erişilebilirlik izleyici (M-1, [08 §2](08-izleme-ve-bildirimler.md))**

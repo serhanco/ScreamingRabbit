@@ -108,7 +108,8 @@ class CrawlReport
 
         $llms = $this->crawl->llms_txt['status'] ?? null;
         if ($llms !== null) {
-            $lines[] = ['label' => 'llms.txt dosyası', 'value' => ['ok' => 'Var', 'invalid' => 'Var, biçimi hatalı', 'missing' => 'Yok'][$llms] ?? $llms, 'state' => $llms === 'ok' ? 'ok' : 'warn'];
+            $value = (['ok' => 'Var', 'invalid' => 'Var, biçimi hatalı', 'missing' => 'Yok'][$llms] ?? $llms).(($this->crawl->llms_txt['full'] ?? false) ? ' · llms-full.txt de var' : '');
+            $lines[] = ['label' => 'llms.txt dosyası', 'value' => $value, 'state' => $llms === 'ok' ? 'ok' : 'warn'];
         }
 
         $pages = $this->crawl->pages()->where('status_code', 200)->where('content_type', 'like', '%html%');
@@ -119,6 +120,8 @@ class CrawlReport
             $withSchema = (clone $pages)->whereNotNull('schema_types')->where('schema_types', '!=', '')->count();
             $share = (int) round($withSchema / $total * 100);
             $lines[] = ['label' => 'Yapısal veri (JSON-LD) olan sayfalar', 'value' => "%{$share} ({$withSchema} / {$total})", 'state' => $share >= 80 ? 'ok' : ($share > 0 ? 'warn' : 'bad')];
+            $jsOnly = (clone $pages)->where('js_shell', true)->count();
+            $lines[] = ['label' => 'JavaScript olmadan okunabilen sayfalar', 'value' => ($total - $jsOnly)." / {$total}", 'state' => $jsOnly === 0 ? 'ok' : 'bad'];
             $broken = (clone $pages)->where('schema_errors', '>', 0)->count();
             if ($broken > 0) {
                 $lines[] = ['label' => 'Bozuk JSON-LD olan sayfalar', 'value' => (string) $broken, 'state' => 'bad'];

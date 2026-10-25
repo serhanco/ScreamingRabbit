@@ -232,6 +232,10 @@ class Auditor
             $this->emit('wp_thin_archive', $page, "{$page->word_count} kelime");
         }
 
+        if ($page->js_shell) {
+            $this->emit('content_requires_js', $page, "Ham HTML'de {$page->word_count} kelime");
+        }
+
         if ($page->word_count !== null && $page->word_count < RuleCatalog::threshold('low_word_count')) {
             $this->emit('low_content', $page, "{$page->word_count} kelime");
         }

@@ -247,6 +247,7 @@ class CrawlTest extends TestCase
         $this->assertSame(1, $crawl->issues()->where('rule', 'schema_invalid_json')->count());
         $this->assertSame(0, $crawl->issues()->where('rule', 'home_missing_organization_schema')->count());
         $this->assertSame('invalid', $crawl->llms_txt['status']);
+        $this->assertFalse($crawl->llms_txt['full']);
         $this->assertSame(1, $crawl->issues()->where('rule', 'llms_txt_invalid')->count());
     }
 
