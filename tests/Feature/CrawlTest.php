@@ -81,6 +81,7 @@ class CrawlTest extends TestCase
             'example.com/b' => Http::response($this->page('', '<h1>One</h1><h1>Two</h1>short'), 200, ['Content-Type' => 'text/html']),
             'example.com/missing' => Http::response('nope', 404, ['Content-Type' => 'text/html']),
             'example.com/old' => Http::response('', 301, ['Location' => '/a']),
+            'elsewhere.com/*' => Http::response('', 200),
             'example.com/' => Http::response($this->page('Home', '<a href="/a">a</a><a href="/b">b</a><a href="/missing">m</a><a href="/old">o</a><a href="/private">p</a><a href="https://elsewhere.com/">e</a>'), 200, ['Content-Type' => 'text/html']),
         ]);
 
@@ -109,7 +110,9 @@ class CrawlTest extends TestCase
         $this->assertSame(['single_inlink'], $rules('/a'));
         $this->assertSame(1, $byPath('/a')->inlinks);
         $this->assertSame(1, $byPath('/old')->inlinks);
-        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'elsewhere.com'));
+        // Other sites are never crawled, only checked once with HEAD for the broken external link rule.
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'elsewhere.com') && $request->method() !== 'HEAD');
+        Http::assertSent(fn ($request) => $request->url() === 'https://elsewhere.com/' && $request->method() === 'HEAD');
         Http::assertNotSent(fn ($request) => $request->url() === 'https://example.com/private');
     }
 
