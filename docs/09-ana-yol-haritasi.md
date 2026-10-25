@@ -41,7 +41,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Kısa parçalar halinde arka planda tarama, muhafazakâr hız varsayılanları (2 eşzamanlı, 300 ms, 5.000 URL)
 - ○ Liste modu (URL listesi yapıştır/yükle) ve yalnızca sitemap modu
 - ✓ Include/exclude (regex), user-agent seçimi (Googlebot, Bingbot, Chrome, özel)
-- ◐ Durdur ✓, takılan taramayı otomatik sürdürme ✓, eski taramaları otomatik silme ✓ (proje başına son 10); ilerleme göstergesi ○
+- ✓ Durdur, takılan taramayı otomatik sürdürme, eski taramaları otomatik silme (proje başına son 10), canlı ilerleme çubuğu ve aşama bilgisi
 - ○ 50.000 URL hedefi için performans testi
 
 **Kurallar** (✓ mevcut 44 kural: yanıt, yönlendirme, indekslenebilirlik, sayfa içi, URL, güvenlik, `wp_raw_url`)

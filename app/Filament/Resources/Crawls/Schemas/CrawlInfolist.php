@@ -8,6 +8,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use App\Filament\Resources\Crawls\CrawlColors;
 use App\Models\Crawl;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -36,6 +37,11 @@ class CrawlInfolist
                         TextEntry::make('started_at')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('finished_at')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('error')->label('Hata')->visible(fn (Crawl $record): bool => filled($record->error))->columnSpanFull(),
+                    ]),
+                Section::make('İlerleme')
+                    ->visible(fn (Crawl $record): bool => $record->isActive())
+                    ->schema([
+                        ViewEntry::make('progress')->hiddenLabel()->view('crawls.progress'),
                     ]),
                 Section::make('Özet')
                     ->columns(5)
