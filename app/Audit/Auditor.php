@@ -216,6 +216,10 @@ class Auditor
             $this->emit('images_missing_alt', $page, $page->images_missing_alt.' görselde alt yok');
         }
 
+        if ($page->images_missing_size > 0) {
+            $this->emit('images_missing_size', $page, $page->images_missing_size.' görselde width/height yok');
+        }
+
         if ($page->inlinks === 1 && $page->depth > 0) {
             $this->emit('single_inlink', $page);
         }

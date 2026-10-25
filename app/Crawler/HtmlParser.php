@@ -8,7 +8,7 @@ use DOMXPath;
 class HtmlParser
 {
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -54,6 +54,8 @@ class HtmlParser
         }
 
         $imagesMissingAlt = $xpath->query('//img[not(@alt)]')->length;
+        // Without width and height the browser can't reserve space, so the layout shifts (CLS) when the image loads.
+        $imagesMissingSize = $xpath->query('//img[not(@width) or not(@height)]')->length;
 
         $images = [];
         foreach ($xpath->query('//img/@src') as $attribute) {
@@ -111,6 +113,7 @@ class HtmlParser
             'meta_refresh' => $metaRefresh,
             'generator' => $generator,
             'images_missing_alt' => $imagesMissingAlt,
+            'images_missing_size' => $imagesMissingSize,
             'images' => $images,
             'mixed_content' => $mixedContent,
             'page_type' => $pageType,
