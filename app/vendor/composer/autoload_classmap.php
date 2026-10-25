@@ -60,6 +60,7 @@ return array(
     'App\\Filament\\Resources\\Projects\\Tables\\ProjectsTable' => $baseDir . '/app/Filament/Resources/Projects/Tables/ProjectsTable.php',
     'App\\Google\\GoogleClient' => $baseDir . '/app/Google/GoogleClient.php',
     'App\\Google\\GscSync' => $baseDir . '/app/Google/GscSync.php',
+    'App\\Google\\UrlInspector' => $baseDir . '/app/Google/UrlInspector.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
     'App\\Http\\Controllers\\GoogleAuthController' => $baseDir . '/app/Http/Controllers/GoogleAuthController.php',
     'App\\Http\\Controllers\\SharedReportController' => $baseDir . '/app/Http/Controllers/SharedReportController.php',

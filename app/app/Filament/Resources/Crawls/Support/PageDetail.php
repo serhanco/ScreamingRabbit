@@ -16,7 +16,7 @@ class PageDetail
     private const QUERY_LIMIT = 20;
 
     /**
-     * @return array{page: CrawlPage, findings: array<int, array<string, string>>, inlinks: \Illuminate\Support\Collection, outlinks: \Illuminate\Support\Collection, queries: \Illuminate\Support\Collection}
+     * @return array{page: CrawlPage, findings: array<int, array<string, string>>, inlinks: \Illuminate\Support\Collection, outlinks: \Illuminate\Support\Collection, queries: \Illuminate\Support\Collection, inspection: ?object}
      */
     public static function for(CrawlPage $page): array
     {
@@ -55,6 +55,11 @@ class PageDetail
             ->limit(self::QUERY_LIMIT)
             ->get(['query', 'clicks', 'impressions', 'position']);
 
-        return compact('page', 'findings', 'inlinks', 'outlinks', 'queries');
+        $inspection = DB::table('gsc_inspections')
+            ->where('project_id', $page->crawl->project_id)
+            ->where('page_hash', $page->url_hash)
+            ->first();
+
+        return compact('page', 'findings', 'inlinks', 'outlinks', 'queries', 'inspection');
     }
 }

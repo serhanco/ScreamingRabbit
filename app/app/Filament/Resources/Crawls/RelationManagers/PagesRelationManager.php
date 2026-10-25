@@ -14,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class PagesRelationManager extends RelationManager
 {
@@ -34,7 +35,8 @@ class PagesRelationManager extends RelationManager
             // Search Console totals for the latest 28 days, matched to the crawled URL.
             ->modifyQueryUsing(fn ($query) => $hasGsc
                 ? $query->leftJoinSub(GscSync::last28($projectId), 'gsc', 'gsc.page_hash', '=', 'crawl_pages.url_hash')
-                    ->select('crawl_pages.*', 'gsc.gsc_clicks', 'gsc.gsc_impressions', 'gsc.gsc_position')
+                    ->leftJoinSub(DB::table('gsc_inspections')->where('project_id', $projectId)->select('page_hash', 'verdict', 'coverage_state'), 'gi', 'gi.page_hash', '=', 'crawl_pages.url_hash')
+                    ->select('crawl_pages.*', 'gsc.gsc_clicks', 'gsc.gsc_impressions', 'gsc.gsc_position', 'gi.verdict as gsc_verdict', 'gi.coverage_state as gsc_coverage')
                 : $query)
             ->columns([
                 TextColumn::make('url')->label('URL')->limit(70)->tooltip(fn (CrawlPage $record): string => $record->url)
@@ -53,6 +55,8 @@ class PagesRelationManager extends RelationManager
                 TextColumn::make('gsc_ctr')->label('CTR')->visible($hasGsc)->toggleable()
                     ->state(fn (CrawlPage $record): ?string => $record->gsc_impressions > 0 ? '%'.number_format($record->gsc_clicks / $record->gsc_impressions * 100, 1, ',', '.') : null)->placeholder('—'),
                 TextColumn::make('gsc_position')->label('Ort. pozisyon')->numeric(decimalPlaces: 1)->placeholder('—')->sortable()->visible($hasGsc)->toggleable(),
+                TextColumn::make('gsc_coverage')->label('Google indeksi')->badge()->limit(40)->placeholder('Denetlenmedi')->visible($hasGsc)->toggleable()
+                    ->color(fn (CrawlPage $record): string => match ($record->gsc_verdict) { 'PASS' => 'success', 'FAIL' => 'danger', 'NEUTRAL' => 'warning', default => 'gray' }),
                 IconColumn::make('in_sitemap')->label('Sitemap')->boolean()->toggleable(),
                 TextColumn::make('redirect_to')->label('Yönlendirme')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])

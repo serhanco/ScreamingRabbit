@@ -778,6 +778,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Filament\\Resources\\Projects\\Tables\\ProjectsTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Tables/ProjectsTable.php',
         'App\\Google\\GoogleClient' => __DIR__ . '/../..' . '/app/Google/GoogleClient.php',
         'App\\Google\\GscSync' => __DIR__ . '/../..' . '/app/Google/GscSync.php',
+        'App\\Google\\UrlInspector' => __DIR__ . '/../..' . '/app/Google/UrlInspector.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\GoogleAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/GoogleAuthController.php',
         'App\\Http\\Controllers\\SharedReportController' => __DIR__ . '/../..' . '/app/Http/Controllers/SharedReportController.php',

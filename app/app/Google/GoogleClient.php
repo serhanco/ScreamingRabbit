@@ -106,6 +106,22 @@ class GoogleClient
     }
 
     /**
+     * Google's view of one URL: indexStatusResult of the URL Inspection API.
+     *
+     * @return array<string, mixed>
+     */
+    public static function inspectUrl(string $property, string $url): array
+    {
+        return Http::withToken(self::accessToken())->timeout(30)
+            ->post('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', [
+                'inspectionUrl' => $url,
+                'siteUrl' => $property,
+                'languageCode' => 'tr',
+            ])
+            ->throw()->json('inspectionResult.indexStatusResult') ?? [];
+    }
+
+    /**
      * One page of Search Analytics rows.
      *
      * @param  array<string, mixed>  $body
