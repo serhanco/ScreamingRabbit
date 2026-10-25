@@ -72,13 +72,14 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ○ Raporda "WordPress" bölümü
 
 **AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok
-- ○ AI botları erişim tablosu: robots.txt'de GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended, Bingbot, CCBot, Bytespider, Meta-ExternalAgent için izinli/engelli; eğitim botu ile arama botu ayrımı ve öneri
-- ○ Cloudflare/WAF "AI botlarını engelle" izi (bot user-agent'ıyla 403/challenge yanıtı)
-- ○ `llms.txt` ve `llms-full.txt` varlığı, biçim kontrolü (başlık, özet, bağlantı listesi), içindeki linklerin durumu
-- ○ JSON-LD çıkarma: sayfa başına şema türleri envanteri, bozuk JSON (ayrıştırma hatası) bulgusu
-- ○ Ana sayfada Organization/WebSite (ve yerel işletmede LocalBusiness) şeması yok bulgusu
+- ✓ Arama motoru + AI botları erişim tablosu (19 bot): robots.txt'de GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended, Bingbot, CCBot, Bytespider, Meta-ExternalAgent için izinli/engelli; eğitim botu ile arama botu ayrımı ve öneri
+- ✓ Cloudflare/WAF "AI botlarını engelle" izi (bot user-agent'ıyla 403/challenge yanıtı)
+- ✓ `llms.txt` varlığı ve biçim kontrolü (başlık, özet, bağlantı listesi)
+- ○ `llms-full.txt` ve llms.txt içindeki linklerin durumu
+- ✓ JSON-LD çıkarma: sayfa başına şema türleri (URL tablosu ve CSV'de), bozuk JSON bulgusu
+- ✓ Ana sayfada Organization/LocalBusiness/Person şeması yok bulgusu
 - ○ İçeriğin JS olmadan erişilebilirliği: ham HTML'deki metin miktarı (JS ile yüklenen içerik AI botlarının çoğunca okunmaz)
-- ○ Raporda "AI arama görünürlüğü" bölümü
+- ◐ Raporda bot erişim tablosu ✓; tam "AI arama görünürlüğü" bölümü ○
 
 **Erişilebilirlik izleyici (M-1, [08 §2](08-izleme-ve-bildirimler.md))**
 - ○ Dakikada bir kontrol: durum kodu, zaman aşımı, DNS, SSL, beklenen kelime, yanıt süresi

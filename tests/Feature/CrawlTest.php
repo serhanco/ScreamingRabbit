@@ -223,4 +223,38 @@ class CrawlTest extends TestCase
         $html = (new \App\Reports\CrawlReport($crawl))->html();
         $this->assertStringContainsString('Arama motorları ve AI botları erişimi', $html);
     }
+
+    public function test_structured_data_and_llms_txt_are_checked(): void
+    {
+        $graph = '<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite"},{"@type":"Organization","name":"X"}]}</script>';
+        Http::fake([
+            '*/robots.txt' => Http::response('', 404),
+            '*/sitemap*.xml' => Http::response('', 404),
+            '*/wp-sitemap.xml' => Http::response('', 404),
+            '*/llms.txt' => Http::response("Just some text without a title\n", 200, ['Content-Type' => 'text/plain']),
+            'example.com/bad' => Http::response($this->page('Bad', '<script type="application/ld+json">{"@type": "Article",}</script>'), 200, ['Content-Type' => 'text/html']),
+            '*' => Http::response($this->page('Home', $graph.'<a href="/bad">bad</a>'), 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+        $crawl->refresh();
+
+        $this->assertSame('WebSite,Organization', $crawl->pages()->where('depth', 0)->value('schema_types'));
+        $this->assertSame(1, $crawl->issues()->where('rule', 'schema_invalid_json')->count());
+        $this->assertSame(0, $crawl->issues()->where('rule', 'home_missing_organization_schema')->count());
+        $this->assertSame('invalid', $crawl->llms_txt['status']);
+        $this->assertSame(1, $crawl->issues()->where('rule', 'llms_txt_invalid')->count());
+    }
+
+    public function test_llms_txt_format(): void
+    {
+        $ok = \App\Crawler\LlmsTxt::analyze("# Hekim Dijital\n\n> Sağlık iletişimi ajansı.\n\n## Hizmetler\n- [SEO](https://example.com/seo): arama\n");
+        $this->assertSame(['status' => 'ok', 'title' => 'Hekim Dijital', 'summary' => true, 'links' => 1], $ok);
+        $this->assertSame('missing', \App\Crawler\LlmsTxt::analyze('<!DOCTYPE html><html></html>')['status']);
+        $this->assertSame('missing', \App\Crawler\LlmsTxt::analyze(null)['status']);
+    }
 }
