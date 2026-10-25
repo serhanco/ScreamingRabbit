@@ -1,5 +1,6 @@
 <?php
 
+use App\Crawler\CrawlMaintenance;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
@@ -10,3 +11,7 @@ Schedule::call(fn () => Artisan::call('queue:work', ['--stop-when-empty' => true
     ->name('queue-worker')
     ->everyMinute()
     ->withoutOverlapping(3);
+
+Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')->everyFiveMinutes();
+
+Schedule::call(fn () => CrawlMaintenance::prune())->name('crawl-prune')->dailyAt('04:00');

@@ -27,6 +27,9 @@ class CrawlBatch implements ShouldQueue
             return;
         }
 
+        // Heartbeat for CrawlMaintenance::rescueStalled().
+        $crawl->touch();
+
         if ((new CrawlRunner($crawl))->run()) {
             self::dispatch($this->crawlId);
         }

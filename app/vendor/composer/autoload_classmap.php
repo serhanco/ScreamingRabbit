@@ -15,6 +15,7 @@ return array(
     'AnourValar\\EloquentSerialize\\Service' => $vendorDir . '/anourvalar/eloquent-serialize/src/Service.php',
     'App\\Audit\\Auditor' => $baseDir . '/app/Audit/Auditor.php',
     'App\\Audit\\RuleCatalog' => $baseDir . '/app/Audit/RuleCatalog.php',
+    'App\\Crawler\\CrawlMaintenance' => $baseDir . '/app/Crawler/CrawlMaintenance.php',
     'App\\Crawler\\CrawlRunner' => $baseDir . '/app/Crawler/CrawlRunner.php',
     'App\\Crawler\\HtmlParser' => $baseDir . '/app/Crawler/HtmlParser.php',
     'App\\Crawler\\RobotsTxt' => $baseDir . '/app/Crawler/RobotsTxt.php',

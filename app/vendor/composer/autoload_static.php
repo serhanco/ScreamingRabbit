@@ -733,6 +733,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
         'App\\Audit\\Auditor' => __DIR__ . '/../..' . '/app/Audit/Auditor.php',
         'App\\Audit\\RuleCatalog' => __DIR__ . '/../..' . '/app/Audit/RuleCatalog.php',
+        'App\\Crawler\\CrawlMaintenance' => __DIR__ . '/../..' . '/app/Crawler/CrawlMaintenance.php',
         'App\\Crawler\\CrawlRunner' => __DIR__ . '/../..' . '/app/Crawler/CrawlRunner.php',
         'App\\Crawler\\HtmlParser' => __DIR__ . '/../..' . '/app/Crawler/HtmlParser.php',
         'App\\Crawler\\RobotsTxt' => __DIR__ . '/../..' . '/app/Crawler/RobotsTxt.php',
