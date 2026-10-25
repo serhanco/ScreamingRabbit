@@ -1,6 +1,8 @@
 # 04 · Konumlandırma, MVP Kapsamı ve Yol Haritası
 
 > Durum tarihi: 24 Ekim 2026
+> **Ana plan artık [09 · Ana yol haritası](09-ana-yol-haritasi.md).** Buradaki "3. adım" = Faz 1, "4. adım" = Faz 3-4, "P2 havuzu" = Faz 5-7. Bu doküman kural kataloğu ve GSC kuralları için ayrıntı kaynağı olarak kalır.
+>
 > Bu doküman [01](01-screaming-frog-ozellik-envanteri.md), [02](02-rakip-analizi.md) ve [03](03-karsilastirma-matrisi.md) dokümanlarının sonucudur. Teknik mimari (dil, veritabanı, kuyruk, sunucu) **2. adımda** ayrı bir dokümanda ele alınacak. Burada yalnızca "ne" yapılacağı var, "nasıl" yapılacağı yok.
 
 ## 1. Konumlandırma
@@ -96,6 +98,7 @@ Hedef: Serhan'ın bir müşteri sitesini tarayıp **Screaming Frog'u açmadan** 
 - Etiket / yazar / tarih arşivleri indekslenebilir ve ince içerikli
 - `/wp-json/` veya `xmlrpc.php` erişim kontrolü (bilgilendirme)
 - Birden fazla SEO eklentisi izi (Yoast + RankMath çakışması)
+- Genişletilmiş WordPress güvenlik/SEO kontrolleri ve bağlantı eklentisi: [07 · WordPress modülü](07-wordpress-modulu.md) (WP-1: Faz 2)
 
 ### 3.3 MVP'de olmayanlar (bilinçli)
 
@@ -132,10 +135,12 @@ JS render, GSC, zamanlama, karşılaştırma, hreflang, yapısal veri, PSI. Heps
 
 ### 4.4 Otomasyon
 
+- WordPress bağlantı eklentisi (WP-2, WP-3): Faz 6 ([07](07-wordpress-modulu.md)).
 - Proje başına zamanlanmış tarama (günlük / haftalık / aylık).
 - **Kritik sayfa izleme** (Lumar Protect fikri): seçili 5-50 URL saatlik veya günlük kontrol edilir (durum kodu, noindex, canonical, title değişimi).
 - Otomatik tarama karşılaştırma: yeni / kaybolan sayfalar, yeni sorunlar, düzelen sorunlar.
 - E-posta bildirimi: kritik değişiklikte anında, diğerleri için haftalık özet.
+- Erişilebilirlik (uptime) izleyici, kesinti süresi raporu ve Telegram dahil bildirim merkezi: [08 · İzleme ve bildirimler](08-izleme-ve-bildirimler.md).
 - Aylık müşteri raporu otomatik üretilir, Serhan onaylayıp gönderir. **Müşteriye otomatik gönderim yok:** dışarıya giden her şey onaydan geçer.
 
 ### 4.5 Ek P1 kontroller
@@ -144,7 +149,7 @@ hreflang · yapısal veri çıkarma/doğrulama · PSI/CrUX (ücretsiz API) · ya
 
 ## 5. P2 havuzu (sonrası)
 
-Log dosyası analizi (cPanel erişim logları) · GA4 · semantik benzerlik ve içerik kümeleri · AI destekli title/meta önerisi · iç link önerici · site mimarisi görselleştirme · erişilebilirlik (axe) · sitemap üretimi · staging/production karşılaştırma · MCP sunucusu (ScreamingRabbit'i Claude'dan sürmek) · REA ile rakip araçların belirli özelliklerinin incelenmesi.
+Log dosyası analizi (cPanel erişim logları) · GA4 · semantik benzerlik ve içerik kümeleri · AI destekli title/meta önerisi (WordPress'te eklentiyle onaylı uygulama: [07 WP-4](07-wordpress-modulu.md)) · iç link önerici · site mimarisi görselleştirme · erişilebilirlik (axe) · sitemap üretimi · staging/production karşılaştırma · MCP sunucusu (ScreamingRabbit'i Claude'dan sürmek) · REA ile rakip araçların belirli özelliklerinin incelenmesi.
 
 ## 6. Mimari için girdiler (2. adıma devredilen kısıtlar)
 
