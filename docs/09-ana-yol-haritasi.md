@@ -96,7 +96,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 **GSC bağlantısı ([04 §4.1](04-mvp-kapsami-ve-yol-haritasi.md))**
 - ✓ Google OAuth (panelden tek hesap bağlama), proje başına property seçimi
 - ✓ Search Analytics senkronu: sayfa × gün (10 dakikada bir, 16 aya kadar geriye parça parça) + sayfa × sorgu son 28 gün (günde bir, URL detayında gösterilir)
-- ○ URL Inspection: öncelikli sayfalar için sırayla (günlük 2.000 kota)
+- ✓ URL Inspection: en çok tıklanan sayfalardan başlayarak sırayla (10 dakikada 20, günde en fazla 500, haftada bir yenilenir); URL listesinde "Google indeksi" sütunu, URL detayında Google canonical ve son tarama
 - ✓ Sayfa tablosuna GSC sütunları: tıklama, gösterim, CTR, pozisyon (son 28 gün)
 
 **GSC'den türeyen analizler ([04 §4.2](04-mvp-kapsami-ve-yol-haritasi.md))**

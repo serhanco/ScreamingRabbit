@@ -22,6 +22,21 @@
         @endforelse
     </section>
 
+    @if ($i = $detail['inspection'])
+        <section>
+            <h3 class="font-semibold mb-2">Google'ın gözünden (URL denetimi, {{ \Carbon\Carbon::parse($i->inspected_at)->format('d.m.Y') }})</h3>
+            @if ($i->error)
+                <div class="opacity-70">Denetlenemedi: {{ $i->error }}</div>
+            @else
+                <dl class="grid grid-cols-2 gap-2">
+                    <dt class="font-medium">Durum</dt><dd>{{ $i->coverage_state ?? '—' }}</dd>
+                    <dt class="font-medium">Google'ın seçtiği canonical</dt><dd class="break-all">{{ $i->google_canonical ?? '—' }}</dd>
+                    <dt class="font-medium">Son Google taraması</dt><dd>{{ $i->last_crawl_time ? \Carbon\Carbon::parse($i->last_crawl_time)->format('d.m.Y') : '—' }}</dd>
+                </dl>
+            @endif
+        </section>
+    @endif
+
     @if ($detail['queries']->isNotEmpty())
         <section>
             <h3 class="font-semibold mb-2">Google'da gösterildiği sorgular (son 28 gün)</h3>
