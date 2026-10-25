@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Crawls\Schemas;
 
 use App\Audit\RuleCatalog;
+use App\Crawler\BotAccess;
+use Filament\Infolists\Components\RepeatableEntry;
 use App\Filament\Resources\Crawls\CrawlColors;
 use App\Models\Crawl;
 use Filament\Infolists\Components\TextEntry;
@@ -54,6 +56,27 @@ class CrawlInfolist
                             ->label("Bulgu: {$label}")
                             ->state(fn (Crawl $record): int => $record->issues()->where('severity', $severity)->count())
                             ->color(CrawlColors::severity($severity)))->values()->all(),
+                    ]),
+                Section::make('Arama motorları ve AI botları erişimi')
+                    ->description('robots.txt kuralı ve ana sayfanın her botun kimliğiyle bir kez istenmesi sonucu.')
+                    ->collapsible()
+                    ->visible(fn (Crawl $record): bool => filled($record->bot_access))
+                    ->schema([
+                        RepeatableEntry::make('bots')
+                            ->hiddenLabel()
+                            ->state(fn (Crawl $record): array => BotAccess::present($record->bot_access))
+                            ->table([
+                                RepeatableEntry\TableColumn::make('Bot'),
+                                RepeatableEntry\TableColumn::make('Tür'),
+                                RepeatableEntry\TableColumn::make('robots.txt'),
+                                RepeatableEntry\TableColumn::make('Erişim testi'),
+                            ])
+                            ->schema([
+                                TextEntry::make('name'),
+                                TextEntry::make('kind'),
+                                TextEntry::make('robots')->badge()->color(fn (string $state): string => $state === 'Engelli' ? 'danger' : 'success'),
+                                TextEntry::make('fetch')->badge()->color(fn (string $state): string => str_starts_with($state, 'Reddedildi') ? 'warning' : (str_starts_with($state, 'Açıldı') ? 'success' : 'gray')),
+                            ]),
                     ]),
             ]);
     }

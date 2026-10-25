@@ -164,4 +164,16 @@ class CrawlPanelTest extends TestCase
         $html = view('crawls.page-detail', ['detail' => $detail])->render();
         $this->assertStringContainsString('https://example.com/target', $html);
     }
+
+    public function test_bot_access_table_is_shown(): void
+    {
+        [, $crawl] = $this->crawlWithIssue();
+        $rows = \App\Crawler\BotAccess::fromRobots("User-agent: GPTBot\nDisallow: /", 'https://example.com/');
+        $crawl->update(['bot_access' => \App\Crawler\BotAccess::fetch($rows, [], 'https://example.com/', 1)]);
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->getKey()])
+            ->assertSuccessful()
+            ->assertSee('GPTBot (OpenAI eğitim)')
+            ->assertSee('Engelli');
+    }
 }

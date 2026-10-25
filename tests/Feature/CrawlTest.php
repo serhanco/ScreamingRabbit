@@ -181,4 +181,46 @@ class CrawlTest extends TestCase
         $this->assertSame(1, $crawl->issues()->where('rule', 'image_too_large')->count());
         $this->assertStringContainsString('/img/gone.jpg', $crawl->issues()->where('rule', 'image_broken')->value('detail'));
     }
+
+    public function test_bot_access_is_checked_and_reported(): void
+    {
+        $robots = "User-agent: *\nAllow: /\n\nUser-agent: Bingbot\nDisallow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: PerplexityBot\nDisallow: /\n\nUser-agent: Applebot\nDisallow: /private\n";
+        Http::fake(function ($request) use ($robots) {
+            $url = $request->url();
+            if (str_ends_with($url, '/robots.txt')) {
+                return Http::response($robots, 200);
+            }
+            if (str_contains($url, 'sitemap')) {
+                return Http::response('', 404);
+            }
+            if (str_contains($request->header('User-Agent')[0] ?? '', 'ClaudeBot')) {
+                return Http::response('blocked', 403);
+            }
+
+            return Http::response($this->page('Home', 'hi'), 200, ['Content-Type' => 'text/html']);
+        });
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+        $crawl->refresh();
+
+        $this->assertFalse($crawl->bot_access['bingbot']['robots_allowed']);
+        $this->assertTrue($crawl->bot_access['googlebot']['robots_allowed']);
+        // Applebot-Extended has no group of its own, so it falls back to "*" rather than Applebot's rules.
+        $this->assertTrue($crawl->bot_access['applebot-extended']['robots_allowed']);
+        $this->assertSame('n/a', $crawl->bot_access['google-extended']['fetch']);
+        $this->assertSame('refused', $crawl->bot_access['claudebot']['fetch']);
+        $this->assertSame([], \App\Crawler\BotAccess::pending($crawl->bot_access));
+
+        $this->assertStringContainsString('Bingbot', $crawl->issues()->where('rule', 'search_bot_blocked')->value('detail'));
+        $this->assertStringContainsString('PerplexityBot', $crawl->issues()->where('rule', 'ai_search_bot_blocked')->value('detail'));
+        $this->assertStringContainsString('GPTBot', $crawl->issues()->where('rule', 'ai_training_bot_blocked')->value('detail'));
+        $this->assertStringContainsString('ClaudeBot (Anthropic eğitim) (403)', $crawl->issues()->where('rule', 'bot_fetch_refused')->value('detail'));
+
+        $html = (new \App\Reports\CrawlReport($crawl))->html();
+        $this->assertStringContainsString('Arama motorları ve AI botları erişimi', $html);
+    }
 }
