@@ -18,10 +18,10 @@ Fazların sonunda ScreamingRabbit:
 |---|---|---|---|
 | 0 | Araştırma, mimari, kurulum | — | ✓ |
 | 1 | Temel teknik denetim (MVP) | Teknik SEO denetim raporu | ◐ sürüyor |
-| 2 | Hızlı kazançlar: WordPress dış kontroller + uptime izleyici | WordPress güvenlik/SEO kontrolü, 7/24 erişilebilirlik takibi | ○ |
+| 2 | Hızlı kazançlar: WordPress dış kontroller + uptime izleyici + AI arama temelleri | WordPress güvenlik/SEO kontrolü, 7/24 erişilebilirlik takibi, "AI botları sitenizi okuyabiliyor mu?" kontrolü | ○ |
 | 3 | GSC ve iş listesi | Trafiğe göre öncelikli aksiyon planı, kannibalizasyon/zombi sayfa analizi | ○ |
 | 4 | Otomasyon, değişiklik takibi, raporlama | Aylık otomatik rapor, "neyi düzelttik, ne bozuldu" | ○ |
-| 5 | Derin teknik denetim (Screaming Frog eşitliği) | Yapısal veri, hreflang, Core Web Vitals, AI arama hazırlığı denetimi | ○ |
+| 5 | Derin teknik denetim (Screaming Frog eşitliği) | Yapısal veri doğrulama, GEO/AEO denetimi, hreflang, Core Web Vitals | ○ |
 | 6 | WordPress bağlantı eklentisi | Site içinden tam envanter, açık taraması, tek tıkla düzeltme | ○ |
 | 7 | AI ve ileri analiz | AI destekli içerik/meta iyileştirme, log analizi, içerik kümeleri | ○ |
 
@@ -40,26 +40,27 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ URL normalleştirme, Cloudflare `/cdn-cgi/` atlama, WordPress izi tespiti
 - ✓ Kısa parçalar halinde arka planda tarama, muhafazakâr hız varsayılanları (2 eşzamanlı, 300 ms, 5.000 URL)
 - ○ Liste modu (URL listesi yapıştır/yükle) ve yalnızca sitemap modu
-- ○ Include/exclude (regex), user-agent seçimi (Googlebot, Bingbot, AI botları, özel)
-- ○ Tarama ilerleme göstergesi, durdur/devam et, eski taramaları otomatik silme (retention)
+- ✓ Include/exclude (regex), user-agent seçimi (Googlebot, Bingbot, Chrome, özel)
+- ◐ Durdur ✓, takılan taramayı otomatik sürdürme ✓, eski taramaları otomatik silme ✓ (proje başına son 10); ilerleme göstergesi ○
 - ○ 50.000 URL hedefi için performans testi
 
 **Kurallar** (✓ mevcut 44 kural: yanıt, yönlendirme, indekslenebilirlik, sayfa içi, URL, güvenlik, `wp_raw_url`)
 - ✓ Zaman aşımı/yanıt vermeyen ayrımı, meta refresh, X-Robots-Tag noindex, canonical hedefi non-200/noindex
 - ○ Dış kırık link ve kırık iç linkin kaynak sayfa listesi, sitemapte olup taranmayan URL
 - ✓ Görseller: alt eksik
-- ○ Görseller: büyük dosya (>200 KB), kırık görsel, boyut özniteliği eksik
+- ✓ Görseller: büyük dosya (>100 KB, Screaming Frog varsayılanı), kırık görsel
+- ○ Görseller: boyut özniteliği eksik
 - ✓ Mimari: tek iç linkli sayfa
 - ✓ Güvenlik: mixed content, HTTPS sayfadan HTTP'ye iç link
 - ○ Güvensiz form
 - ✓ WordPress temel: ek sayfaları, ince arşivler, birden fazla SEO eklentisi
 
 **Ekranlar ve rapor**
-- ◐ Tarama sonuçları: URL tablosu ve sorunlar ekranı
+- ✓ Tarama sonuçları: URL tablosu ve sorunlar ekranı
 - ✓ Sağlık skoru (0-100): her tetiklenen kural önem ağırlığının %30'unu, kalanını etkilediği sayfa oranıyla orantılı düşürür
-- ○ Her URL'nin ayrıntı sayfası: başlıklar, gelen/giden linkler, bulgular
-- ○ CSV export (done) (tablo ve sorun bazında)
-- ○ Müşteri raporu: paylaşılabilir link (iptal edilebilir token) + PDF
+- ✓ Her URL'nin ayrıntı penceresi: başlıklar, gelen/giden linkler, bulgular
+- ✓ CSV export (URL ve sorun bazında)
+- ✓ Müşteri raporu: paylaşılabilir link (iptal edilebilir token) + PDF, Serhan Demirel imzası
 
 ## 3. Faz 2 · Hızlı kazançlar
 
@@ -69,6 +70,15 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ○ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
 - ○ "Arama motorlarını engelle" açık, SEO eklentisi tespiti, çift site haritası, iç arama indekslenebilir, `?replytocom`, sayfalama canonical'ı, varsayılan içerik, "Kategorilenmemiş", staging sızıntısı
 - ○ Raporda "WordPress" bölümü
+
+**AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok
+- ○ AI botları erişim tablosu: robots.txt'de GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended, Bingbot, CCBot, Bytespider, Meta-ExternalAgent için izinli/engelli; eğitim botu ile arama botu ayrımı ve öneri
+- ○ Cloudflare/WAF "AI botlarını engelle" izi (bot user-agent'ıyla 403/challenge yanıtı)
+- ○ `llms.txt` ve `llms-full.txt` varlığı, biçim kontrolü (başlık, özet, bağlantı listesi), içindeki linklerin durumu
+- ○ JSON-LD çıkarma: sayfa başına şema türleri envanteri, bozuk JSON (ayrıştırma hatası) bulgusu
+- ○ Ana sayfada Organization/WebSite (ve yerel işletmede LocalBusiness) şeması yok bulgusu
+- ○ İçeriğin JS olmadan erişilebilirliği: ham HTML'deki metin miktarı (JS ile yüklenen içerik AI botlarının çoğunca okunmaz)
+- ○ Raporda "AI arama görünürlüğü" bölümü
 
 **Erişilebilirlik izleyici (M-1, [08 §2](08-izleme-ve-bildirimler.md))**
 - ○ Dakikada bir kontrol: durum kodu, zaman aşımı, DNS, SSL, beklenen kelime, yanıt süresi
@@ -151,8 +161,12 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Dizin bazlı derinlik ve dağılım
 
 **Yapısal veri**
-- ○ JSON-LD / Microdata / RDFa çıkarma
-- ○ Schema.org doğrulama ve Google zengin sonuç gereksinimleri
+- ○ JSON-LD / Microdata / RDFa çıkarma, şema türü ve özellik envanteri (site geneli tablo)
+- ○ Schema.org sözlüğüne göre doğrulama: bilinmeyen tür/özellik, yanlış değer tipi, eksik zorunlu alan
+- ○ Google zengin sonuç gereksinimleri: Article, Product (+ Offer, Review, AggregateRating), BreadcrumbList, FAQPage, HowTo, Recipe, Event, LocalBusiness, Organization, VideoObject, JobPosting; zorunlu/önerilen alan eksikleri
+- ○ Şema ↔ sayfa tutarlılığı: şemadaki başlık/fiyat/tarih sayfadakiyle uyuşuyor mu, `@id` ve `sameAs` bağlantıları
+- ○ Yinelenen veya çelişen şemalar (örn. hem Yoast hem tema aynı türü basıyor)
+- ○ WordPress: SEO eklentisinin şema grafiği (Yoast/Rank Math) kontrolü
 
 **Performans**
 - ○ PageSpeed Insights API + CrUX: LCP, INP, CLS (ücretsiz API, şablon başına örnek sayfa)
@@ -161,11 +175,15 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 **Güvenlik**
 - ○ Güvenlik başlıkları (HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy)
 
-**AI arama (GEO) hazırlığı**
-- ○ robots.txt'de GPTBot, ClaudeBot, PerplexityBot, Google-Extended vb. durumu
-- ○ `llms.txt` varlığı ve geçerliliği
-- ○ İçeriğin JS olmadan erişilebilirliği
-- ○ Organization / Article / FAQ / Product şema kapsamı, yazar ve tarih sinyalleri
+**AI arama görünürlüğü: GEO (generative engine) ve AEO (answer engine) denetimi** — GEO-1'in üzerine
+- ○ Varlık (entity) sinyalleri: Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
+- ○ E-E-A-T sinyalleri: yazar kutusu ve yazar sayfası, Person şeması, yayın/güncelleme tarihi (görünür + `datePublished`/`dateModified`), hakkımızda/iletişim/politika sayfaları
+- ○ Alıntılanabilirlik (AEO): soru biçimli başlıklar, başlığın hemen altında kısa doğrudan cevap paragrafı, liste/tablo kullanımı, SSS bölümü, tanım cümleleri
+- ○ Bölümleme ve okunabilirlik: başlık hiyerarşisi, paragraf uzunluğu, anlamlı alt başlıklarla "parçalanabilir" içerik (LLM'lerin pasaj seçimi için)
+- ○ Kaynak ve veri sinyalleri: dış kaynak linkleri, istatistik/rakam içeren cümleler, alıntılar
+- ○ Tazelik: eski tarihli ama trafiği olan sayfalar (GSC ile), "son güncelleme" eksikliği
+- ○ AI botlarının gerçekten aldığı içerik: AI bot user-agent'larıyla örnek sayfa çekip içerik farkı (cloaking/engel tespiti)
+- ○ Sayfa başına "AI hazırlık skoru" ve site geneli özet, raporda ayrı bölüm
 
 **Araçlar**
 - ○ XML ve görsel sitemap üretme
@@ -196,6 +214,12 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ İç link önerici (zayıf sayfalara, GSC fırsat sorgularıyla eşleşen kaynaklardan)
 - ○ WordPress'te onaylı uygulama (WP-4) ve GSC ile etki ölçümü
 - ○ Bulgu açıklamalarını müşteri diline çeviren rapor özeti
+
+**AI görünürlük ölçümü (AEO-2)**
+- ○ Belirlenen sorgular için ChatGPT, Perplexity, Google AI Overviews / AI Mode, Claude cevaplarında sitenin alıntılanması ve marka geçişi takibi (resmî API'lerle, kullanım şartlarına uygun)
+- ○ Rakip karşılaştırması: aynı sorgularda kimin alıntılandığı
+- ○ GA4 / sunucu logunda AI kaynaklı ziyaret ve bot trafiği (chatgpt.com, perplexity.ai yönlendirmeleri)
+- ○ Claude API ile sayfa bazlı "LLM okunabilirlik" değerlendirmesi ve somut yeniden yazım önerisi
 
 **İleri analiz**
 - ○ Semantik benzerlik ve içerik kümeleri (embedding), konu dışı içerik tespiti
@@ -229,11 +253,11 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 | 3.5 Site mimarisi ve linkleme | Faz 1 (derinlik), Faz 3 (yetim), Faz 5 (anchor, Link Score) |
 | 3.6 Kopya ve benzer içerik | Faz 1 (birebir), Faz 5 (yakın), Faz 7 (semantik) |
 | 3.7 Güvenlik ve teknik | Faz 1, Faz 2 (WordPress), Faz 5 (başlıklar) |
-| 3.8 Yapısal veri | Faz 5 |
+| 3.8 Yapısal veri | Faz 2 (çıkarma, temel), Faz 5 (doğrulama, zengin sonuç) |
 | 3.9 Performans, mobil, erişilebilirlik | Faz 5 (PSI/CrUX), Faz 7 (axe) |
 | 3.10 Özel arama, extraction | Faz 5 |
 | 3.11 Entegrasyonlar | Faz 3 (GSC), Faz 5 (PSI), Faz 7 (GA4, AI, MCP) |
 | 3.12 Sitemap ve robots araçları | Faz 1 (analiz), Faz 5 (üretim, test) |
 | 3.13 Otomasyon, karşılaştırma, raporlama | Faz 4 |
 
-**Screaming Frog'da hiç olmayanlar:** GSC trafiğiyle öncelik ve iş listesi (Faz 3), önce/sonra etki ölçümü (Faz 3), bilgisayardan bağımsız 7/24 zamanlama (Faz 4), dakikalık uptime izleme ve Telegram uyarısı (Faz 2), WordPress güvenlik denetimi ve site içi eklenti (Faz 2, 6), AI ile onaylı düzeltme uygulama (Faz 7), Türkçe markalı müşteri raporu (Faz 1, 4).
+**Screaming Frog'da hiç olmayanlar:** GSC trafiğiyle öncelik ve iş listesi (Faz 3), önce/sonra etki ölçümü (Faz 3), bilgisayardan bağımsız 7/24 zamanlama (Faz 4), dakikalık uptime izleme ve Telegram uyarısı (Faz 2), WordPress güvenlik denetimi ve site içi eklenti (Faz 2, 6), AI ile onaylı düzeltme uygulama (Faz 7), Türkçe markalı müşteri raporu (Faz 1, 4), GEO/AEO denetimi ve AI görünürlük ölçümü (Faz 2, 5, 7).
