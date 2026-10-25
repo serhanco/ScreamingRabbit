@@ -19,6 +19,7 @@ return array(
     'App\\Crawler\\HtmlParser' => $baseDir . '/app/Crawler/HtmlParser.php',
     'App\\Crawler\\RobotsTxt' => $baseDir . '/app/Crawler/RobotsTxt.php',
     'App\\Crawler\\SitemapReader' => $baseDir . '/app/Crawler/SitemapReader.php',
+    'App\\Crawler\\UrlFilter' => $baseDir . '/app/Crawler/UrlFilter.php',
     'App\\Crawler\\UrlNormalizer' => $baseDir . '/app/Crawler/UrlNormalizer.php',
     'App\\Exports\\CrawlCsv' => $baseDir . '/app/Exports/CrawlCsv.php',
     'App\\Filament\\Resources\\Clients\\ClientResource' => $baseDir . '/app/Filament/Resources/Clients/ClientResource.php',

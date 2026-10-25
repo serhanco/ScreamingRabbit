@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Projects\Schemas;
 
 use App\Models\Project;
 use Filament\Forms\Components\Select;
+use App\Crawler\UrlFilter;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -70,11 +72,34 @@ class ProjectForm
                         TextInput::make('crawl_settings.user_agent')
                             ->label('User-Agent')
                             ->maxLength(255)
-                            ->placeholder($defaults['user_agent']),
+                            ->placeholder($defaults['user_agent'])
+                            ->datalist(array_values(config('screamingrabbit.user_agents')))
+                            ->helperText('Listeden Googlebot, Bingbot veya Chrome seçebilir ya da kendin yazabilirsin.'),
                         Toggle::make('crawl_settings.respect_robots')
                             ->label('robots.txt kurallarına uy')
                             ->default($defaults['respect_robots']),
+                        Textarea::make('crawl_settings.include')
+                            ->label('Sadece şunları tara')
+                            ->rows(3)
+                            ->placeholder("/blog/\n/urun/")
+                            ->helperText('Her satıra bir kalıp (regex). Boşsa tüm site taranır.')
+                            ->rule(fn (): \Closure => self::regexRule()),
+                        Textarea::make('crawl_settings.exclude')
+                            ->label('Şunları tarama')
+                            ->rows(3)
+                            ->placeholder("/etiket/\n\\?replytocom=")
+                            ->helperText('Her satıra bir kalıp (regex). Eşleşen URL\'ler atlanır.')
+                            ->rule(fn (): \Closure => self::regexRule()),
                     ]),
             ]);
+    }
+
+    private static function regexRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($line = UrlFilter::firstInvalid($value)) {
+                $fail("Geçersiz kalıp: {$line}");
+            }
+        };
     }
 }
