@@ -1,0 +1,882 @@
+<?php
+
+namespace Livewire\Features\SupportComputed;
+
+use Illuminate\Support\Facades\Cache;
+use Tests\TestComponent;
+use Tests\TestCase;
+use Livewire\EventBus;
+use Livewire\Livewire;
+use Livewire\Component;
+use Livewire\Attributes\Computed;
+use Livewire\Features\SupportEvents\BaseOn;
+
+class UnitTest extends TestCase
+{
+    protected function skipUnlessCacheSupportsSerializableClassRestrictions()
+    {
+        $constructor = new \ReflectionMethod(\Illuminate\Cache\ArrayStore::class, '__construct');
+
+        if ($constructor->getNumberOfParameters() < 2) {
+            $this->markTestSkipped('This Laravel version does not support cache serializable class restrictions.');
+        }
+    }
+
+    function test_can_make_method_a_computed()
+    {
+        Livewire::test(new class extends TestComponent {
+            #[Computed]
+            function foo() {
+                return 'bar';
+            }
+        })
+            ->assertSetStrict('foo', 'bar');
+    }
+
+    function test_can_access_computed_properties_inside_views()
+    {
+        Livewire::test(new class extends TestComponent {
+            #[Computed]
+            function foo() {
+                return 'bar';
+            }
+
+            function render() {
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar');
+    }
+
+    function test_computed_properties_only_get_accessed_once_per_request()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                $noop = $this->foo;
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSetStrict('count', 1)
+            ->call('$refresh')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_can_bust_computed_cache_using_unset()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                unset($this->foo);
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSetStrict('count', 2)
+            ->call('$refresh')
+            ->assertSetStrict('count', 4);
+    }
+
+    function test_cached_computed_property_is_memoized_within_a_single_request()
+    {
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(cache: true)]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                $noop = $this->foo;
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSetStrict('count', 1);
+    }
+
+    function test_persisted_computed_property_is_memoized_within_a_single_request()
+    {
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(persist: true)]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                $noop = $this->foo;
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSetStrict('count', 1);
+    }
+
+    function test_can_bust_cached_computed_cache_using_unset()
+    {
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(cache: true)]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                unset($this->foo);
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_can_bust_persisted_computed_cache_using_unset()
+    {
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(persist: true)]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                unset($this->foo);
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_cached_computed_property_is_recomputed_when_the_cached_value_cannot_be_unserialized()
+    {
+        $this->skipUnlessCacheSupportsSerializableClassRestrictions();
+
+        config()->set('app.debug', true);
+        config()->set('cache.serializable_classes', false);
+        config()->set('cache.stores.array.serialize', true);
+        Cache::purge('array');
+        Cache::setDefaultDriver('array');
+
+        $component = Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(cache: true)]
+            function foo() {
+                $this->count++;
+
+                return (object) ['bar' => 'baz'];
+            }
+
+            function render() {
+                return <<<'HTML'
+                    <div>foo{{ $this->foo->bar }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobaz')
+            ->assertSetStrict('count', 1);
+
+        $logger = \Mockery::mock(\Psr\Log\LoggerInterface::class);
+        $logger->shouldReceive('warning')
+            ->once()
+            ->withArgs(fn ($message) => str_contains($message, '::foo]')
+                && str_contains($message, '[stdClass]')
+                && str_contains($message, 'was not served from cache'));
+        app()->instance('log', $logger);
+
+        $component->call('$refresh')
+            ->assertSee('foobaz')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_persisted_computed_property_is_recomputed_when_the_cached_value_cannot_be_unserialized()
+    {
+        $this->skipUnlessCacheSupportsSerializableClassRestrictions();
+
+        config()->set('cache.serializable_classes', false);
+        config()->set('cache.stores.array.serialize', true);
+        Cache::purge('array');
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(persist: true)]
+            function foo() {
+                $this->count++;
+
+                return (object) ['bar' => 'baz'];
+            }
+
+            function render() {
+                return <<<'HTML'
+                    <div>foo{{ $this->foo->bar }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobaz')
+            ->assertSetStrict('count', 1)
+            ->call('$refresh')
+            ->assertSee('foobaz')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_persisted_computed_property_is_recomputed_when_an_array_it_returns_holds_a_value_that_cannot_be_unserialized()
+    {
+        $this->skipUnlessCacheSupportsSerializableClassRestrictions();
+
+        config()->set('cache.serializable_classes', false);
+        config()->set('cache.stores.array.serialize', true);
+        Cache::purge('array');
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(persist: true)]
+            function foo() {
+                $this->count++;
+
+                return ['bar' => (object) ['baz' => 'bob']];
+            }
+
+            function render() {
+                return <<<'HTML'
+                    <div>foo{{ $this->foo['bar']->baz }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobob')
+            ->assertSetStrict('count', 1)
+            ->call('$refresh')
+            ->assertSee('foobob')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_cached_computed_property_is_not_recomputed_when_its_class_is_allowed_to_be_unserialized()
+    {
+        $this->skipUnlessCacheSupportsSerializableClassRestrictions();
+
+        config()->set('cache.serializable_classes', [\stdClass::class]);
+        config()->set('cache.stores.array.serialize', true);
+        Cache::purge('array');
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(cache: true)]
+            function foo() {
+                $this->count++;
+
+                return (object) ['bar' => 'baz'];
+            }
+
+            function render() {
+                return <<<'HTML'
+                    <div>foo{{ $this->foo->bar }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobaz')
+            ->assertSetStrict('count', 1)
+            ->call('$refresh')
+            ->assertSee('foobaz')
+            ->assertSetStrict('count', 1);
+    }
+
+    function test_can_tag_cached_computed_property()
+    {
+        // need to set a cache driver, which can handle tags
+        Cache::setDefaultDriver('array');
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(cache: true, tags: ['foo'])]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function deleteCachedTags() {
+                if (Cache::supportsTags()) {
+                    Cache::tags(['foo'])->flush();
+                }
+            }
+
+            function render() {
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->call('$refresh')
+            ->assertSetStrict('count', 1)
+            ->call('deleteCachedTags')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_can_tag_persisten_computed_property()
+    {
+        // need to set a cache driver, which can handle tags
+        Cache::setDefaultDriver('array');
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(persist: true, tags: ['foo'])]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function deleteCachedTags() {
+                if (Cache::supportsTags()) {
+                    Cache::tags(['foo'])->flush();
+                }
+            }
+
+            function render() {
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->call('$refresh')
+            ->assertSetStrict('count', 1)
+            ->call('deleteCachedTags')
+            ->assertSetStrict('count', 2);
+    }
+
+    function test_can_tag_persisted_computed_with_custom_key_property()
+    {
+        Cache::setDefaultDriver('array');
+
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed(persist: true, key: 'baz')]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            function render() {
+                $noop = $this->foo;
+
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->call('$refresh')
+            ->assertSetStrict('count', 1);
+
+        $this->assertTrue(Cache::has('baz'));
+    }
+
+    function test_cant_call_a_computed_directly()
+    {
+        $this->expectException(CannotCallComputedDirectlyException::class);
+
+        Livewire::test(new class extends TestComponent {
+            #[Computed]
+            function foo() {
+                return 'bar';
+            }
+
+            function render() {
+                return <<<'HTML'
+                    <div>foo{{ $this->foo }}</div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->call('foo');
+    }
+
+
+    function test_can_use_multiple_computed_properties_for_different_properties()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $count = 0;
+
+            #[Computed]
+            function foo() {
+                $this->count++;
+
+                return 'bar';
+            }
+
+            #[Computed]
+            function bob() {
+                $this->count++;
+
+                return 'lob';
+            }
+
+            function render() {
+                $noop = $this->foo;
+                $noop = $this->foo;
+                $noop = $this->bob;
+                $noop = $this->bob;
+
+                return <<<'HTML'
+                <div>
+                    <div>foo{{ $this->foo }}</div>
+                    <div>bob{{ $this->bob }}</div>
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('foobar')
+            ->assertSee('boblob')
+            ->assertSetStrict('count', 2)
+            ->call('$refresh')
+            ->assertSetStrict('count', 4);
+    }
+
+    function test_parses_computed_properties()
+    {
+        $this->assertEquals(
+            ['foo' => 'bar', 'bar' => 'baz', 'bobLobLaw' => 'blog'],
+            SupportLegacyComputedPropertySyntax::getComputedProperties(new class {
+                public function getFooProperty() { return 'bar'; }
+                public function getBarProperty() { return 'baz'; }
+                public function getBobLobLawProperty() { return 'blog'; }
+            })
+        );
+    }
+
+    function test_computed_property_is_accessible_using_snake_case()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $upperCasedFoo = 'FOO_BAR';
+
+            #[Computed]
+            public function fooBar()
+            {
+                return strtolower($this->upperCasedFoo);
+            }
+
+            public function render()
+            {
+                return <<<'HTML'
+                <div>
+                    {{ var_dump($this->foo_bar) }}
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('foo_bar');
+    }
+
+    function test_computed_property_is_accessible_when_using_snake_case_or_camel_case_in_the_method_name_in_the_class()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $upperCasedFoo = 'FOO_BAR';
+
+            #[Computed]
+            public function foo_bar_snake_case_in_component_class()
+            {
+                return strtolower($this->upperCasedFoo);
+            }
+
+            #[Computed]
+            public function fooBarCamelCaseInComponentClass()
+            {
+                return strtolower($this->upperCasedFoo);
+            }
+
+            public function render()
+            {
+                return <<<'HTML'
+                    <div>
+                        <!-- Snake Case in Component Class -->
+                        snake_case_in_component_class_{{ $this->foo_bar_snake_case_in_component_class }}
+
+                        <!-- Camel Case in Blade View -->
+                        camelCaseInBladeView_snake_case_method_{{ $this->fooBarCamelCaseInComponentClass }}
+
+                        <!-- Camel Case in Component Class -->
+                        camel_case_in_component_class_{{ $this->foo_bar_camel_case_in_component_class }}
+
+                        <!-- Camel Case in Blade View -->
+                        camelCaseInBladeView_camel_case_method_{{ $this->fooBarCamelCaseInComponentClass }}
+                    </div>
+                HTML;
+            }
+        })
+            ->assertSeeInOrder([
+                'snake_case_in_component_class_foo_bar',
+                'camelCaseInBladeView_snake_case_method_foo_bar',
+                'camel_case_in_component_class_foo_bar',
+                'camelCaseInBladeView_camel_case_method_foo_bar'
+            ]);
+    }
+
+    public function test_computed_property_is_accessable_within_blade_view()
+    {
+        Livewire::test(ComputedPropertyStub::class)
+            ->assertSee('foo');
+    }
+
+    public function test_injected_computed_property_is_accessable_within_blade_view()
+    {
+        Livewire::test(InjectedComputedPropertyStub::class)
+            ->assertSee('bar');
+    }
+
+    public function test_computed_property_is_memoized_after_its_accessed()
+    {
+        Livewire::test(MemoizedComputedPropertyStub::class)
+            ->assertSee('int(2)');
+    }
+
+    public function test_isset_is_true_on_existing_computed_property()
+    {
+        Livewire::test(IssetComputedPropertyStub::class)
+            ->assertSee('true');
+    }
+
+    public function test_isset_is_false_on_non_existing_computed_property()
+    {
+        Livewire::test(FalseIssetComputedPropertyStub::class)
+            ->assertSee('false');
+    }
+
+    public function test_isset_is_false_on_null_computed_property()
+    {
+        Livewire::test(NullIssetComputedPropertyStub::class)
+            ->assertSee('false');
+    }
+
+    public function test_computed_attribute_takes_priority_over_legacy_get_property_syntax()
+    {
+        Livewire::test(new class extends TestComponent {
+            use HasLegacyComputedProperty;
+
+            #[Computed]
+            public function foo(): string
+            {
+                return 'computed';
+            }
+        })
+            ->assertSetStrict('foo', 'computed');
+    }
+
+    public function test_computed_attributes_do_not_accumulate_event_bus_listeners()
+    {
+        $countListeners = function () {
+            $eventBus = app(EventBus::class);
+            $reflection = new \ReflectionClass($eventBus);
+            $total = 0;
+
+            foreach (['listeners', 'listenersAfter', 'listenersBefore'] as $propertyName) {
+                $property = $reflection->getProperty($propertyName);
+                $property->setAccessible(true);
+
+                foreach ($property->getValue($eventBus) as $listeners) {
+                    $total += count($listeners);
+                }
+            }
+
+            return $total;
+        };
+
+        Livewire::test(ComputedAttributeMemoryLeakStub::class);
+        Livewire::flushState();
+
+        $baselineListeners = $countListeners();
+
+        for ($i = 0; $i < 20; $i++) {
+            Livewire::test(ComputedAttributeMemoryLeakStub::class);
+            Livewire::flushState();
+        }
+
+        $this->assertEquals($baselineListeners, $countListeners());
+    }
+
+    public function test_it_supports_legacy_computed_properties()
+    {
+        Livewire::test(new class extends TestComponent {
+            public function getFooProperty()
+            {
+                return 'bar';
+            }
+        })
+            ->assertSetStrict('foo', 'bar');
+    }
+
+    public function test_it_supports_unsetting_legacy_computed_properties()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $changeFoo = false;
+
+            public function getFooProperty()
+            {
+                return $this->changeFoo ? 'baz' : 'bar';
+            }
+
+            public function save()
+            {
+                // Access foo to ensure it is memoized.
+                $this->foo;
+
+                $this->changeFoo = true;
+
+                unset($this->foo);
+            }
+        })
+            ->assertSetStrict('foo', 'bar')
+            ->call('save')
+            ->assertSetStrict('foo', 'baz');
+    }
+
+    public function test_it_supports_unsetting_legacy_computed_properties_for_events()
+    {
+        Livewire::test(new class extends TestComponent {
+            public $changeFoo = false;
+
+            public function getFooProperty()
+            {
+                return $this->changeFoo ? 'baz' : 'bar';
+            }
+
+            #[BaseOn('bar')]
+            public function onBar()
+            {
+                $this->changeFoo = true;
+
+                unset($this->foo);
+            }
+        })
+            ->assertSetStrict('foo', 'bar')
+            ->dispatch('bar', 'baz')
+            ->assertSetStrict('foo', 'baz');
+    }
+}
+
+class ComputedPropertyStub extends Component
+{
+    public $upperCasedFoo = 'FOO_BAR';
+
+    public function getFooBarProperty()
+    {
+        return strtolower($this->upperCasedFoo);
+    }
+
+    public function render()
+    {
+        return <<<'HTML'
+        <div>
+            {{ var_dump($this->foo_bar) }}
+        </div>
+        HTML;
+    }
+}
+
+class FooDependency {
+    public $baz = 'bar';
+}
+
+class InjectedComputedPropertyStub extends Component
+{
+    public function getFooBarProperty(FooDependency $foo)
+    {
+        return $foo->baz;
+    }
+
+    public function render()
+    {
+        return <<<'HTML'
+        <div>
+            {{ var_dump($this->foo_bar) }}
+        </div>
+        HTML;
+    }
+}
+
+class MemoizedComputedPropertyStub extends Component
+{
+    public $count = 1;
+
+    public function getFooProperty()
+    {
+        return $this->count += 1;
+    }
+
+    public function render()
+    {
+        // Access foo once here to start the cache.
+        $this->foo;
+
+        return <<<'HTML'
+        <div>
+            {{ var_dump($this->foo) }}
+        </div>
+        HTML;
+    }
+}
+
+class IssetComputedPropertyStub extends Component{
+    public $upperCasedFoo = 'FOO_BAR';
+
+    public function getFooBarProperty()
+    {
+        return strtolower($this->upperCasedFoo);
+    }
+
+    public function render()
+    {
+        return <<<'HTML'
+        <div>
+            {{ var_dump(isset($this->foo_bar)) }}
+        </div>
+        HTML;
+    }
+}
+
+class FalseIssetComputedPropertyStub extends Component{
+    public $upperCasedFoo = 'FOO_BAR';
+
+    public function getFooBarProperty()
+    {
+        return strtolower($this->upperCasedFoo);
+    }
+
+    public function render()
+    {
+        return <<<'HTML'
+        <div>
+            {{ var_dump(isset($this->foo)) }}
+        </div>
+        HTML;
+    }
+}
+
+trait HasLegacyComputedProperty
+{
+    public function getFooProperty(): string
+    {
+        return 'legacy';
+    }
+}
+
+class ComputedAttributeMemoryLeakStub extends Component
+{
+    #[Computed]
+    public function items(): array
+    {
+        return ['a', 'b', 'c'];
+    }
+
+    #[Computed]
+    public function total(): int
+    {
+        return count($this->items);
+    }
+
+    public function render()
+    {
+        return '<div>{{ $this->total }}</div>';
+    }
+}
+
+class NullIssetComputedPropertyStub extends Component{
+    public $upperCasedFoo = 'FOO_BAR';
+
+    public function getFooProperty()
+    {
+        return null;
+    }
+
+    public function render()
+    {
+        return <<<'HTML'
+        <div>
+            {{ var_dump(isset($this->foo)) }}
+        </div>
+        HTML;
+    }
+}

@@ -1,0 +1,13 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cannot cast array\<mixed, mixed\>\|string to string\.$#'
+			identifier: cast.string
+			count: 3
+			path: src/UriTemplate.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: src/UriTemplate.php

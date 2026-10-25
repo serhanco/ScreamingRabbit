@@ -1,0 +1,16 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 7
+    paths:
+        - benchmarks
+        - src
+        - tests
+    ignoreErrors:
+        -
+            message: "#^Method .+Test::provide.+Cases\\(\\) return type has no value type specified in iterable type iterable\\.$#"
+            paths:
+                - tests/

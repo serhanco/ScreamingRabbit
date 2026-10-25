@@ -1,0 +1,837 @@
+<?php
+
+namespace Livewire\Features\SupportIslands;
+
+use Tests\TestCase;
+use Livewire\Livewire;
+use Livewire\Features\SupportIslands\Compiler\IslandCompiler;
+use Livewire\Features\SupportScriptsAndAssets\SupportScriptsAndAssets;
+use Illuminate\Support\Facades\File;
+
+class UnitTest extends TestCase
+{
+    public function test_class_component_island_recovers_when_cached_file_is_deleted_between_requests()
+    {
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public int $count = 0;
+
+            public function increment()
+            {
+                $this->count++;
+                $this->renderIsland('counter');
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'counter')
+                        <div>count: {{ $count }}</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        });
+
+        $component->assertSee('count: 0');
+
+        // Get the island token from the component's stored islands...
+        $islands = $component->instance()->getIslands();
+        $token = $islands[0]['token'];
+        $cachedPath = IslandCompiler::getCachedPathFromToken($token);
+
+        // Verify the island cache file exists after initial render...
+        $this->assertFileExists($cachedPath);
+
+        // Delete the island cache file and its compiled Blade cache to simulate a deployment...
+        File::delete($cachedPath);
+
+        $compiledPath = app('blade.compiler')->getCompiledPath($cachedPath);
+        if (file_exists($compiledPath)) {
+            File::delete($compiledPath);
+        }
+
+        $this->assertFileDoesNotExist($cachedPath);
+
+        // A subsequent request should still work, not throw FileNotFoundException...
+        $component->call('increment');
+    }
+
+    public function test_sfc_island_recovers_when_cached_file_is_deleted_between_requests()
+    {
+        // Create a temporary view file to simulate an SFC's compiled view...
+        $viewPath = app('livewire.compiler')->cacheManager->cacheDirectory . '/test-sfc-island.blade.php';
+        File::ensureDirectoryExists(dirname($viewPath));
+        File::put($viewPath, <<<'HTML'
+        <div>
+            @island(name: 'counter')
+                <div>count: {{ $count }}</div>
+            @endisland
+        </div>
+        HTML);
+
+        $component = Livewire::test(new class($viewPath) extends \Livewire\Component {
+            public int $count = 0;
+            protected static string $viewPath;
+
+            public function __construct($viewPath = null)
+            {
+                if ($viewPath) {
+                    static::$viewPath = $viewPath;
+                }
+            }
+
+            public function increment()
+            {
+                $this->count++;
+                $this->renderIsland('counter');
+            }
+
+            // SFCs use view() instead of render()...
+            protected function view($data = [])
+            {
+                return app('view')->file(static::$viewPath, $data);
+            }
+        }, ['viewPath' => $viewPath]);
+
+        $component->assertSee('count: 0');
+
+        // Get the island token from the component's stored islands...
+        $islands = $component->instance()->getIslands();
+        $token = $islands[0]['token'];
+        $cachedPath = IslandCompiler::getCachedPathFromToken($token);
+
+        // Verify the island cache file exists after initial render...
+        $this->assertFileExists($cachedPath);
+
+        // Delete the island cache file and its compiled Blade cache to simulate a deployment...
+        File::delete($cachedPath);
+
+        $compiledPath = app('blade.compiler')->getCompiledPath($cachedPath);
+        if (file_exists($compiledPath)) {
+            File::delete($compiledPath);
+        }
+
+        $this->assertFileDoesNotExist($cachedPath);
+
+        // A subsequent request should still work, not throw FileNotFoundException...
+        $component->call('increment');
+
+        // Clean up...
+        File::delete($viewPath);
+    }
+
+    public function test_island_in_included_partial_recovers_when_cached_file_is_deleted_between_requests()
+    {
+        app('view')->addLocation(__DIR__ . '/fixtures/views');
+
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public int $count = 0;
+
+            public function increment()
+            {
+                $this->count++;
+                $this->renderIsland('counter');
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @include('island-partial')
+                </div>
+                HTML;
+            }
+        });
+
+        // Simulate a server that has never compiled the partial...
+        $cachedPath = IslandCompiler::getCachedPathFromToken($component->instance()->getIslands()[0]['token']);
+
+        File::delete([$cachedPath, app('blade.compiler')->getCompiledPath($cachedPath)]);
+
+        $component->call('increment')->assertOk();
+    }
+
+    public function test_sfc_island_can_use_imports_from_the_component_class()
+    {
+        app('livewire.finder')->addLocation(viewPath: __DIR__ . '/fixtures');
+
+        Livewire::test('sfc-island-imports')->assertSee('year: 2024');
+    }
+
+    public function test_sfc_island_can_use_php_imports_from_parent_view()
+    {
+        // Create a temporary view file to simulate an SFC's compiled view...
+        $viewPath = app('livewire.compiler')->cacheManager->cacheDirectory . '/test-sfc-island-imports.blade.php';
+        File::ensureDirectoryExists(dirname($viewPath));
+        File::put($viewPath, <<<'HTML'
+        <?php
+        use Carbon\Carbon;
+        ?>
+
+        <div>
+            @island(name: 'timestamp', with: ['timestamp' => Carbon::parse('2024-01-01')->timestamp])
+                <div>year: {{ Carbon::createFromTimestamp($timestamp)->year }}</div>
+            @endisland
+        </div>
+        HTML);
+
+        try {
+            Livewire::test(new class($viewPath) extends \Livewire\Component {
+                protected static string $viewPath;
+
+                public function __construct($viewPath = null)
+                {
+                    if ($viewPath) {
+                        static::$viewPath = $viewPath;
+                    }
+                }
+
+                // SFCs use view() instead of render()...
+                protected function view($data = [])
+                {
+                    return app('view')->file(static::$viewPath, $data);
+                }
+            }, ['viewPath' => $viewPath])->assertSee('year: 2024');
+        } finally {
+            File::delete($viewPath);
+        }
+    }
+
+    public function test_sfc_island_can_use_blade_use_imports_from_parent_view()
+    {
+        // Create a temporary view file to simulate an SFC's compiled view...
+        $viewPath = app('livewire.compiler')->cacheManager->cacheDirectory . '/test-sfc-island-blade-use-imports.blade.php';
+        File::ensureDirectoryExists(dirname($viewPath));
+        File::put($viewPath, <<<'HTML'
+        @use('Carbon\Carbon')
+
+        <div>
+            @island(name: 'timestamp', with: ['timestamp' => Carbon::parse('2024-01-01')->timestamp])
+                <div>year: {{ Carbon::createFromTimestamp($timestamp)->year }}</div>
+            @endisland
+        </div>
+        HTML);
+
+        try {
+            Livewire::test(new class($viewPath) extends \Livewire\Component {
+                protected static string $viewPath;
+
+                public function __construct($viewPath = null)
+                {
+                    if ($viewPath) {
+                        static::$viewPath = $viewPath;
+                    }
+                }
+
+                // SFCs use view() instead of render()...
+                protected function view($data = [])
+                {
+                    return app('view')->file(static::$viewPath, $data);
+                }
+            }, ['viewPath' => $viewPath])->assertSee('year: 2024');
+        } finally {
+            File::delete($viewPath);
+        }
+    }
+
+    public function test_render_island_directives()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    Outside island
+
+                    @island
+                        Inside island
+
+                        @island
+                            Nested island
+                        @endisland
+
+                        after
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertDontSee('@island')
+            ->assertDontSee('@endisland')
+            ->assertSee('Outside island')
+            ->assertSee('Inside island')
+            ->assertSee('Nested island')
+            ->assertSee('!--[if FRAGMENT:')
+            ->assertSee('!--[if ENDFRAGMENT:');
+    }
+
+    public function test_island_with_raw_block()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    Outside island
+
+                    @island
+                        <div>
+                            @php $foo = 'bar'; @endphp
+                            Inside island: {{ $foo }}
+                        </div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('Inside island: bar')
+            ;
+    }
+
+    public function test_island_with_parameter_provides_scope()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public $componentData = 'component value';
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(with: ['bar' => 'baz', 'number' => 42])
+                        <div>
+                            bar: {{ $bar ?? 'not set' }}
+                            number: {{ $number ?? 'not set' }}
+                        </div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('bar: baz')
+            ->assertSee('number: 42');
+    }
+
+    public function test_island_with_parameter_can_reference_component_properties()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public $myData = 'from component';
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(with: ['data' => $this->myData])
+                        <div>data: {{ $data ?? 'not set' }}</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('data: from component');
+    }
+
+    public function test_island_with_empty_parameter_still_renders()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'test')
+                        <div>content without with parameter</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('content without with parameter');
+    }
+
+    public function test_island_with_parameter_overrides_component_properties()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public $count = 999;
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(with: ['count' => 123])
+                        <div>count: {{ $count }}</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('count: 123')
+            ->assertDontSee('count: 999');
+    }
+
+    public function test_runtime_with_overrides_directive_with()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public $count = 999;
+
+            public function refreshWithData()
+            {
+                $this->renderIsland('test', null, 'morph', ['count' => 456]);
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'test', with: ['count' => 123])
+                        <div>count: {{ $count }}</div>
+                    @endisland
+
+                    <button wire:click="refreshWithData">Refresh</button>
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('count: 123')
+            ->call('refreshWithData');
+
+        // After calling refreshWithData, the island should show the runtime value
+        // Note: we can't easily assert on the fragment, but we can verify no errors occur
+    }
+
+    public function test_precedence_order()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public $value = 'component';
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(with: ['value' => 'directive'])
+                        <div>value: {{ $value }}</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('value: directive')
+            ->assertDontSee('value: component');
+    }
+
+    public function test_runtime_with_works_on_island_without_directive_with()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function refreshWithData()
+            {
+                $this->renderIsland('plain', null, 'morph', ['data' => 'runtime']);
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'plain')
+                        <div>data: {{ $data ?? 'not set' }}</div>
+                    @endisland
+
+                    <button wire:click="refreshWithData">Refresh</button>
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('data: not set')
+            ->call('refreshWithData');
+    }
+
+    public function test_runtime_with_works_on_island_with_no_parameters()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function refreshWithData()
+            {
+                // Find the token for the unnamed island
+                $islands = $this->getIslands();
+                $token = $islands[0]['token'] ?? null;
+
+                if ($token) {
+                    $this->renderIsland($token, null, 'morph', ['data' => 'runtime']);
+                }
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island
+                        <div>data: {{ $data ?? 'not set' }}</div>
+                    @endisland
+
+                    <button wire:click="refreshWithData">Refresh</button>
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('data: not set')
+            ->call('refreshWithData');
+    }
+
+    public function test_commented_out_island_directives_do_not_affect_content()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    {{-- @island(defer: true) --}}
+                        This content should be visible
+                    {{-- @endisland --}}
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('This content should be visible')
+            ->assertDontSee('@island')
+            ->assertDontSee('@endisland');
+    }
+
+    public function test_commented_out_island_with_livewire_component_inside()
+    {
+        Livewire::component('inner-component', new class extends \Livewire\Component {
+            public function render() {
+                return '<span>Inner component rendered</span>';
+            }
+        });
+
+        Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    {{-- @island(defer: true) --}}
+                        <livewire:inner-component />
+                    {{-- @endisland --}}
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('Inner component rendered');
+    }
+
+    public function test_multiple_calls_targeting_same_island_only_renders_fragment_once()
+    {
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public $isDialogOpen = true;
+
+            public function cancelDialog()
+            {
+                $this->isDialogOpen = false;
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'dialog')
+                        <div>
+                            @if ($isDialogOpen)
+                                Dialog is open
+                            @else
+                                Dialog is closed
+                            @endif
+                        </div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        });
+
+        // Simulate two calls in one request both targeting the same island
+        // (like wire:model.live="isDialogOpen" + wire:cancel="cancelDialog")
+        $component->update(
+            calls: [
+                [
+                    'method' => 'cancelDialog',
+                    'params' => [],
+                    'path' => '',
+                    'metadata' => [
+                        'island' => [
+                            'name' => 'dialog',
+                            'mode' => 'morph',
+                        ],
+                    ],
+                ],
+                [
+                    'method' => '$commit',
+                    'params' => [],
+                    'path' => '',
+                    'metadata' => [
+                        'type' => 'model.live',
+                        'island' => [
+                            'name' => 'dialog',
+                            'mode' => 'morph',
+                        ],
+                    ],
+                ],
+            ],
+            updates: [
+                'isDialogOpen' => false,
+            ],
+        );
+
+        $fragments = $component->effects['islandFragments'] ?? [];
+
+        $this->assertCount(1, $fragments, 'Expected only one island fragment but got ' . count($fragments));
+    }
+
+    public function test_island_render_shares_the_component_with_views()
+    {
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public function repaint()
+            {
+                $this->renderIsland('probe');
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'probe')
+                        <div>shared: {{ app('view')->shared('__livewire') ? 'yes' : 'no' }}</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        });
+
+        $component->assertSee('shared: yes');
+
+        $component->call('repaint');
+
+        $fragments = implode('', $component->effects['islandFragments'] ?? []);
+
+        $this->assertStringContainsString('shared: yes', $fragments);
+    }
+
+    public function test_island_directive_supports_nested_parentheses_in_expression()
+    {
+        Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(with: ['value' => strtoupper(trim('  hello  '))])
+                        <div>value: {{ $value ?? 'not set' }}</div>
+                    @endisland
+                </div>
+                HTML;
+            }
+        })
+            ->assertSee('value: HELLO');
+    }
+
+    public function test_island_keeps_its_token_when_a_directive_above_it_has_an_unbalanced_expression()
+    {
+        $compiledPath = sys_get_temp_dir() . '/laravel-island-offset-' . uniqid();
+
+        config()->set('view.compiled', $compiledPath);
+        app()->forgetInstance('livewire.compiler');
+        app()->forgetInstance('livewire.factory');
+
+        $compiled = IslandCompiler::compile(__FILE__, <<<'HTML'
+        <div>
+            @if (auth()->check())
+                first
+            @endif
+
+            @if (auth()->check() && request()->isMethod('get'))
+                second
+            @endif
+
+            @island(name: 'counter')
+                @if (request()->isMethod('get'))
+                    <div>count: {{ $count }}</div>
+                @endif
+            @endisland
+
+            @if (auth()->check())
+                third
+            @endif
+        </div>
+        HTML);
+
+        $token = app('livewire.compiler')->cacheManager->getHash(__FILE__) . '-1';
+        $cachedPath = IslandCompiler::getCachedPathFromToken($token);
+
+        $this->assertStringContainsString("token: '{$token}'", $compiled);
+        $this->assertStringNotContainsString('[ENDISLAND', $compiled);
+        $this->assertStringNotContainsString('[LIVEWIRE_DIRECTIVE:', $compiled);
+        $this->assertStringContainsString("@if (auth()->check() && request()->isMethod('get'))", $compiled);
+        $this->assertFileExists($cachedPath);
+        $this->assertStringContainsString("@if (request()->isMethod('get'))", File::get($cachedPath));
+        $this->assertStringNotContainsString('[LIVEWIRE_DIRECTIVE:', File::get($cachedPath));
+
+        File::deleteDirectory($compiledPath);
+    }
+
+    public function test_island_tokens_are_stable_across_different_base_paths()
+    {
+        $path = '/resources/views/components/foo.blade.php';
+
+        $content = '@island @endisland';
+
+        $islandA = IslandCompiler::compile(base_path($path), $content);
+
+        // Simulate Forge's zero-downtime deployments where each release has its own folder...
+        app()->setBasePath('/home/forge/domain/releases/22222');
+
+        $islandB = IslandCompiler::compile(base_path($path), $content);
+
+        $this->assertSame($islandA, $islandB);
+    }
+
+    public function test_livewire_compiler_uses_laravels_configured_compiled_view_path()
+    {
+        $compiledPath = sys_get_temp_dir() . '/laravel-custom-compiled-' . uniqid();
+
+        config()->set('view.compiled', $compiledPath);
+        app()->forgetInstance('livewire.compiler');
+        app()->forgetInstance('livewire.factory');
+
+        $this->assertSame($compiledPath . '/livewire', app('livewire.compiler')->cacheManager->cacheDirectory);
+
+        File::deleteDirectory($compiledPath);
+    }
+
+    public function test_island_compiler_writes_cached_islands_inside_laravels_configured_compiled_view_path()
+    {
+        $compiledPath = sys_get_temp_dir() . '/laravel-custom-islands-' . uniqid();
+
+        config()->set('view.compiled', $compiledPath);
+        app()->forgetInstance('livewire.compiler');
+        app()->forgetInstance('livewire.factory');
+
+        IslandCompiler::compile(__FILE__, <<<'HTML'
+        <div>
+            @island(name: 'counter')
+                <div>count: {{ $count }}</div>
+            @endisland
+        </div>
+        HTML);
+
+        $token = app('livewire.compiler')->cacheManager->getHash(__FILE__) . '-1';
+        $cachedPath = IslandCompiler::getCachedPathFromToken($token);
+
+        $this->assertSame($compiledPath . '/livewire/islands/' . $token . '.blade.php', $cachedPath);
+        $this->assertFileExists($cachedPath);
+
+        File::deleteDirectory($compiledPath);
+    }
+
+    public function test_children_mounted_during_an_island_render_are_kept_in_the_children_memo()
+    {
+        Livewire::component('island-child', new class extends \Livewire\Component {
+            public $number = 0;
+
+            public function render() {
+                return '<div>child {{ $number }}</div>';
+            }
+        });
+
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public $from = 1;
+            public $to = 1;
+
+            public function loadMore()
+            {
+                $this->from = $this->to + 1;
+                $this->to++;
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(name: 'rows', always: true)
+                        @foreach (range($from, $to) as $number)
+                            <livewire:island-child :$number :wire:key="'row-'.$number" />
+                        @endforeach
+                    @endisland
+                </div>
+                HTML;
+            }
+        });
+
+        $this->assertSame(['row-1'], array_keys($component->snapshot['memo']['children']));
+
+        // Simulate an append-mode island render, like a "load more" button would...
+        $component->update(calls: [
+            [
+                'method' => 'loadMore',
+                'params' => [],
+                'path' => '',
+                'metadata' => [
+                    'island' => [
+                        'name' => 'rows',
+                        'mode' => 'append',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertSame(['row-1', 'row-2'], array_keys($component->snapshot['memo']['children']));
+
+        $appendedChildId = $component->snapshot['memo']['children']['row-2'][1];
+
+        $component->call('$refresh');
+
+        // The appended child should come back as a stub, not mount again from scratch...
+        $this->assertStringContainsString('wire:id="'.$appendedChildId.'" wire:name="island-child" wire:key="row-2"', $component->html());
+        $this->assertStringNotContainsString('child 1', $component->html());
+        $this->assertStringNotContainsString('child 2', $component->html());
+    }
+
+    public function test_assets_inside_an_implicitly_rendered_island_are_shipped()
+    {
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(defer: true)
+                        @placeholder <div>loading</div> @endplaceholder
+                        <div data-loaded>ready</div>
+                        @assets <script src="/x.js" data-x></script> @endassets
+                    @endisland
+                </div>
+                HTML;
+            }
+        });
+
+        $name = $component->instance()->getIslands()[0]['name'];
+
+        app('livewire')->update($component->snapshot, [], [
+            [
+                'method' => '__lazyLoadIsland',
+                'params' => [],
+                'path' => '',
+                'metadata' => [
+                    'island' => ['name' => $name, 'mode' => 'morph'],
+                ],
+            ],
+        ]);
+
+        $this->assertStringContainsString('/x.js', json_encode(SupportScriptsAndAssets::getAssets()));
+    }
+
+    public function test_assets_inside_an_explicitly_rendered_island_are_still_shipped()
+    {
+        $component = Livewire::test(new class extends \Livewire\Component {
+            public function refresh()
+            {
+                $this->renderIsland('counter');
+            }
+
+            public function render() {
+                return <<<'HTML'
+                <div>
+                    @island(defer: true, name: 'counter')
+                        @placeholder <div>loading</div> @endplaceholder
+                        <div data-loaded>ready</div>
+                        @assets <script src="/y.js" data-y></script> @endassets
+                    @endisland
+                </div>
+                HTML;
+            }
+        });
+
+        app('livewire')->update($component->snapshot, [], [
+            [
+                'method' => 'refresh',
+                'params' => [],
+                'path' => '',
+            ],
+        ]);
+
+        $this->assertStringContainsString('/y.js', json_encode(SupportScriptsAndAssets::getAssets()));
+    }
+}
