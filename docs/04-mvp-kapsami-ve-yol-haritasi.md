@@ -96,6 +96,7 @@ Hedef: Serhan'ın bir müşteri sitesini tarayıp **Screaming Frog'u açmadan** 
 - Etiket / yazar / tarih arşivleri indekslenebilir ve ince içerikli
 - `/wp-json/` veya `xmlrpc.php` erişim kontrolü (bilgilendirme)
 - Birden fazla SEO eklentisi izi (Yoast + RankMath çakışması)
+- Genişletilmiş WordPress güvenlik/SEO kontrolleri ve bağlantı eklentisi: [07 · WordPress modülü](07-wordpress-modulu.md) (WP-1 bu adımın sonunda)
 
 ### 3.3 MVP'de olmayanlar (bilinçli)
 
@@ -132,6 +133,7 @@ JS render, GSC, zamanlama, karşılaştırma, hreflang, yapısal veri, PSI. Heps
 
 ### 4.4 Otomasyon
 
+- WordPress modülü WP-2 ve WP-3: açık veritabanı eşleştirmesi, salt okunur bağlantı eklentisi, onaylı değişiklikler ([07](07-wordpress-modulu.md)).
 - Proje başına zamanlanmış tarama (günlük / haftalık / aylık).
 - **Kritik sayfa izleme** (Lumar Protect fikri): seçili 5-50 URL saatlik veya günlük kontrol edilir (durum kodu, noindex, canonical, title değişimi).
 - Otomatik tarama karşılaştırma: yeni / kaybolan sayfalar, yeni sorunlar, düzelen sorunlar.
@@ -144,7 +146,7 @@ hreflang · yapısal veri çıkarma/doğrulama · PSI/CrUX (ücretsiz API) · ya
 
 ## 5. P2 havuzu (sonrası)
 
-Log dosyası analizi (cPanel erişim logları) · GA4 · semantik benzerlik ve içerik kümeleri · AI destekli title/meta önerisi · iç link önerici · site mimarisi görselleştirme · erişilebilirlik (axe) · sitemap üretimi · staging/production karşılaştırma · MCP sunucusu (ScreamingRabbit'i Claude'dan sürmek) · REA ile rakip araçların belirli özelliklerinin incelenmesi.
+Log dosyası analizi (cPanel erişim logları) · GA4 · semantik benzerlik ve içerik kümeleri · AI destekli title/meta önerisi (WordPress'te eklentiyle onaylı uygulama: [07 WP-4](07-wordpress-modulu.md)) · iç link önerici · site mimarisi görselleştirme · erişilebilirlik (axe) · sitemap üretimi · staging/production karşılaştırma · MCP sunucusu (ScreamingRabbit'i Claude'dan sürmek) · REA ile rakip araçların belirli özelliklerinin incelenmesi.
 
 ## 6. Mimari için girdiler (2. adıma devredilen kısıtlar)
 
