@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\MonitorAlert;
+use App\Filament\Resources\Monitors\Pages\EditMonitor;
 use App\Filament\Resources\Monitors\Pages\ListMonitors;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
@@ -115,5 +116,53 @@ class MonitorTest extends TestCase
         $monitor = $this->monitor(['status' => 'up']);
 
         Livewire::test(ListMonitors::class)->assertCanSeeTableRecords([$monitor])->assertSee('Çalışıyor');
+    }
+
+    public function test_a_long_outage_sends_an_hourly_reminder(): void
+    {
+        Event::fake([MonitorAlert::class]);
+        $this->monitor();
+        Http::fake(fn ($request) => str_contains($request->url(), 'site.test') ? Http::response('', 503) : Http::response('', 204));
+
+        MonitorRunner::run(0);
+        $this->travel(30)->minutes();
+        MonitorRunner::run(0);
+        Event::assertDispatchedTimes(MonitorAlert::class, 1);
+
+        $this->travel(31)->minutes();
+        MonitorRunner::run(0);
+        Event::assertDispatched(MonitorAlert::class, fn ($e) => str_starts_with($e->title, 'Hâlâ erişilemiyor: Klinik'));
+
+        $this->travel(10)->minutes();
+        MonitorRunner::run(0);
+        Event::assertDispatchedTimes(MonitorAlert::class, 2);
+    }
+
+    public function test_daily_rollup_keeps_uptime_after_raw_checks_are_pruned(): void
+    {
+        $monitor = $this->monitor();
+        $yesterday = now()->subDay()->setTime(12, 0);
+        foreach ([true, true, true, false] as $i => $ok) {
+            MonitorCheck::create(['monitor_id' => $monitor->id, 'checked_at' => $yesterday->copy()->addMinutes($i), 'ok' => $ok, 'response_ms' => 100]);
+        }
+        MonitorCheck::create(['monitor_id' => $monitor->id, 'checked_at' => now(), 'ok' => true, 'response_ms' => 80]);
+
+        MonitorRunner::rollup($yesterday);
+        MonitorCheck::query()->where('checked_at', '<', now()->startOfDay())->delete();
+
+        $days = MonitorRunner::dailyUptime($monitor, 30);
+        $this->assertCount(30, $days);
+        $this->assertSame(75.0, $days[$yesterday->toDateString()]);
+        $this->assertSame(100.0, $days[now()->toDateString()]);
+        $this->assertNull($days[now()->subDays(5)->toDateString()]);
+    }
+
+    public function test_monitor_edit_page_shows_the_uptime_bar(): void
+    {
+        $this->actingAs(User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
+        $monitor = $this->monitor();
+        MonitorCheck::create(['monitor_id' => $monitor->id, 'checked_at' => now(), 'ok' => true, 'response_ms' => 80]);
+
+        Livewire::test(EditMonitor::class, ['record' => $monitor->getRouteKey()])->assertSee('Son 90 gün')->assertSee('%100');
     }
 }

@@ -27,4 +27,7 @@ Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')
 
 Schedule::call(fn () => CrawlMaintenance::prune())->name('crawl-prune')->dailyAt('04:00');
 
-Schedule::call(fn () => MonitorRunner::prune())->name('monitor-prune')->dailyAt('04:30');
+Schedule::call(function () {
+    MonitorRunner::rollup(now()->subDay());
+    MonitorRunner::prune();
+})->name('monitor-daily')->dailyAt('00:10');

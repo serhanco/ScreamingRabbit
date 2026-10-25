@@ -30,6 +30,8 @@ class MonitorRunner
 
     private const SSL_WARN_DAYS = 14;
 
+    private const REMIND_MINUTES = 60;
+
     private const CANARIES = ['https://www.google.com/generate_204', 'https://1.1.1.1/'];
 
     /**
@@ -169,6 +171,11 @@ class MonitorRunner
             return;
         }
 
+        if ($open && ($open->reminded_at ?? $open->started_at)->lte(now()->subMinutes(self::REMIND_MINUTES))) {
+            $open->update(['reminded_at' => now()]);
+            Alerts::send("Hâlâ erişilemiyor: {$monitor->project->name}", "{$site} {$open->durationForHumans()} süredir yanıt vermiyor.");
+        }
+
         if ($open === null) {
             Incident::create(['monitor_id' => $monitor->id, 'started_at' => now(), 'cause' => $result['error'], 'detail' => $result['detail'], 'notified_down_at' => now()]);
             Alerts::send("Erişilemiyor: {$monitor->project->name}", "{$site} yanıt vermiyor. Neden: ".(Monitor::CAUSES[$result['error']] ?? $result['error']).($result['detail'] ? " ({$result['detail']})" : '').'.');
@@ -190,6 +197,52 @@ class MonitorRunner
         if ($expires && $expires->lt(now()->addDays(self::SSL_WARN_DAYS))) {
             Alerts::send("SSL bitiyor: {$monitor->project->name}", "{$monitor->url} sertifikası {$expires->format('d.m.Y')} tarihinde bitiyor ({$expires->diffForHumans()}).");
         }
+    }
+
+    /**
+     * Rolls raw checks up into one row per monitor and day, kept permanently for the uptime bars and reports.
+     */
+    public static function rollup(\DateTimeInterface $day): void
+    {
+        $from = \Carbon\CarbonImmutable::parse($day)->startOfDay();
+
+        MonitorCheck::query()
+            ->whereBetween('checked_at', [$from, $from->endOfDay()])
+            ->selectRaw('monitor_id, COUNT(*) as checks, SUM(CASE WHEN ok THEN 1 ELSE 0 END) as up_checks, AVG(response_ms) as avg_ms')
+            ->groupBy('monitor_id')
+            ->get()
+            ->each(fn ($row) => \Illuminate\Support\Facades\DB::table('monitor_daily')->updateOrInsert(
+                ['monitor_id' => $row->monitor_id, 'day' => $from->toDateString()],
+                ['checks' => $row->checks, 'up_checks' => $row->up_checks, 'avg_ms' => $row->avg_ms === null ? null : (int) round($row->avg_ms)],
+            ));
+    }
+
+    /**
+     * Uptime per day for the last given days, oldest first; today comes from the raw checks. null means no data.
+     *
+     * @return array<string, ?float> Y-m-d => percentage
+     */
+    public static function dailyUptime(Monitor $monitor, int $days): array
+    {
+        $start = now()->startOfDay()->subDays($days - 1);
+        $rows = \Illuminate\Support\Facades\DB::table('monitor_daily')->where('monitor_id', $monitor->id)
+            ->where('day', '>=', $start->toDateString())->get()
+            ->keyBy(fn ($row) => substr((string) $row->day, 0, 10));
+
+        $result = [];
+        for ($i = 0; $i < $days; $i++) {
+            $date = $start->copy()->addDays($i)->toDateString();
+            $row = $rows[$date] ?? null;
+            $result[$date] = $row && $row->checks > 0 ? round($row->up_checks / $row->checks * 100, 2) : null;
+        }
+
+        $today = $monitor->checks()->where('checked_at', '>=', now()->startOfDay())
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN ok THEN 1 ELSE 0 END) as up')->first();
+        if ($today && $today->total > 0) {
+            $result[now()->toDateString()] = round($today->up / $today->total * 100, 2);
+        }
+
+        return $result;
     }
 
     /** Raw checks are kept 30 days (docs/08 §2.4). */

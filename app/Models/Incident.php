@@ -16,6 +16,7 @@ class Incident extends Model
             'ended_at' => 'datetime',
             'notified_down_at' => 'datetime',
             'notified_up_at' => 'datetime',
+            'reminded_at' => 'datetime',
         ];
     }
 
