@@ -42,6 +42,36 @@ class ClientReportTest extends TestCase
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 
+    public function test_report_has_ai_visibility_and_wordpress_sections(): void
+    {
+        $crawl = $this->crawl();
+        $crawl->update([
+            'bot_access' => [
+                ['token' => 'googlebot', 'name' => 'Googlebot', 'kind' => 'search', 'robots_allowed' => true, 'fetch' => 'ok', 'status' => 200],
+                ['token' => 'oai-searchbot', 'name' => 'OAI-SearchBot', 'kind' => 'ai_search', 'robots_allowed' => false, 'fetch' => 'ok', 'status' => 200],
+            ],
+            'llms_txt' => ['status' => 'missing'],
+            'wp_checks' => [
+                'inventory' => ['plugins' => ['contact-form-7' => '5.1'], 'themes' => ['astra' => null]],
+                'probes' => ['feed' => ['value' => '6.4.2'], 'core_latest' => ['value' => '6.8.3'], 'plugin:contact-form-7' => ['value' => '6.1']],
+            ],
+        ]);
+        $home = CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/', 'url_hash' => sha1('home'), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html', 'depth' => 0, 'schema_types' => 'WebSite']);
+        CrawlIssue::create(['crawl_id' => $crawl->id, 'page_id' => $home->id, 'rule' => 'wp_core_outdated', 'severity' => 'high']);
+
+        $this->get('/rapor/tok123')
+            ->assertOk()
+            ->assertSee('AI arama görünürlüğü')
+            ->assertSee('0 / 1 erişebiliyor')
+            ->assertSee('%100 (1 / 1)')
+            ->assertSee('WordPress')
+            ->assertSee('6.4.2')
+            ->assertSee('contact-form-7')
+            ->assertSee('Sorun var, ayrıntı aşağıda');
+
+        $this->get('/rapor/tok123/pdf')->assertOk();
+    }
+
     public function test_unknown_revoked_or_unfinished_is_404(): void
     {
         $this->get('/rapor/nope')->assertNotFound();

@@ -70,7 +70,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
 - ✓ "Arama motorlarını engelle" açık, çift site haritası, iç arama indekslenebilir, `?replytocom`, varsayılan içerik, "Kategorilenmemiş"
 - ○ Sayfalama canonical'ı, staging sızıntısı, SEOPress/The SEO Framework tespiti
-- ○ Raporda "WordPress" bölümü
+- ✓ Raporda "WordPress" bölümü: sürüm, eklenti/tema, güvenlik kontrol listesi
 
 **AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok
 - ✓ Arama motoru + AI botları erişim tablosu (19 bot): robots.txt'de GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended, Bingbot, CCBot, Bytespider, Meta-ExternalAgent için izinli/engelli; eğitim botu ile arama botu ayrımı ve öneri
@@ -80,7 +80,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ JSON-LD çıkarma: sayfa başına şema türleri (URL tablosu ve CSV'de), bozuk JSON bulgusu
 - ✓ Ana sayfada Organization/LocalBusiness/Person şeması yok bulgusu
 - ○ İçeriğin JS olmadan erişilebilirliği: ham HTML'deki metin miktarı (JS ile yüklenen içerik AI botlarının çoğunca okunmaz)
-- ◐ Raporda bot erişim tablosu ✓; tam "AI arama görünürlüğü" bölümü ○
+- ✓ Raporda "AI arama görünürlüğü" bölümü: bot türü başına erişim, llms.txt, kurum şeması, JSON-LD kapsamı, bot tablosu
 
 **Erişilebilirlik izleyici (M-1, [08 §2](08-izleme-ve-bildirimler.md))**
 - ✓ Dakikada bir kontrol (1/5/15 dk): durum kodu, zaman aşımı, DNS, SSL, beklenen kelime, yanıt süresi

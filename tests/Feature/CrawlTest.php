@@ -221,7 +221,7 @@ class CrawlTest extends TestCase
         $this->assertStringContainsString('ClaudeBot (Anthropic eğitim) (403)', $crawl->issues()->where('rule', 'bot_fetch_refused')->value('detail'));
 
         $html = (new \App\Reports\CrawlReport($crawl))->html();
-        $this->assertStringContainsString('Arama motorları ve AI botları erişimi', $html);
+        $this->assertStringContainsString('AI arama görünürlüğü', $html);
     }
 
     public function test_structured_data_and_llms_txt_are_checked(): void
