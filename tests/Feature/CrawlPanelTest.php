@@ -147,4 +147,21 @@ class CrawlPanelTest extends TestCase
             ->callAction('csvPages')
             ->assertHasNoActionErrors();
     }
+
+    public function test_page_detail_shows_findings_and_links(): void
+    {
+        [, $crawl, $page] = $this->crawlWithIssue();
+        $target = CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/target', 'url_hash' => sha1('https://example.com/target'), 'state' => 'done', 'status_code' => 200]);
+        \App\Models\CrawlLink::create(['crawl_id' => $crawl->id, 'from_page_id' => $page->id, 'to_hash' => $target->url_hash]);
+        \App\Models\CrawlLink::create(['crawl_id' => $crawl->id, 'from_page_id' => $target->id, 'to_hash' => $page->url_hash]);
+
+        $detail = \App\Filament\Resources\Crawls\Support\PageDetail::for($page->fresh());
+
+        $this->assertSame(['https://example.com/target'], $detail['outlinks']->all());
+        $this->assertSame(['https://example.com/target'], $detail['inlinks']->all());
+        $this->assertCount(1, $detail['findings']);
+
+        $html = view('crawls.page-detail', ['detail' => $detail])->render();
+        $this->assertStringContainsString('https://example.com/target', $html);
+    }
 }
