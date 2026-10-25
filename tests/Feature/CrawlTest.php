@@ -106,7 +106,7 @@ class CrawlTest extends TestCase
         $this->assertContains('low_content', $rules('/b'));
         $this->assertContains('title_too_short', $rules('/'));
         $this->assertContains('sitemap_missing_indexable', $rules('/b'));
-        $this->assertSame([], $rules('/a'));
+        $this->assertSame(['single_inlink'], $rules('/a'));
         $this->assertSame(1, $byPath('/a')->inlinks);
         $this->assertSame(1, $byPath('/old')->inlinks);
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'elsewhere.com'));

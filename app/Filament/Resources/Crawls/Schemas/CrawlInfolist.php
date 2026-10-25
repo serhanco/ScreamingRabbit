@@ -16,7 +16,7 @@ class CrawlInfolist
         return $schema
             ->components([
                 Section::make('Tarama')
-                    ->columns(4)
+                    ->columns(5)
                     ->schema([
                         TextEntry::make('project.name')->label('Proje'),
                         TextEntry::make('status')
@@ -24,6 +24,13 @@ class CrawlInfolist
                             ->badge()
                             ->formatStateUsing(fn (string $state): string => Crawl::STATUSES[$state] ?? $state)
                             ->color(fn (string $state): string => CrawlColors::status($state)),
+                        TextEntry::make('health_score')
+                            ->label('Sağlık skoru')
+                            ->placeholder('-')
+                            ->suffix(' / 100')
+                            ->size('lg')
+                            ->weight('bold')
+                            ->color(fn (?int $state): string => CrawlColors::health($state)),
                         TextEntry::make('started_at')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('finished_at')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('error')->label('Hata')->visible(fn (Crawl $record): bool => filled($record->error))->columnSpanFull(),

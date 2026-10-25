@@ -197,9 +197,14 @@ class CrawlRunner
                 'word_count' => $parsed['word_count'],
                 'content_hash' => $parsed['content_hash'],
                 'wordpress_hint' => $parsed['wordpress_hint'],
+                'images_missing_alt' => $parsed['images_missing_alt'],
+                'mixed_content' => $parsed['mixed_content'],
+                'meta_refresh' => $parsed['meta_refresh'] ? mb_substr($parsed['meta_refresh'], 0, 250) : null,
+                'page_type' => $parsed['page_type'],
+                'seo_plugin' => $parsed['seo_plugin'],
             ];
 
-            $this->storeLinks($page, $parsed['links']);
+            $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
         }
 
         $page->update($update);
@@ -208,10 +213,11 @@ class CrawlRunner
     /**
      * @param  array<int, array{url: string, nofollow: bool}>  $links
      */
-    private function storeLinks(CrawlPage $page, array $links): void
+    private function storeLinks(CrawlPage $page, array $links): int
     {
         $rows = [];
         $seen = [];
+        $httpLinks = 0;
 
         foreach ($links as $link) {
             $url = $link['url'];
@@ -219,6 +225,10 @@ class CrawlRunner
                 continue;
             }
             $seen[$url] = true;
+
+            if (str_starts_with($page->url, 'https://') && str_starts_with($url, 'http://')) {
+                $httpLinks++;
+            }
 
             $rows[] = [
                 'crawl_id' => $this->crawl->id,
@@ -235,6 +245,8 @@ class CrawlRunner
         foreach (array_chunk($rows, 500) as $chunk) {
             DB::table('crawl_links')->insert($chunk);
         }
+
+        return $httpLinks;
     }
 
     private function addPage(string $url, int $depth, bool $inSitemap = false): void

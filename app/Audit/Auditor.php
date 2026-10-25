@@ -18,6 +18,12 @@ class Auditor
 
     private Crawl $crawl;
 
+    /** @var array<int, string> page id => sha1 of the canonical URL it points at */
+    private array $canonicalTargets = [];
+
+    /** @var array<string, int> SEO plugin key => a page id that shows it */
+    private array $seoPlugins = [];
+
     public function run(Crawl $crawl): void
     {
         $this->crawl = $crawl;
@@ -32,6 +38,8 @@ class Auditor
         $groups = ['title' => [], 'meta_description' => [], 'h1' => [], 'content' => []];
         /** @var array<string, array{id: int, url: string, redirect_to: ?string}> $redirects */
         $redirects = [];
+        $this->canonicalTargets = [];
+        $this->seoPlugins = [];
 
         $crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use (&$groups, &$redirects, $platform) {
             foreach ($pages as $page) {
@@ -45,7 +53,31 @@ class Auditor
 
         $this->auditRedirects($redirects);
         $this->auditDuplicates($groups);
+        $this->auditCanonicalTargets();
+        $this->auditSeoPlugins($platform);
         $this->flush();
+
+        $crawl->update(['health_score' => $this->healthScore()]);
+    }
+
+    /**
+     * 0-100. Every rule that fires costs part of its severity weight (30% for existing at all, the rest in
+     * proportion to the share of pages it affects), so one broken page matters, but a site-wide problem matters more.
+     */
+    private function healthScore(): int
+    {
+        $total = max(1, $this->crawl->pages()->where('state', 'done')->count());
+        $weights = ['high' => 12, 'medium' => 6, 'low' => 2, 'info' => 0];
+
+        $penalty = 0.0;
+        $perRule = $this->crawl->issues()->selectRaw('rule, severity, COUNT(DISTINCT page_id) as pages')->groupBy('rule', 'severity')->get();
+
+        foreach ($perRule as $row) {
+            $ratio = min(1, $row->pages / $total);
+            $penalty += $weights[$row->severity] * (0.3 + 0.7 * $ratio);
+        }
+
+        return (int) max(0, min(100, round(100 - $penalty)));
     }
 
     /**
@@ -62,7 +94,8 @@ class Auditor
         $status = $page->status_code;
 
         if ($status === null) {
-            $this->emit('fetch_failed', $page, $page->error);
+            $timedOut = stripos((string) $page->error, 'timed out') !== false || stripos((string) $page->error, 'error 28') !== false;
+            $this->emit($timedOut ? 'timeout' : 'fetch_failed', $page, $page->error);
 
             return;
         }
@@ -94,6 +127,22 @@ class Auditor
             $this->emit('http_page', $page);
         }
 
+        if ($page->mixed_content > 0) {
+            $this->emit('mixed_content', $page, $page->mixed_content.' HTTP kaynak');
+        }
+
+        if ($page->http_internal_links > 0) {
+            $this->emit('https_to_http_link', $page, $page->http_internal_links.' HTTP iç link');
+        }
+
+        if ($page->meta_refresh) {
+            $this->emit('meta_refresh', $page, $page->meta_refresh);
+        }
+
+        foreach (array_filter(explode(',', (string) $page->seo_plugin)) as $plugin) {
+            $this->seoPlugins[$plugin] ??= $page->id;
+        }
+
         $noindex = str_contains(strtolower((string) $page->meta_robots), 'noindex')
             || str_contains(strtolower((string) $page->x_robots), 'noindex');
 
@@ -103,6 +152,7 @@ class Auditor
             $this->emit('canonical_missing', $page);
         } elseif ($page->canonical !== $page->url) {
             $this->emit('canonical_other', $page, $page->canonical);
+            $this->canonicalTargets[$page->id] = sha1($page->canonical);
         }
 
         $this->auditUrl($page);
@@ -150,6 +200,22 @@ class Auditor
             if ((string) $page->h1 !== '') {
                 $groups['h1'][md5(mb_strtolower((string) $page->h1))][] = $page->id;
             }
+        }
+
+        if ($page->images_missing_alt > 0) {
+            $this->emit('images_missing_alt', $page, $page->images_missing_alt.' görselde alt yok');
+        }
+
+        if ($page->inlinks === 1 && $page->depth > 0) {
+            $this->emit('single_inlink', $page);
+        }
+
+        if ($wordpress && $page->page_type === 'attachment') {
+            $this->emit('wp_attachment_page', $page);
+        }
+
+        if ($wordpress && $page->page_type === 'archive' && $page->word_count !== null && $page->word_count < RuleCatalog::threshold('low_word_count')) {
+            $this->emit('wp_thin_archive', $page, "{$page->word_count} kelime");
         }
 
         if ($page->word_count !== null && $page->word_count < RuleCatalog::threshold('low_word_count')) {
@@ -232,6 +298,40 @@ class Auditor
                     $this->emitFor($rule, $id, count($ids).' sayfada aynı');
                 }
             }
+        }
+    }
+
+    private function auditCanonicalTargets(): void
+    {
+        if ($this->canonicalTargets === []) {
+            return;
+        }
+
+        $targets = [];
+        foreach (array_chunk(array_unique($this->canonicalTargets), 500) as $hashes) {
+            foreach ($this->crawl->pages()->whereIn('url_hash', $hashes)->get(['url_hash', 'url', 'state', 'status_code', 'meta_robots', 'x_robots']) as $target) {
+                $targets[$target->url_hash] = $target;
+            }
+        }
+
+        foreach ($this->canonicalTargets as $pageId => $hash) {
+            $target = $targets[$hash] ?? null;
+            if ($target === null || $target->state !== 'done') {
+                continue;
+            }
+
+            $noindex = str_contains(strtolower((string) $target->meta_robots.' '.(string) $target->x_robots), 'noindex');
+            if ($target->status_code !== 200 || $noindex) {
+                $this->emitFor('canonical_target_bad', $pageId, $target->url.($target->status_code !== 200 ? ' → HTTP '.($target->status_code ?? 'yanıt yok') : ' → noindex'));
+            }
+        }
+    }
+
+    private function auditSeoPlugins(bool $wordpress): void
+    {
+        if ($wordpress && count($this->seoPlugins) > 1) {
+            $start = $this->crawl->pages()->orderBy('depth')->orderBy('id')->value('id');
+            $this->emitFor('wp_multiple_seo_plugins', $start, implode(', ', array_keys($this->seoPlugins)));
         }
     }
 
