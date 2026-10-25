@@ -205,10 +205,25 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Onaylı değişiklikler: SEO title/meta, noindex, 301 yönlendirme, görsel alt metni
 - ○ Değişiklik günlüğü, çakışma koruması, tek tıkla geri alma
 - ○ Eklentinin kendi güncelleme kontrolü
+- ○ AI önerilerinin uygulayıcısı: Faz 7'de üretilen ve panelde onaylanan title/meta, alt metin, şema, SSS/kısa cevap bloğu, iç link önerilerini siteye yazar (LLM anahtarı eklentide değil, uygulamada durur)
 
 ## 8. Faz 7 · AI ve ileri analiz
 
-**AI destekli aksiyonlar (Claude API, uygulamada çalışır)**
+**AI katmanı: çoklu LLM bağlantısı (AI-0)**
+- ○ Ayarlar → AI sağlayıcıları: Anthropic (Claude), OpenAI, Google Gemini, Mistral ve OpenAI uyumlu uç noktalar (OpenRouter, yerel model); anahtarlar şifreli saklanır, istenince değiştirilir
+- ○ Görev bazlı model seçimi (ör. toplu alt metin için ucuz model, rapor özeti için güçlü model), varsayılan ve yedek sağlayıcı
+- ○ Bütçe ve kota: aylık harcama sınırı, proje başına kullanım, istek önbelleği (aynı sayfaya aynı soruyu tekrar sormaz)
+- ○ Tüm AI çıktıları öneridir: panelde onay/ret, düzenleme, kim neyi onayladı kaydı
+
+**AI kalite yorumu (AI-1)** — kontrollerin yalnızca varlığını değil kalitesini değerlendirir
+- ○ Title/meta: arama niyetine uygunluk, tıklanabilirlik, marka/anahtar kelime dengesi
+- ○ Alt metin: görselle ve bağlamla uyum (görsel modeli)
+- ○ Şema: içerikle tutarlılık, eksik ama eklenmesi gereken türler
+- ○ GEO/AEO: alıntılanabilirlik, doğrudan cevap kalitesi, E-E-A-T eksikleri, llms.txt içeriğinin yeterliliği
+- ○ İçerik: ince/yinelenen içerik, okunabilirlik, güncellik yorumu
+- ○ Her bulguya "neden önemli + somut öneri" metni, müşteri raporuna da aktarılabilir
+
+**AI destekli aksiyonlar (AI-0 üzerinden, uygulamada çalışır)**
 - ○ Title/meta yeniden yazım önerisi (GSC sorgularıyla), toplu inceleme ekranı
 - ○ Eksik alt metni önerisi (görsel + bağlam)
 - ○ İç link önerici (zayıf sayfalara, GSC fırsat sorgularıyla eşleşen kaynaklardan)
