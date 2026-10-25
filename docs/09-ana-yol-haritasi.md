@@ -44,16 +44,19 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ○ Tarama ilerleme göstergesi, durdur/devam et, eski taramaları otomatik silme (retention)
 - ○ 50.000 URL hedefi için performans testi
 
-**Kurallar** (✓ mevcut 34 kural: yanıt, yönlendirme, indekslenebilirlik, sayfa içi, URL, güvenlik, `wp_raw_url`)
-- ○ Kalan MVP kuralları ([04 §3.2](04-mvp-kapsami-ve-yol-haritasi.md)): yanıt vermeyen/zaman aşımı ayrımı, iç ve dış kırık link (kaynak sayfasıyla), meta refresh, X-Robots-Tag noindex, canonical hedefi non-200/noindex, sitemapte olup taranmayan URL
-- ○ Görseller: alt eksik, büyük dosya (>200 KB), kırık görsel, boyut özniteliği eksik
-- ○ Mimari: tek iç linkli sayfa, URL'de boşluk
-- ○ Güvenlik: mixed content, HTTPS sayfadan HTTP'ye iç link, güvensiz form
-- ○ WordPress temel: ek sayfaları, ince arşivler, birden fazla SEO eklentisi
+**Kurallar** (✓ mevcut 44 kural: yanıt, yönlendirme, indekslenebilirlik, sayfa içi, URL, güvenlik, `wp_raw_url`)
+- ✓ Zaman aşımı/yanıt vermeyen ayrımı, meta refresh, X-Robots-Tag noindex, canonical hedefi non-200/noindex
+- ○ Dış kırık link ve kırık iç linkin kaynak sayfa listesi, sitemapte olup taranmayan URL
+- ✓ Görseller: alt eksik
+- ○ Görseller: büyük dosya (>200 KB), kırık görsel, boyut özniteliği eksik
+- ✓ Mimari: tek iç linkli sayfa
+- ✓ Güvenlik: mixed content, HTTPS sayfadan HTTP'ye iç link
+- ○ Güvensiz form
+- ✓ WordPress temel: ek sayfaları, ince arşivler, birden fazla SEO eklentisi
 
 **Ekranlar ve rapor**
 - ◐ Tarama sonuçları: URL tablosu ve sorunlar ekranı
-- ○ Sağlık skoru (0-100)
+- ✓ Sağlık skoru (0-100): her tetiklenen kural önem ağırlığının %30'unu, kalanını etkilediği sayfa oranıyla orantılı düşürür
 - ○ Her URL'nin ayrıntı sayfası: başlıklar, gelen/giden linkler, bulgular
 - ○ CSV/XLSX export (tablo ve sorun bazında)
 - ○ Müşteri raporu: paylaşılabilir link (iptal edilebilir token) + PDF

@@ -21,6 +21,8 @@ class CrawlsTable
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => Crawl::STATUSES[$state] ?? $state)
                     ->color(fn (string $state): string => CrawlColors::status($state)),
+                TextColumn::make('health_score')->label('Skor')->placeholder('-')->badge()
+                    ->color(fn (?int $state): string => CrawlColors::health($state)),
                 TextColumn::make('pages_count')->label('URL')->numeric(),
                 TextColumn::make('issues_count')->label('Bulgu')->numeric(),
                 TextColumn::make('started_at')->label('Başlangıç')->dateTime('d.m.Y H:i')->sortable(),
