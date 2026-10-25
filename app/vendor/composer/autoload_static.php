@@ -770,6 +770,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Jobs\\CrawlBatch' => __DIR__ . '/../..' . '/app/Jobs/CrawlBatch.php',
         'App\\Models\\Client' => __DIR__ . '/../..' . '/app/Models/Client.php',
         'App\\Models\\Crawl' => __DIR__ . '/../..' . '/app/Models/Crawl.php',
+        'App\\Models\\CrawlImage' => __DIR__ . '/../..' . '/app/Models/CrawlImage.php',
         'App\\Models\\CrawlIssue' => __DIR__ . '/../..' . '/app/Models/CrawlIssue.php',
         'App\\Models\\CrawlLink' => __DIR__ . '/../..' . '/app/Models/CrawlLink.php',
         'App\\Models\\CrawlPage' => __DIR__ . '/../..' . '/app/Models/CrawlPage.php',

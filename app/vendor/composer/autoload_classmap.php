@@ -52,6 +52,7 @@ return array(
     'App\\Jobs\\CrawlBatch' => $baseDir . '/app/Jobs/CrawlBatch.php',
     'App\\Models\\Client' => $baseDir . '/app/Models/Client.php',
     'App\\Models\\Crawl' => $baseDir . '/app/Models/Crawl.php',
+    'App\\Models\\CrawlImage' => $baseDir . '/app/Models/CrawlImage.php',
     'App\\Models\\CrawlIssue' => $baseDir . '/app/Models/CrawlIssue.php',
     'App\\Models\\CrawlLink' => $baseDir . '/app/Models/CrawlLink.php',
     'App\\Models\\CrawlPage' => $baseDir . '/app/Models/CrawlPage.php',

@@ -55,6 +55,7 @@ class Auditor
         $this->auditDuplicates($groups);
         $this->auditCanonicalTargets();
         $this->auditSeoPlugins($platform);
+        $this->auditImages();
         $this->flush();
 
         $crawl->update(['health_score' => $this->healthScore()]);
@@ -333,6 +334,30 @@ class Auditor
             $start = $this->crawl->pages()->orderBy('depth')->orderBy('id')->value('id');
             $this->emitFor('wp_multiple_seo_plugins', $start, implode(', ', array_keys($this->seoPlugins)));
         }
+    }
+
+    private function auditImages(): void
+    {
+        $maxBytes = RuleCatalog::threshold('image_max_kb') * 1024;
+
+        DB::table('crawl_image_refs')
+            ->join('crawl_images', 'crawl_images.id', '=', 'crawl_image_refs.image_id')
+            ->where('crawl_image_refs.crawl_id', $this->crawl->id)
+            ->where('crawl_images.state', 'done')
+            ->where(fn ($q) => $q->where('crawl_images.status_code', '>=', 400)
+                ->orWhereNull('crawl_images.status_code')
+                ->orWhere('crawl_images.size_bytes', '>', $maxBytes))
+            ->select('crawl_image_refs.id', 'crawl_image_refs.page_id', 'crawl_images.url', 'crawl_images.status_code', 'crawl_images.size_bytes')
+            ->orderBy('crawl_image_refs.id')
+            ->chunk(500, function ($rows) use ($maxBytes) {
+                foreach ($rows as $row) {
+                    if ($row->status_code === null || $row->status_code >= 400) {
+                        $this->emitFor('image_broken', $row->page_id, ($row->status_code ? 'HTTP '.$row->status_code : 'Yanıt yok').': '.$row->url);
+                    } elseif ($row->size_bytes > $maxBytes) {
+                        $this->emitFor('image_too_large', $row->page_id, round($row->size_bytes / 1024).' KB: '.$row->url);
+                    }
+                }
+            });
     }
 
     private function emit(string $rule, CrawlPage $page, ?string $detail = null): void

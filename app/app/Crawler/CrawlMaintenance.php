@@ -59,7 +59,7 @@ class CrawlMaintenance
                 ->pluck('id');
 
             foreach ($old as $id) {
-                foreach (['crawl_links', 'crawl_issues', 'crawl_pages'] as $table) {
+                foreach (['crawl_links', 'crawl_issues', 'crawl_image_refs', 'crawl_images', 'crawl_pages'] as $table) {
                     do {
                         $ids = DB::table($table)->where('crawl_id', $id)->limit(self::DELETE_CHUNK)->pluck('id');
                         DB::table($table)->whereIn('id', $ids)->delete();
