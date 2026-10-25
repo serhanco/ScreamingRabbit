@@ -55,4 +55,28 @@ class Crawl extends Model
     {
         return in_array($this->status, ['pending', 'running'], true);
     }
+
+    /**
+     * How far a running crawl has got: pages done out of the pages found so far (capped by the URL limit) and the
+     * current step, in the order CrawlRunner works through them.
+     *
+     * @return array{done: int, total: int, percent: int, phase: string}
+     */
+    public function progress(): array
+    {
+        $done = $this->pages()->where('state', '!=', 'queued')->count();
+        $queued = $this->pages()->where('state', 'queued')->count();
+        $total = max($done, min($done + $queued, (int) ($this->settings['max_urls'] ?? PHP_INT_MAX)));
+
+        $phase = match (true) {
+            $this->status === 'pending' => 'Sırada, birazdan başlayacak',
+            $queued > 0 => 'Sayfalar taranıyor',
+            $this->images()->where('state', 'queued')->exists() => 'Görseller kontrol ediliyor',
+            collect($this->bot_access ?? [])->contains(fn ($bot) => $bot['fetch'] === 'pending') => 'Bot erişimi test ediliyor',
+            collect($this->wp_checks['probes'] ?? [])->contains(fn ($probe) => $probe['state'] === 'pending') => 'WordPress kontrolleri yapılıyor',
+            default => 'Sonuçlar hesaplanıyor',
+        };
+
+        return ['done' => $done, 'total' => $total, 'percent' => $total > 0 ? (int) floor($done / $total * 100) : 0, 'phase' => $phase];
+    }
 }

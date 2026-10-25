@@ -114,6 +114,23 @@ class CrawlPanelTest extends TestCase
             ->assertActionVisible('cancel');
     }
 
+    public function test_running_crawl_shows_progress(): void
+    {
+        [, $crawl] = $this->crawlWithIssue();
+        $crawl->update(['status' => 'running', 'settings' => ['max_urls' => 100]]);
+        foreach (['a', 'b', 'c'] as $path) {
+            CrawlPage::create(['crawl_id' => $crawl->id, 'url' => "https://example.com/{$path}", 'url_hash' => sha1($path), 'state' => 'queued']);
+        }
+
+        $this->assertSame(['done' => 1, 'total' => 4, 'percent' => 25, 'phase' => 'Sayfalar taranıyor'], $crawl->progress());
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->getKey()])
+            ->assertSee('Sayfalar taranıyor')
+            ->assertSee('1 / 4 URL')
+            ->call('refreshProgress')
+            ->assertOk();
+        Livewire::test(ListCrawls::class)->assertSee('%25 · Sayfalar taranıyor');
+    }
+
     public function test_share_action_creates_token_and_copies_link(): void
     {
         [, $crawl] = $this->crawlWithIssue();
