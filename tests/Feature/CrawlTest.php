@@ -182,6 +182,28 @@ class CrawlTest extends TestCase
         $this->assertStringContainsString('/img/gone.jpg', $crawl->issues()->where('rule', 'image_broken')->value('detail'));
     }
 
+    public function test_broken_external_links_are_reported(): void
+    {
+        Http::fake([
+            '*/robots.txt' => Http::response('', 404),
+            '*/sitemap*.xml' => Http::response('', 404),
+            '*/wp-sitemap.xml' => Http::response('', 404),
+            'gone.other.com/*' => Http::response('', 404),
+            'blocked.other.com/*' => Http::response('', 403),
+            'nohead.other.com/*' => fn ($request) => Http::response('', $request->method() === 'HEAD' ? 405 : 200),
+            '*' => Http::response($this->page('T', '<a href="https://gone.other.com/x">a</a><a href="https://blocked.other.com/x">b</a><a href="https://nohead.other.com/x">c</a><a href="mailto:a@b.c">m</a>'), 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+
+        $this->assertSame(3, \Illuminate\Support\Facades\DB::table('crawl_external_links')->where('crawl_id', $crawl->id)->count());
+        $this->assertSame(['HTTP 404: https://gone.other.com/x'], $crawl->issues()->where('rule', 'external_link_broken')->pluck('detail')->all());
+    }
+
     public function test_bot_access_is_checked_and_reported(): void
     {
         $robots = "User-agent: *\nAllow: /\n\nUser-agent: Bingbot\nDisallow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: PerplexityBot\nDisallow: /\n\nUser-agent: Applebot\nDisallow: /private\n";

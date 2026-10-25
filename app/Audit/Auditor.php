@@ -56,6 +56,7 @@ class Auditor
         $this->auditCanonicalTargets();
         $this->auditSeoPlugins($platform);
         $this->auditImages();
+        $this->auditExternalLinks();
         $this->auditBotAccess();
         $this->auditAiReadiness();
         if ($platform) {
@@ -353,6 +354,23 @@ class Auditor
         }
     }
 
+    private function auditExternalLinks(): void
+    {
+        DB::table('crawl_external_refs')
+            ->join('crawl_external_links', 'crawl_external_links.id', '=', 'crawl_external_refs.link_id')
+            ->where('crawl_external_refs.crawl_id', $this->crawl->id)
+            ->where('crawl_external_links.state', 'done')
+            ->where(fn ($q) => $q->where(fn ($q) => $q->where('crawl_external_links.status_code', '>=', 400)->whereNotIn('crawl_external_links.status_code', self::EXTERNAL_BLOCKED))
+                ->orWhereNull('crawl_external_links.status_code'))
+            ->select('crawl_external_refs.id', 'crawl_external_refs.page_id', 'crawl_external_links.url', 'crawl_external_links.status_code')
+            ->orderBy('crawl_external_refs.id')
+            ->chunk(500, function ($rows) {
+                foreach ($rows as $row) {
+                    $this->emitFor('external_link_broken', $row->page_id, ($row->status_code ? 'HTTP '.$row->status_code : 'Yanıt yok').': '.$row->url);
+                }
+            });
+    }
+
     private function auditImages(): void
     {
         $maxBytes = RuleCatalog::threshold('image_max_kb') * 1024;
@@ -400,6 +418,12 @@ class Auditor
             }
         }
     }
+
+    /**
+     * Statuses that say only "this site turns bots away" (login walls, bot protection, LinkedIn's 999), not that the
+     * link is broken, so they are not reported.
+     */
+    private const EXTERNAL_BLOCKED = [401, 403, 429, 999];
 
     private const ENTITY_TYPES = '/^(Organization|Corporation|LocalBusiness|Person|OnlineBusiness|OnlineStore|Store|Restaurant|ProfessionalService|MedicalOrganization|MedicalBusiness|Dentist|Physician|EducationalOrganization|NewsMediaOrganization|NGO|LegalService|Attorney|HealthAndBeautyBusiness|HomeAndConstructionBusiness|AutomotiveBusiness|FinancialService|RealEstateAgent|TravelAgency|LodgingBusiness|Hotel|SportsActivityLocation|EntertainmentBusiness|FoodEstablishment)$/';
 

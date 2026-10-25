@@ -41,6 +41,9 @@ return [
         'user_agent' => 'ScreamingRabbit/1.0 (+'.env('APP_URL', 'http://localhost').'/bot)',
         'include' => '',
         'exclude' => '',
+        // Outgoing links to other sites are checked once each after the crawl, at most this many per crawl.
+        'check_external' => true,
+        'max_external' => 500,
     ],
 
     // Ready-made User-Agent strings offered in the project form; any other value can still be typed.

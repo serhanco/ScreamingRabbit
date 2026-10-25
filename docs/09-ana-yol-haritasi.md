@@ -46,7 +46,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 
 **Kurallar** (✓ mevcut 44 kural: yanıt, yönlendirme, indekslenebilirlik, sayfa içi, URL, güvenlik, `wp_raw_url`)
 - ✓ Zaman aşımı/yanıt vermeyen ayrımı, meta refresh, X-Robots-Tag noindex, canonical hedefi non-200/noindex
-- ○ Dış kırık link ve kırık iç linkin kaynak sayfa listesi, sitemapte olup taranmayan URL
+- ◐ Dış kırık link ✓ (taramada en fazla 500, botları engelleyen siteler hariç); kırık iç linkin kaynak sayfa listesi, sitemapte olup taranmayan URL ○
 - ✓ Görseller: alt eksik
 - ✓ Görseller: büyük dosya (>100 KB, Screaming Frog varsayılanı), kırık görsel
 - ✓ Görseller: boyut özniteliği (width/height) eksik, CLS riski

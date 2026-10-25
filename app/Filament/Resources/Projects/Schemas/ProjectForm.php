@@ -78,6 +78,10 @@ class ProjectForm
                         Toggle::make('crawl_settings.respect_robots')
                             ->label('robots.txt kurallarına uy')
                             ->default($defaults['respect_robots']),
+                        Toggle::make('crawl_settings.check_external')
+                            ->label('Dış linkleri kontrol et')
+                            ->helperText('Başka sitelere verilen linkler tarama sonunda bir kez kontrol edilir (en fazla '.$defaults['max_external'].').')
+                            ->default($defaults['check_external']),
                         Textarea::make('crawl_settings.include')
                             ->label('Sadece şunları tara')
                             ->rows(3)
