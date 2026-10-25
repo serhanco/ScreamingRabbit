@@ -38,6 +38,7 @@ class PagesRelationManager extends RelationManager
                 TextColumn::make('depth')->label('Derinlik')->sortable()->toggleable(),
                 TextColumn::make('inlinks')->label('İç link')->numeric()->sortable()->toggleable(),
                 TextColumn::make('response_ms')->label('Süre (ms)')->numeric()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('schema_types')->label('Şema')->limit(40)->placeholder('—')->toggleable(),
                 IconColumn::make('in_sitemap')->label('Sitemap')->boolean()->toggleable(),
                 TextColumn::make('redirect_to')->label('Yönlendirme')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])

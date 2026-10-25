@@ -57,6 +57,7 @@ class Auditor
         $this->auditSeoPlugins($platform);
         $this->auditImages();
         $this->auditBotAccess();
+        $this->auditAiReadiness();
         $this->flush();
 
         $crawl->update(['health_score' => $this->healthScore()]);
@@ -202,6 +203,10 @@ class Auditor
             if ((string) $page->h1 !== '') {
                 $groups['h1'][md5(mb_strtolower((string) $page->h1))][] = $page->id;
             }
+        }
+
+        if ($page->schema_errors > 0) {
+            $this->emit('schema_invalid_json', $page, $page->schema_errors.' JSON-LD bloğu okunamadı');
         }
 
         if ($page->images_missing_alt > 0) {
@@ -382,6 +387,28 @@ class Auditor
             if ($refused->isNotEmpty()) {
                 $this->emit('bot_fetch_refused', $home, $refused->implode(', '));
             }
+        }
+    }
+
+    private const ENTITY_TYPES = '/^(Organization|Corporation|LocalBusiness|Person|OnlineBusiness|OnlineStore|Store|Restaurant|ProfessionalService|MedicalOrganization|MedicalBusiness|Dentist|Physician|EducationalOrganization|NewsMediaOrganization|NGO|LegalService|Attorney|HealthAndBeautyBusiness|HomeAndConstructionBusiness|AutomotiveBusiness|FinancialService|RealEstateAgent|TravelAgency|LodgingBusiness|Hotel|SportsActivityLocation|EntertainmentBusiness|FoodEstablishment)$/';
+
+    private function auditAiReadiness(): void
+    {
+        $home = $this->crawl->pages()->where('depth', 0)->orderBy('id')->first();
+        if ($home === null || $home->status_code !== 200) {
+            return;
+        }
+
+        $types = array_filter(explode(',', (string) $home->schema_types));
+        if (! collect($types)->contains(fn ($type) => preg_match(self::ENTITY_TYPES, $type))) {
+            $this->emit('home_missing_organization_schema', $home, $types === [] ? 'Şema yok' : 'Bulunan: '.implode(', ', $types));
+        }
+
+        $llms = $this->crawl->llms_txt['status'] ?? null;
+        if ($llms === 'missing') {
+            $this->emit('llms_txt_missing', $home);
+        } elseif ($llms === 'invalid') {
+            $this->emit('llms_txt_invalid', $home);
         }
     }
 
