@@ -29,7 +29,7 @@ Adımlar:
    - Klasör: boş bırak (`public_html`'e kurulur)
    Oluştur'a, sonra **Deploy**'a bas.
 3. Tarayıcıda `https://hekimdijital.com` aç. Seni kurulum sayfasına yönlendirir.
-4. Kurulum sayfasındaki **kurulum anahtarı** için File Manager'da `public_html/app/storage/app/install.key` dosyasını aç, içindeki metni kopyala ve forma yapıştır.
+4. Kurulum sayfasındaki **kurulum anahtarı** için File Manager'da `domains/hekimdijital.com/screamingrabbit-data/storage/app/install.key` dosyasını aç, içindeki metni kopyala ve forma yapıştır.
 5. Formu doldur: veritabanı sunucusu `localhost`, hPanel'de oluşturduğun veritabanı adı, kullanıcı ve şifre, kendi e-postan ve en az 12 karakterlik bir şifre. **Kurulumu başlat.**
 6. Sayfa sana bir **cron komutu** gösterir. hPanel → **Advanced → Cron Jobs** → her dakika çalışan yeni bir görev olarak ekle.
 7. `https://hekimdijital.com/admin` adresinde giriş yap. İlk girişte telefondaki doğrulama uygulamasını (Google Authenticator, Authy vb.) kurmanı ister: QR kodu okut ve **kurtarma kodlarını güvenli bir yere kaydet.**

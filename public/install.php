@@ -42,7 +42,7 @@ if ($basePath === false || ! is_file($basePath.'/vendor/autoload.php')) {
 
 require $basePath.'/vendor/autoload.php';
 
-$installer = new Installer($basePath);
+$installer = new Installer($basePath, App\Support\DataDir::resolve($basePath));
 $installer->ensureKey();
 
 if ($installer->isInstalled()) {
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         usleep(random_int(300000, 600000)); // makes guessing the install key slower
 
         if (! $installer->verifyKey($input['key'])) {
-            throw new RuntimeException('Kurulum anahtarı hatalı. Anahtar, app/storage/app/install.key dosyasının içindedir.');
+            throw new RuntimeException('Kurulum anahtarı hatalı. Anahtar, screamingrabbit-data/storage/app/install.key dosyasının içindedir.');
         }
         if ($input['db_name'] === '' || $input['db_user'] === '') {
             throw new RuntimeException('Veritabanı adı ve kullanıcı adı gerekli.');
@@ -157,7 +157,7 @@ $field = fn (string $name, string $label, string $type = 'text', string $hint = 
 page('ScreamingRabbit kurulumu', '<h1>ScreamingRabbit kurulumu</h1>'
     .($error !== null ? '<div class="err">'.e($error).'</div>' : '')
     .'<form method="post" autocomplete="off">'
-    .$field('key', 'Kurulum anahtarı', 'text', 'Dosya Yöneticisi\'nde app/storage/app/install.key dosyasını açın, içindeki metni buraya yapıştırın.')
+    .$field('key', 'Kurulum anahtarı', 'text', 'Dosya Yöneticisi\'nde screamingrabbit-data/storage/app/install.key dosyasını açın, içindeki metni buraya yapıştırın.')
     .'<h2>Veritabanı</h2>'
     .$field('db_host', 'Sunucu', 'text', 'Hostinger\'da genellikle localhost')
     .$field('db_name', 'Veritabanı adı')
