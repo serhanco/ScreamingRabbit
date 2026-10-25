@@ -100,12 +100,12 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Sayfa tablosuna GSC sütunları: tıklama, gösterim, CTR, pozisyon (son 28 gün)
 
 **GSC'den türeyen analizler ([04 §4.2](04-mvp-kapsami-ve-yol-haritasi.md))**
-- ○ Trafik alan sayfada teknik sorun (öncelik yükseltme)
-- ○ Yüksek gösterim / düşük CTR
-- ○ Fırsat sorguları (pozisyon 8-20)
-- ○ Kannibalizasyon
-- ○ Düşen sayfalar, zombi sayfalar, yetim sayfalar (GSC'de var, iç linki yok)
-- ○ İndeks tutarsızlığı (Google canonical ≠ bizim, "taranmış, indekslenmemiş")
+- ○ Trafik alan sayfada teknik sorun (öncelik yükseltme; iş listesiyle birlikte)
+- ✓ Yüksek gösterim / düşük CTR (pozisyona göre beklenen CTR'nin yarısının altı)
+- ✓ Fırsat sorguları (pozisyon 8-20)
+- ✓ Kannibalizasyon
+- ✓ Düşen sayfalar, zombi sayfalar, yetim sayfalar (GSC'de var, iç linki yok) · proje başına "Search Console fırsatları" sayfası
+- ✓ İndeks tutarsızlığı (Google canonical ≠ bizim, "taranmış, indekslenmemiş")
 
 **İş listesi ([04 §4.3](04-mvp-kapsami-ve-yol-haritasi.md))**
 - ○ Bulgulardan ve GSC analizlerinden otomatik aksiyon, tekrar etmeyen güncelleme
