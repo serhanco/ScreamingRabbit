@@ -88,4 +88,29 @@ class CrawlPanelTest extends TestCase
         @unlink($marker);
         @unlink(storage_path('app/migrate.lock'));
     }
+
+    public function test_finished_crawl_offers_recrawl_not_refresh(): void
+    {
+        Queue::fake();
+        [$project, $crawl] = $this->crawlWithIssue();
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->getKey()])
+            ->assertActionHidden('refresh')
+            ->assertActionVisible('recrawl')
+            ->callAction('recrawl');
+
+        $this->assertSame(2, $project->crawls()->count());
+        Queue::assertPushed(CrawlBatch::class);
+    }
+
+    public function test_running_crawl_offers_refresh_and_stop(): void
+    {
+        [, $crawl] = $this->crawlWithIssue();
+        $crawl->update(['status' => 'running']);
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->getKey()])
+            ->assertActionVisible('refresh')
+            ->assertActionHidden('recrawl')
+            ->assertActionVisible('cancel');
+    }
 }
