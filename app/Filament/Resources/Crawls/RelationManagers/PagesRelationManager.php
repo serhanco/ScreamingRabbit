@@ -13,6 +13,9 @@ use Filament\Tables\Table;
 
 class PagesRelationManager extends RelationManager
 {
+    // Load the tab content together with the page instead of after a delay.
+    protected static bool $isLazy = false;
+
     protected static string $relationship = 'pages';
 
     protected static ?string $title = 'URL listesi';
