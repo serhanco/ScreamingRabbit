@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Projects\Schemas;
 
+use App\Google\GoogleClient;
 use App\Models\Project;
 use Filament\Forms\Components\Select;
 use App\Crawler\UrlFilter;
@@ -47,6 +48,12 @@ class ProjectForm
                             ->default('wordpress')
                             ->required()
                             ->helperText('WordPress seçilirse WordPress\'e özel denetimler de çalışır.'),
+                        Select::make('gsc_property')
+                            ->label('Search Console mülkü')
+                            ->options(fn (): array => rescue(fn () => GoogleClient::sites(), [], false))
+                            ->searchable()
+                            ->placeholder('Bağlı değil')
+                            ->helperText(fn (): string => GoogleClient::connected() ? 'Tıklama ve gösterim verileri bu mülkten günlük çekilir.' : 'Önce "Google bağlantısı" sayfasından Google hesabını bağla.'),
                     ]),
                 Section::make('Tarama ayarları')
                     ->description('Boş bırakılan alanlar varsayılan değeri kullanır. Müşteri sitesini yormamak için düşük değerlerle başlayın.')
