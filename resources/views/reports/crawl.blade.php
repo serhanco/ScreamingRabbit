@@ -1,6 +1,8 @@
 @php
     $color = fn (?int $s) => $s === null ? '#6b7280' : ($s >= 80 ? '#15803d' : ($s >= 50 ? '#b45309' : '#b91c1c'));
     $sevColor = ['high' => '#b91c1c', 'medium' => '#b45309', 'low' => '#1d4ed8', 'info' => '#6b7280'];
+    // Embedded so the PDF renderer, which never fetches remote files, shows it too.
+    $logo = 'data:image/svg+xml;base64,'.base64_encode(file_get_contents(public_path('images/logo-mark.svg')));
 @endphp
 <!doctype html>
 <html lang="tr">
@@ -8,6 +10,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <title>SEO Raporu · {{ $report['project'] }}</title>
     <style>
         body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 12px; color: #1f2937; margin: 0; padding: {{ $forPdf ? '0' : '24px' }}; background: {{ $forPdf ? '#fff' : '#f3f4f6' }}; }
@@ -27,6 +30,9 @@
         .footer { margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 10px; color: #6b7280; }
         a { color: #c2410c; }
         .actions { margin-bottom: 14px; }
+        .brandbar { border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 18px; }
+        .brandbar td { vertical-align: middle; }
+        .wordmark { font-size: 17px; font-weight: bold; color: #1f2937; }
         @media print { body { background: #fff; padding: 0; } .actions { display: none; } }
     </style>
 </head>
@@ -35,6 +41,12 @@
     @unless ($forPdf)
         <div class="actions"><a href="{{ url()->current() }}/pdf">PDF olarak indir</a></div>
     @endunless
+
+    <table class="brandbar" style="width:100%"><tr>
+        <td style="width:40px"><img src="{{ $logo }}" width="34" height="34" alt=""></td>
+        <td><span class="wordmark">Screaming<span style="color:#ea580c">Rabbit</span></span></td>
+        <td style="text-align:right" class="muted">Bir <a href="{{ $report['brand']['url'] }}">{{ $report['brand']['name'] }}</a> ürünü</td>
+    </tr></table>
 
     <h1>SEO Teknik Denetim Raporu</h1>
     <table class="meta">
@@ -82,6 +94,7 @@
     @endforelse
 
     <div class="footer">
+        <img src="{{ $logo }}" width="14" height="14" alt="" style="vertical-align:middle">
         Bu rapor {{ $report['brand']['product'] }} ile hazırlanmıştır ·
         <a href="{{ $report['brand']['url'] }}">Bir {{ $report['brand']['name'] }} ürünü</a> ·
         <a href="{{ $report['brand']['url'] }}">{{ preg_replace('#^https?://#', '', $report['brand']['url']) }}</a>
