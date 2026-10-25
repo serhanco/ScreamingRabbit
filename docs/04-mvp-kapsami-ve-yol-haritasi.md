@@ -1,6 +1,8 @@
 # 04 · Konumlandırma, MVP Kapsamı ve Yol Haritası
 
 > Durum tarihi: 24 Ekim 2026
+> **Ana plan artık [09 · Ana yol haritası](09-ana-yol-haritasi.md).** Buradaki "3. adım" = Faz 1, "4. adım" = Faz 3-4, "P2 havuzu" = Faz 5-7. Bu doküman kural kataloğu ve GSC kuralları için ayrıntı kaynağı olarak kalır.
+>
 > Bu doküman [01](01-screaming-frog-ozellik-envanteri.md), [02](02-rakip-analizi.md) ve [03](03-karsilastirma-matrisi.md) dokümanlarının sonucudur. Teknik mimari (dil, veritabanı, kuyruk, sunucu) **2. adımda** ayrı bir dokümanda ele alınacak. Burada yalnızca "ne" yapılacağı var, "nasıl" yapılacağı yok.
 
 ## 1. Konumlandırma

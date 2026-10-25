@@ -12,17 +12,24 @@ ScreamingRabbit, SEO danışmanının müşteri sitelerini kendi sunucusunda sü
 | 06 | [Kurulum kılavuzu (Hostinger)](06-kurulum-hostinger.md) | Adım adım kurulum, cron, güncelleme ve taşıma (taslak) |
 | 07 | [WordPress modülü](07-wordpress-modulu.md) | WP'ye özel dış SEO/güvenlik kontrolleri, bağlantı eklentisi, güvenlik modeli, fazlar |
 | 08 | [İzleme ve bildirimler](08-izleme-ve-bildirimler.md) | Erişilebilirlik (uptime) izleyici, kesinti kaydı, e-posta/Telegram uyarıları, uptime raporu |
+| 09 | [Ana yol haritası](09-ana-yol-haritasi.md) | Tüm fazlar ve her fazdaki özellikler, Screaming Frog kapsama özeti |
 
 ## Yol haritası
 
-1. Araştırma ve özellik dokümanları ✓
-2. Mimari ve sunucu kararı ✓
-3. **MVP: crawler ve temel denetimler** ← sırada (sonunda WordPress WP-1)
-4. GSC, aksiyon listeleri ve otomasyon (önce uptime izleyici M-1; WordPress WP-2, WP-3; bildirim merkezi M-2)
+Ayrıntı: [09 · Ana yol haritası](09-ana-yol-haritasi.md)
+
+0. Araştırma, mimari, kurulum ✓
+1. **Temel teknik denetim (MVP)** ← sürüyor
+2. Hızlı kazançlar: WordPress dış kontroller + uptime izleyici
+3. GSC ve iş listesi
+4. Otomasyon, değişiklik takibi, raporlama
+5. Derin teknik denetim (Screaming Frog eşitliği)
+6. WordPress bağlantı eklentisi
+7. AI ve ileri analiz
 
 ## Öncelik etiketleri
 
-- **P0**: MVP (3. adım)
-- **P1**: GSC ve otomasyon (4. adım)
-- **P2**: Sonraki sürümler
+- **P0**: MVP (Faz 1)
+- **P1**: GSC, otomasyon ve derin denetim (Faz 2-5)
+- **P2**: Sonraki sürümler (Faz 6-7)
 - **—**: Kapsam dışı
