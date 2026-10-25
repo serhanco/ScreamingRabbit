@@ -34,6 +34,7 @@ class CrawlTest extends TestCase
         $this->assertNull(UrlNormalizer::resolve('#top', $base));
         $this->assertTrue(UrlNormalizer::isInternal('https://www.example.com/x', 'https://example.com'));
         $this->assertTrue(UrlNormalizer::isAsset('https://example.com/a/file.PDF'));
+        $this->assertTrue(UrlNormalizer::isAsset('https://example.com/cdn-cgi/l/email-protection'));
     }
 
     public function test_robots_longest_rule_wins(): void
