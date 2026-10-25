@@ -3,26 +3,38 @@
 namespace App\Monitoring;
 
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Delivers alerts by e-mail (SMTP account from the settings page) and Telegram (bot token + chat id).
+ * Delivers alerts to every user who wants that kind: by e-mail through the shared SMTP mailbox and by Telegram
+ * through the shared bot, each to the user's own address and chat.
  */
 class Channels
 {
     /**
-     * @return array<string, bool|null> channel => true sent, false failed, null not configured
+     * @return array<int, array<string, bool|null>> user id => channel results
      */
-    public static function deliver(string $title, string $body): array
+    public static function deliver(string $kind, string $title, string $body): array
     {
-        return ['email' => self::email($title, $body), 'telegram' => self::telegram($title, $body)];
+        return User::query()->orderBy('id')->get()
+            ->filter(fn (User $user) => $user->wantsAlert($kind))
+            ->mapWithKeys(fn (User $user) => [$user->id => self::toUser($user, $title, $body)])
+            ->all();
     }
 
-    public static function email(string $title, string $body): ?bool
+    /**
+     * @return array<string, bool|null> channel => true sent, false failed, null not configured
+     */
+    public static function toUser(User $user, string $title, string $body): array
     {
-        $to = Setting::get('alert_email');
+        return ['email' => self::email($user->alert_email, $title, $body), 'telegram' => self::telegram($user->telegram_chat_id, $title, $body)];
+    }
+
+    public static function email(?string $to, string $title, string $body): ?bool
+    {
         $username = Setting::get('smtp_username');
         if (! $to || ! $username) {
             return null;
@@ -59,10 +71,9 @@ class Channels
         return $options;
     }
 
-    public static function telegram(string $title, string $body): ?bool
+    public static function telegram(?string $chat, string $title, string $body): ?bool
     {
         $token = Setting::get('telegram_bot_token');
-        $chat = Setting::get('telegram_chat_id');
         if (! $token || ! $chat) {
             return null;
         }

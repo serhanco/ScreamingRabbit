@@ -89,7 +89,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Saatlik "hâlâ kapalı" hatırlatması
 - ✓ SSL bitiş uyarısı, dış kalp atışı servisi (uygulamanın kendisi için)
 - ✓ Panelde 90 günlük uptime şeridi
-- ○ Kullanıcı başına bildirim: her üyenin kendi uyarı e-postası, kendi Telegram sohbeti (tek ortak bot) ve hangi uyarıları alacağı; gönderen posta kutusu ve bot anahtarı ortak
+- ✓ Kullanıcı başına bildirim: her üyenin kendi uyarı e-postası, kendi Telegram sohbeti (tek ortak bot) ve hangi uyarıları alacağı; gönderen posta kutusu ve bot anahtarı ortak
 
 ## 4. Faz 3 · GSC ve iş listesi (ana farklılaştırıcı)
 
