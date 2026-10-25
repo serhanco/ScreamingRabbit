@@ -22,6 +22,9 @@ return [
         'grafit' => ['label' => 'Grafit', 'primary' => 'Slate', 'gray' => 'Zinc'],
     ],
 
+    // How many finished crawls to keep per project; older ones are deleted every night to save database space.
+    'crawl_retention' => (int) env('CRAWL_RETENTION', 10),
+
     // Default crawl settings for a new project. Politeness defaults are deliberately conservative
     // so that crawling client sites on shared hosting stays safe (see docs/05 section 5.3).
     'crawl_defaults' => [
