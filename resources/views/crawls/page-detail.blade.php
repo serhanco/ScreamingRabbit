@@ -22,6 +22,18 @@
         @endforelse
     </section>
 
+    @if ($detail['queries']->isNotEmpty())
+        <section>
+            <h3 class="font-semibold mb-2">Google'da gösterildiği sorgular (son 28 gün)</h3>
+            <table class="w-full">
+                <tr class="text-left opacity-70"><th>Sorgu</th><th>Tıklama</th><th>Gösterim</th><th>Pozisyon</th></tr>
+                @foreach ($detail['queries'] as $q)
+                    <tr><td class="pe-2">{{ $q->query }}</td><td>{{ $q->clicks }}</td><td>{{ $q->impressions }}</td><td>{{ number_format((float) $q->position, 1, ',', '.') }}</td></tr>
+                @endforeach
+            </table>
+        </section>
+    @endif
+
     <section>
         <h3 class="font-semibold mb-2">Gelen linkler ({{ $detail['inlinks']->count() }})</h3>
         <ul class="list-disc ps-5 break-all">@forelse ($detail['inlinks'] as $u)<li>{{ $u }}</li>@empty<li class="opacity-70">Yok</li>@endforelse</ul>
