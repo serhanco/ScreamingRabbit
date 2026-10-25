@@ -56,6 +56,7 @@ class Auditor
         $this->auditCanonicalTargets();
         $this->auditSeoPlugins($platform);
         $this->auditImages();
+        $this->auditBotAccess();
         $this->flush();
 
         $crawl->update(['health_score' => $this->healthScore()]);
@@ -358,6 +359,30 @@ class Auditor
                     }
                 }
             });
+    }
+
+    private function auditBotAccess(): void
+    {
+        $rows = $this->crawl->bot_access ?? [];
+        $home = $this->crawl->pages()->where('depth', 0)->orderBy('id')->first();
+        if ($rows === [] || $home === null) {
+            return;
+        }
+
+        $rules = ['search' => 'search_bot_blocked', 'ai_search' => 'ai_search_bot_blocked', 'ai_training' => 'ai_training_bot_blocked'];
+        foreach ($rules as $kind => $rule) {
+            $blocked = collect($rows)->where('kind', $kind)->where('robots_allowed', false)->pluck('name');
+            if ($blocked->isNotEmpty()) {
+                $this->emit($rule, $home, $blocked->implode(', '));
+            }
+        }
+
+        if ($home->status_code === 200) {
+            $refused = collect($rows)->where('fetch', 'refused')->map(fn ($row) => $row['name'].' ('.$row['status'].')');
+            if ($refused->isNotEmpty()) {
+                $this->emit('bot_fetch_refused', $home, $refused->implode(', '));
+            }
+        }
     }
 
     private function emit(string $rule, CrawlPage $page, ?string $detail = null): void

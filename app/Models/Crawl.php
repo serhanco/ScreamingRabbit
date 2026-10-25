@@ -23,6 +23,7 @@ class Crawl extends Model
         return [
             'settings' => 'array',
             'sitemap_found' => 'boolean',
+            'bot_access' => 'array',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];

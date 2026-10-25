@@ -25,6 +25,8 @@ class CrawlRunner
 
     private const MAX_IMAGES_PER_PAGE = 100;
 
+    private const BOT_TIMEOUT_SECONDS = 8;
+
     private array $settings;
 
     private ?UrlFilter $filter = null;
@@ -82,6 +84,10 @@ class CrawlRunner
                     ->limit(max(1, (int) $this->settings['concurrency']) * 2)->get();
 
                 if ($images->isEmpty()) {
+                    if ($this->checkBots()) {
+                        continue;
+                    }
+
                     $this->finish();
 
                     return false;
@@ -114,6 +120,7 @@ class CrawlRunner
         $robots = new RobotsTxt((string) $robotsBody, 'screamingrabbit');
 
         $this->addPage($start, 0);
+        $this->crawl->bot_access = BotAccess::fromRobots($robotsBody, $start);
 
         $candidates = $robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml'];
         $limit = (int) $this->settings['max_urls'];
@@ -355,6 +362,25 @@ class CrawlRunner
         } elseif ($inSitemap) {
             CrawlPage::where('crawl_id', $this->crawl->id)->where('url_hash', $hash)->update(['in_sitemap' => true]);
         }
+    }
+
+    /**
+     * Runs one round of bot access requests against the start page; false once none are left.
+     */
+    private function checkBots(): bool
+    {
+        $rows = $this->crawl->bot_access ?? [];
+        $tokens = array_slice(BotAccess::pending($rows), 0, max(1, (int) $this->settings['concurrency']));
+        if ($tokens === []) {
+            return false;
+        }
+
+        $start = $this->crawl->pages()->where('depth', 0)->orderBy('id')->value('url') ?? $this->crawl->project->base_url;
+        $this->crawl->bot_access = BotAccess::fetch($rows, $tokens, $start, self::BOT_TIMEOUT_SECONDS);
+        $this->crawl->save();
+        usleep(max(0, (int) $this->settings['delay_ms']) * 1000);
+
+        return true;
     }
 
     private function filter(): UrlFilter

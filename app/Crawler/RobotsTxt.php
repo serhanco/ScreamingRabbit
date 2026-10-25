@@ -3,7 +3,8 @@
 namespace App\Crawler;
 
 /**
- * Minimal robots.txt reader: picks the group for our user agent (or "*"), longest matching rule wins, Allow wins ties.
+ * Minimal robots.txt reader: picks the group whose User-agent equals the bot's product token (or "*"),
+ * longest matching rule wins, Allow wins ties (RFC 9309).
  */
 class RobotsTxt
 {
@@ -47,7 +48,7 @@ class RobotsTxt
         $chosen = null;
         foreach ($groups as $group) {
             foreach ($group['agents'] as $agent) {
-                if ($agent !== '*' && str_contains($agentToken, $agent)) {
+                if ($agent !== '*' && $agent === strtolower($agentToken)) {
                     $chosen = $group;
                     break 2;
                 }
