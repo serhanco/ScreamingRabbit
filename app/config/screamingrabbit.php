@@ -1,6 +1,13 @@
 <?php
 
 return [
+    // Attribution shown in client reports, the admin panel and other public places.
+    'brand' => [
+        'name' => env('BRAND_NAME', 'Serhan Demirel'),
+        'url' => env('BRAND_URL', 'https://serhandemirel.com'),
+        'product' => 'ScreamingRabbit',
+    ],
+
     // Default crawl settings for a new project. Politeness defaults are deliberately conservative
     // so that crawling client sites on shared hosting stays safe (see docs/05 section 5.3).
     'crawl_defaults' => [
