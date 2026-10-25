@@ -84,7 +84,7 @@ class CrawlRunner
                     ->limit(max(1, (int) $this->settings['concurrency']) * 2)->get();
 
                 if ($images->isEmpty()) {
-                    if ($this->checkBots()) {
+                    if ($this->checkBots() || $this->checkWordPress()) {
                         continue;
                     }
 
@@ -207,6 +207,10 @@ class CrawlRunner
             }
         } elseif ($status === 200 && str_contains($contentType, 'html')) {
             $body = mb_strcut($response->body(), 0, self::MAX_BODY_BYTES);
+            if ($page->depth === 0) {
+                $this->crawl->wp_checks = ['inventory' => WordPressProbe::inventory($body)];
+                $this->crawl->save();
+            }
             $update['size_bytes'] = strlen($body);
             $parsed = HtmlParser::parse($body, $page->url);
 
@@ -380,6 +384,45 @@ class CrawlRunner
 
         $start = $this->crawl->pages()->where('depth', 0)->orderBy('id')->value('url') ?? $this->crawl->project->base_url;
         $this->crawl->bot_access = BotAccess::fetch($rows, $tokens, $start, self::BOT_TIMEOUT_SECONDS);
+        $this->crawl->save();
+        usleep(max(0, (int) $this->settings['delay_ms']) * 1000);
+
+        return true;
+    }
+
+    /**
+     * Runs one round of the external WordPress checks; false once none are left or the site is not WordPress.
+     */
+    private function checkWordPress(): bool
+    {
+        $checks = $this->crawl->wp_checks ?? [];
+        if (($checks['skipped'] ?? false) === true) {
+            return false;
+        }
+
+        if (! isset($checks['probes'])) {
+            $isWordPress = $this->crawl->project->platform === 'wordpress' || $this->crawl->pages()->where('wordpress_hint', true)->exists();
+            if (! $isWordPress) {
+                $this->crawl->wp_checks = ['skipped' => true];
+                $this->crawl->save();
+
+                return false;
+            }
+            $checks['inventory'] ??= ['plugins' => [], 'themes' => []];
+            $checks['probes'] = WordPressProbe::initial($checks['inventory']);
+        }
+
+        $pending = array_keys(array_filter($checks['probes'], fn ($probe) => $probe['state'] === 'pending'));
+        if ($pending === []) {
+            return false;
+        }
+
+        $start = $this->crawl->pages()->where('depth', 0)->orderBy('id')->value('url') ?? $this->crawl->project->base_url;
+        $origin = parse_url($start, PHP_URL_SCHEME).'://'.parse_url($start, PHP_URL_HOST);
+        $keys = array_slice($pending, 0, max(1, (int) $this->settings['concurrency']) * 2);
+
+        $checks['probes'] = WordPressProbe::run($checks['probes'], $keys, $origin, $this->settings['user_agent'], self::BOT_TIMEOUT_SECONDS);
+        $this->crawl->wp_checks = $checks;
         $this->crawl->save();
         usleep(max(0, (int) $this->settings['delay_ms']) * 1000);
 

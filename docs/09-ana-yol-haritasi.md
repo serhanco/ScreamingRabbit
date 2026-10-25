@@ -65,10 +65,11 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 ## 3. Faz 2 · Hızlı kazançlar
 
 **WordPress dış kontroller (WP-1, [07 §2](07-wordpress-modulu.md))**
-- ○ Çekirdek sürümü ifşası ve güncellik (wordpress.org API)
-- ○ Eklenti/tema envanteri (HTML izlerinden) ve güncellik
-- ○ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
-- ○ "Arama motorlarını engelle" açık, SEO eklentisi tespiti, çift site haritası, iç arama indekslenebilir, `?replytocom`, sayfalama canonical'ı, varsayılan içerik, "Kategorilenmemiş", staging sızıntısı
+- ✓ Çekirdek sürümü ifşası ve güncellik (wordpress.org API)
+- ✓ Eklenti/tema envanteri (HTML izlerinden) ve güncellik
+- ✓ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
+- ✓ "Arama motorlarını engelle" açık, çift site haritası, iç arama indekslenebilir, `?replytocom`, varsayılan içerik, "Kategorilenmemiş"
+- ○ Sayfalama canonical'ı, staging sızıntısı, SEOPress/The SEO Framework tespiti
 - ○ Raporda "WordPress" bölümü
 
 **AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok

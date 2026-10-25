@@ -257,4 +257,65 @@ class CrawlTest extends TestCase
         $this->assertSame('missing', \App\Crawler\LlmsTxt::analyze('<!DOCTYPE html><html></html>')['status']);
         $this->assertSame('missing', \App\Crawler\LlmsTxt::analyze(null)['status']);
     }
+
+    public function test_wordpress_external_checks(): void
+    {
+        $home = '<html><head><title>Merhaba dünya! – Site</title><link rel="stylesheet" href="/wp-content/plugins/contact-form-7/style.css?ver=5.1">'
+            .'<link rel="stylesheet" href="/wp-content/themes/astra/style.css?ver=4.0"></head><body>Hi</body></html>';
+        Http::fake([
+            'api.wordpress.org/core/*' => Http::response(['offers' => [['current' => '6.8.3']]]),
+            'api.wordpress.org/plugins/*' => Http::response(['version' => '6.0.1']),
+            'example.com/robots.txt' => Http::response('', 404),
+            'example.com/sitemap.xml' => Http::response('', 404),
+            'example.com/sitemap_index.xml' => Http::response('', 200),
+            'example.com/wp-sitemap.xml' => Http::response('', 200),
+            'example.com/feed/' => Http::response('<generator>https://wordpress.org/?v=6.4.1</generator>', 200),
+            'example.com/readme.html' => Http::response('<h1>WordPress</h1>', 200),
+            'example.com/license.txt' => Http::response('', 404),
+            'example.com/wp-content/debug.log' => Http::response('PHP Notice', 200, ['Content-Type' => 'text/plain', 'Content-Length' => '10']),
+            'example.com/wp-content/uploads/' => Http::response('<title>Index of /wp-content/uploads</title>', 200),
+            'example.com/wp-content/plugins/' => Http::response('', 200),
+            'example.com/xmlrpc.php' => Http::response('XML-RPC server accepts POST requests only.', 405),
+            'example.com/wp-json/wp/v2/users' => Http::response([['id' => 1, 'slug' => 'admin']]),
+            'example.com/?author=1' => Http::response('', 301, ['Location' => 'https://example.com/author/admin/']),
+            'http://example.com/wp-login.php' => Http::response('', 301, ['Location' => 'https://example.com/wp-login.php']),
+            'example.com/?s=screamingrabbit' => Http::response('<meta name="robots" content="noindex">', 200),
+            'example.com/wp-config*' => Http::response('', 404),
+            '*' => Http::response($home, 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'platform' => 'wordpress', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+        $crawl->refresh();
+        $rules = $crawl->issues()->pluck('detail', 'rule');
+
+        $this->assertSame('Sitede 6.4.1, güncel 6.8.3', $rules['wp_core_outdated']);
+        $this->assertSame('contact-form-7 5.1 → 6.0.1', $rules['wp_plugin_outdated']);
+        $this->assertStringContainsString('astra', $rules['wp_inventory']);
+        $this->assertSame('Görünen: admin', $rules['wp_user_enumeration']);
+        $this->assertSame('readme.html', $rules['wp_default_files']);
+        $this->assertSame('/wp-content/uploads/', $rules['wp_directory_listing']);
+        $this->assertTrue($rules->has('wp_xmlrpc_enabled'));
+        $this->assertTrue($rules->has('wp_debug_log_public'));
+        $this->assertTrue($rules->has('wp_double_sitemap'));
+        $this->assertTrue($rules->has('wp_default_content'));
+        $this->assertFalse($rules->has('wp_login_http'));
+        $this->assertFalse($rules->has('wp_search_indexable'));
+        $this->assertFalse($rules->has('wp_config_backup_exposed'));
+    }
+
+    public function test_wordpress_checks_are_skipped_for_other_sites(): void
+    {
+        Http::fake(['*' => Http::response($this->page('T', 'x'), 200, ['Content-Type' => 'text/html'])]);
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'platform' => 'generic', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+
+        $this->assertSame(['skipped' => true], $crawl->fresh()->wp_checks);
+    }
 }

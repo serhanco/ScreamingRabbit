@@ -25,6 +25,7 @@ class Crawl extends Model
             'sitemap_found' => 'boolean',
             'bot_access' => 'array',
             'llms_txt' => 'array',
+            'wp_checks' => 'array',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];
