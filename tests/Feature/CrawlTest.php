@@ -129,4 +129,31 @@ class CrawlTest extends TestCase
 
         $this->assertSame(2, $crawl->pages()->count());
     }
+
+    public function test_include_and_exclude_rules_limit_the_crawl(): void
+    {
+        Http::fake([
+            '*/robots.txt' => Http::response('', 404),
+            '*/sitemap*.xml' => Http::response('', 404),
+            '*/wp-sitemap.xml' => Http::response('', 404),
+            '*' => Http::response($this->page('T', '<a href="/blog/a">a</a><a href="/blog/etiket/x">x</a><a href="/urun/1">1</a>'), 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0, 'include' => "/blog/\n", 'exclude' => '/etiket/']]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        (new CrawlRunner($crawl))->run();
+
+        $this->assertEqualsCanonicalizing(['https://example.com/', 'https://example.com/blog/a'], $crawl->pages()->pluck('url')->all());
+    }
+
+    public function test_url_filter_rules(): void
+    {
+        $filter = new \App\Crawler\UrlFilter('', "\\?replytocom=\n#comments");
+
+        $this->assertTrue($filter->allows('https://example.com/post'));
+        $this->assertFalse($filter->allows('https://example.com/post?replytocom=5'));
+        $this->assertNull(\App\Crawler\UrlFilter::firstInvalid("/blog/\n^https"));
+        $this->assertSame('(unclosed', \App\Crawler\UrlFilter::firstInvalid("/ok/\n(unclosed"));
+    }
 }

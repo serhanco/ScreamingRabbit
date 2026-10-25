@@ -30,5 +30,15 @@ return [
         'delay_ms' => 300,
         'respect_robots' => true,
         'user_agent' => 'ScreamingRabbit/1.0 (+'.env('APP_URL', 'http://localhost').'/bot)',
+        'include' => '',
+        'exclude' => '',
+    ],
+
+    // Ready-made User-Agent strings offered in the project form; any other value can still be typed.
+    'user_agents' => [
+        'Googlebot (akıllı telefon)' => 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Googlebot (masaüstü)' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Bingbot' => 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+        'Chrome (masaüstü)' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
     ],
 ];
