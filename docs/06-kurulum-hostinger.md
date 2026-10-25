@@ -1,66 +1,56 @@
 # 06 · Kurulum Kılavuzu (Hostinger paylaşımlı hosting)
 
-> Durum: **Taslak.** Hostinger'a özgü ekran adları ilk kurulumda doğrulanacak ve bu doküman o zaman kesinleştirilecek.
-> İki yol var. **Yol A** terminal gerektirmez ve önerilen yoldur. **Yol B** SSH'ye alışkın olanlar içindir.
+> Durum: **Taslak.** Hostinger ekran adları ilk kurulumda doğrulanacak, kılavuz o zaman kesinleştirilecek.
 
-## Ortak ön koşullar
+## Nasıl çalışıyor
 
-- [x] hekimdijital.com boş PHP sitesi olarak hazır, SSL aktif
+Kod GitHub'da. `main` dalına her değişiklik geldiğinde GitHub, kütüphaneler ve arayüz dosyaları hazır olarak **`deploy`** adlı bir dal üretir (`tools/build-deploy.sh`, `.github/workflows/deploy-branch.yml`). Hostinger'ın **Git** ekranı bu dalı doğrudan web klasörüne çeker. Terminal ve ZIP gerekmez. Güncelleme, Git ekranında tek tıkla yapılır.
+
+`deploy` dalının düzeni (web klasörünün kendisi olur):
+
+```
+index.php  install.php  .htaccess  css/  js/  fonts/   ← web'e açık dosyalar
+app/                                                    ← uygulama (web'den engelli: app/.htaccess)
+```
+
+## İlk kurulum
+
+Ön koşullar:
+
 - [ ] hPanel → **Databases → Management**: bir veritabanı, kullanıcı ve şifre oluşturulmuş (şifre sohbette paylaşılmaz)
-- [ ] hPanel → **Advanced → PHP Configuration**: PHP 8.3 veya üstü seçili
+- [ ] hPanel → **Advanced → PHP Configuration**: PHP 8.3 veya üstü
 
-## Yol A: Terminalsiz kurulum (ZIP + tarayıcı)
+Adımlar:
 
-Hazır paket `screamingrabbit-release.zip` içinde iki klasör var: `screamingrabbit` (uygulama) ve `public_html` (web'e açık kısım). Paketi, kod deposundaki `tools/build-release.sh` betiği hazırlar.
+1. hPanel → **File Manager** → `public_html` içindeki her şeyi sil (Hostinger'ın bıraktığı `default.php` gibi). Git, klasörün boş olmasını ister.
+2. hPanel → **Advanced → Git** → yeni depo ekle:
+   - Depo adresi: `https://github.com/serhanco/ScreamingRabbit.git`
+   - Dal: `deploy`
+   - Klasör: boş bırak (`public_html`'e kurulur)
+   Oluştur'a, sonra **Deploy**'a bas.
+3. Tarayıcıda `https://hekimdijital.com` aç. Seni kurulum sayfasına yönlendirir.
+4. Kurulum sayfasındaki **kurulum anahtarı** için File Manager'da `public_html/app/storage/app/install.key` dosyasını aç, içindeki metni kopyala ve forma yapıştır.
+5. Formu doldur: veritabanı sunucusu `localhost`, hPanel'de oluşturduğun veritabanı adı, kullanıcı ve şifre, kendi e-postan ve en az 12 karakterlik bir şifre. **Kurulumu başlat.**
+6. Sayfa sana bir **cron komutu** gösterir. hPanel → **Advanced → Cron Jobs** → her dakika çalışan yeni bir görev olarak ekle.
+7. `https://hekimdijital.com/admin` adresinde giriş yap. İlk girişte telefondaki doğrulama uygulamasını (Google Authenticator, Authy vb.) kurmanı ister: QR kodu okut ve **kurtarma kodlarını güvenli bir yere kaydet.**
 
-1. hPanel → **Files → File Manager** aç. `domains/hekimdijital.com/` klasörüne gir (`public_html`'in bir üstü).
-2. ZIP'i bu klasöre **yükle** (Upload), sonra ZIP'e sağ tıklayıp **Extract** ile aç. Sonuçta yan yana `public_html` ve `screamingrabbit` klasörleri olmalı. Sorarsa mevcut dosyaların üzerine yazmaya izin ver.
-3. `public_html` içinde Hostinger'ın bıraktığı bir `default.php` varsa sil.
-4. `screamingrabbit` klasöründeki **`install.key`** dosyasını aç (çift tıklama), içindeki metni kopyala.
-5. Tarayıcıda `https://hekimdijital.com/install.php` adresini aç. Formu doldur:
-   - Kurulum anahtarı: az önce kopyaladığın metin
-   - Veritabanı: sunucu `localhost`, hPanel'de oluşturduğun ad, kullanıcı ve şifre
-   - Yönetici hesabı: adın, e-postan ve en az 12 karakterlik bir şifre
-6. **Kurulumu başlat**'a bas. Başarılı olunca sayfa sana cron komutunu gösterir ve kurulum sayfası kendini siler.
-7. hPanel → **Advanced → Cron Jobs**: yeni görev, **her dakika**, komut olarak o sayfada gösterilen satır.
-8. `https://hekimdijital.com/admin` adresinde giriş yap. İlk girişte telefondaki doğrulama uygulamasını (Google Authenticator, Authy vb.) kurmanı ister: QR kodu okut ve **kurtarma kodlarını güvenli bir yere kaydet.**
+Güvenlik: Kurulum sayfası, yalnızca hosting hesabına erişimi olanın okuyabileceği anahtarı sorar. Kurulum bitince kendini kilitler ve siler. `app/` klasörü ve `.env` dosyası web'den erişilemez.
 
-Güvenlik: Kurulum sayfası, `install.key` içindeki metni bilmeyen kimsenin kurulum yapmasına izin vermez ve kurulum bitince kendini kilitler.
+## Güncelleme
 
-### Güncelleme (Yol A)
+1. Değişiklikler `main` dalına birleşince GitHub `deploy` dalını kendisi yeniler (birkaç dakika).
+2. hPanel → **Advanced → Git** → ilgili depoda **Deploy** (güncellemeleri çek).
 
-Yeni sürüm çıktığında yeni bir ZIP hazırlanır. `screamingrabbit` ve `public_html` içindeki dosyaların üzerine yazılır, ancak **`screamingrabbit/.env`** dosyasına ve **`screamingrabbit/storage`** klasörüne dokunulmaz. Ardından veritabanı değişiklikleri için panelde **Ayarlar → Güncelle** düğmesi eklenecek (henüz yok). O zamana kadar güncellemeyi birlikte yaparız.
-
-## Yol B: SSH ile kurulum
-
-```bash
-cd ~
-git clone https://github.com/serhanco/ScreamingRabbit.git screamingrabbit
-cd screamingrabbit
-cp .env.example .env
-nano .env        # APP_ENV=production, APP_DEBUG=false, APP_URL, DB_* değerlerini doldur
-composer install --no-dev --optimize-autoloader
-php artisan key:generate
-php artisan migrate --force
-php artisan filament:assets
-php artisan make:filament-user
-```
-
-Web adresini `~/screamingrabbit/public` klasörüne bağlamak için (klasör yolu hesaba göre değişebilir):
-
-```bash
-mv ~/domains/hekimdijital.com/public_html ~/domains/hekimdijital.com/public_html.eski
-ln -s ~/screamingrabbit/public ~/domains/hekimdijital.com/public_html
-```
-
-Cron (her dakika): `php /home/KULLANICI/screamingrabbit/artisan schedule:run >> /dev/null 2>&1`
-
-Güncelleme: `cd ~/screamingrabbit && bash deploy.sh` (gerekirse `PHP_BIN=/usr/bin/php8.3 bash deploy.sh`).
+Veritabanı değişikliği içeren bir sürüm olursa, ayrıca belirtilecektir.
 
 ## Başka bir domaine veya VPS'e taşıma
 
-1. Kodu yeni sunucuya aynı yollardan kur.
+1. Kodu yeni sunucuya aynı yoldan kur (`deploy` dalı).
 2. Eski veritabanını dışa aktarıp yenisine yükle (phpMyAdmin).
-3. `.env` içinde `APP_URL` ve veritabanı bilgilerini güncelle.
+3. `app/.env` içinde `APP_URL` ve veritabanı bilgilerini güncelle.
 4. DNS'i yeni sunucuya çevir, SSL'in aktif olduğunu kontrol et.
 5. Eski `.env` içindeki `APP_KEY` değerini yeni `.env`'e **aynen** kopyala. Aksi halde şifrelenmiş veriler (2FA anahtarları) okunamaz.
+
+## Alternatif: SSH ile kurulum (ileri düzey)
+
+SSH erişimi olanlar `git clone` ve `composer install` ile de kurabilir. Ayrıntılar için `deploy.sh` dosyasına bakın.
