@@ -78,20 +78,75 @@
         <tr>@foreach ($report['by_severity'] as $row)<td class="num">{{ $row['count'] }}</td>@endforeach</tr>
     </table>
 
-    @if (! empty($report['bots']))
-        <h2>Arama motorları ve AI botları erişimi</h2>
+    @php($stateStyle = ['ok' => 'color:#15803d', 'warn' => 'color:#b45309;font-weight:bold', 'bad' => 'color:#b91c1c;font-weight:bold'])
+    @php($stateMark = ['ok' => '✓', 'warn' => '!', 'bad' => '✗'])
+    @if (! empty($report['ai']) || ! empty($report['bots']))
+        <h2>AI arama görünürlüğü</h2>
+        <p style="margin:4px 0">ChatGPT, Perplexity, Google AI Overviews gibi yapay zekâ aramalarında yer alabilmek için sitenin bu botlara açık ve makinelerin anlayacağı biçimde olması gerekir.</p>
+        @if (! empty($report['ai']))
+            <table class="grid">
+                @foreach ($report['ai'] as $line)
+                    <tr>
+                        <td style="width:24px;text-align:center;{{ $stateStyle[$line['state']] }}">{{ $stateMark[$line['state']] }}</td>
+                        <td>{{ $line['label'] }}</td>
+                        <td style="{{ $stateStyle[$line['state']] }}">{{ $line['value'] }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        @endif
+        @if (! empty($report['bots']))
+            <h3 style="font-size:13px;margin:14px 0 0">Bot bazında erişim</h3>
+            <table class="grid">
+                <tr><th>Bot</th><th>Tür</th><th>robots.txt</th><th>Erişim testi</th></tr>
+                @foreach ($report['bots'] as $bot)
+                    <tr>
+                        <td>{{ $bot['name'] }}</td>
+                        <td>{{ $bot['kind'] }}</td>
+                        <td style="{{ $bot['robots'] === 'Engelli' ? 'color:#b91c1c;font-weight:bold' : '' }}">{{ $bot['robots'] }}</td>
+                        <td style="{{ str_starts_with($bot['fetch'], 'Reddedildi') ? 'color:#b45309;font-weight:bold' : '' }}">{{ $bot['fetch'] }}</td>
+                    </tr>
+                @endforeach
+            </table>
+            <p style="font-size:11px;color:#6b7280">Erişim testi ana sayfayı her botun kimliğiyle bir kez ister. "Reddedildi", güvenlik duvarının bu kimliği engellediğini gösterir; gerçek botlar IP doğrulamasıyla geçebilir.</p>
+        @endif
+    @endif
+
+    @if (! empty($report['wordpress']))
+        @php($wp = $report['wordpress'])
+        <h2>WordPress</h2>
         <table class="grid">
-            <tr><th>Bot</th><th>Tür</th><th>robots.txt</th><th>Erişim testi</th></tr>
-            @foreach ($report['bots'] as $bot)
+            <tr><th>WordPress sürümü</th><th>Güncel sürüm</th><th>Eklenti</th><th>Tema</th></tr>
+            <tr>
+                <td class="num" style="{{ $wp['version'] && $wp['latest'] && version_compare($wp['version'], $wp['latest'], '<') ? 'color:#b91c1c' : '' }}">{{ $wp['version'] ?? 'Gizli' }}</td>
+                <td class="num">{{ $wp['latest'] ?? '—' }}</td>
+                <td class="num">{{ count($wp['plugins']) }}</td>
+                <td>{{ implode(', ', $wp['themes']) ?: '—' }}</td>
+            </tr>
+        </table>
+        @if ($wp['plugins'])
+            <table class="grid">
+                <tr><th>Dışarıdan görünen eklenti</th><th>Sitedeki sürüm</th><th>Güncel sürüm</th></tr>
+                @foreach ($wp['plugins'] as $plugin)
+                    @php($old = $plugin['seen'] && $plugin['latest'] && version_compare($plugin['seen'], $plugin['latest'], '<'))
+                    <tr>
+                        <td>{{ $plugin['slug'] }}</td>
+                        <td style="{{ $old ? 'color:#b91c1c;font-weight:bold' : '' }}">{{ $plugin['seen'] ?? '—' }}</td>
+                        <td>{{ $plugin['latest'] ?? '—' }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        @endif
+        <h3 style="font-size:13px;margin:14px 0 0">Güvenlik ve bakım kontrolleri</h3>
+        <table class="grid">
+            @foreach ($wp['checks'] as $check)
                 <tr>
-                    <td>{{ $bot['name'] }}</td>
-                    <td>{{ $bot['kind'] }}</td>
-                    <td style="{{ $bot['robots'] === 'Engelli' ? 'color:#b91c1c;font-weight:bold' : '' }}">{{ $bot['robots'] }}</td>
-                    <td style="{{ str_starts_with($bot['fetch'], 'Reddedildi') ? 'color:#b45309;font-weight:bold' : '' }}">{{ $bot['fetch'] }}</td>
+                    <td style="width:24px;text-align:center;{{ $check['passed'] ? $stateStyle['ok'] : $stateStyle['bad'] }}">{{ $check['passed'] ? '✓' : '✗' }}</td>
+                    <td>{{ $check['title'] }}</td>
+                    <td style="{{ $check['passed'] ? $stateStyle['ok'] : $stateStyle['bad'] }}">{{ $check['passed'] ? 'Sorun yok' : 'Sorun var, ayrıntı aşağıda' }}</td>
                 </tr>
             @endforeach
         </table>
-        <p style="font-size:11px;color:#6b7280">Erişim testi ana sayfayı her botun kimliğiyle bir kez ister. "Reddedildi", güvenlik duvarının bu kimliği engellediğini gösterir; gerçek botlar IP doğrulamasıyla geçebilir.</p>
+        <p style="font-size:11px;color:#6b7280">Kontroller siteye dışarıdan, bir ziyaretçinin görebileceği kadarıyla yapılır; yönetim paneline giriş yapılmaz.</p>
     @endif
 
     <h2>Bulgular ve çözüm önerileri</h2>

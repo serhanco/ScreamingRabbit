@@ -15,6 +15,10 @@ class CrawlReport
 {
     private const SAMPLE_URLS = 5;
 
+    /** WordPress checks shown as a pass/fail list in the report; each passes when its rule raised nothing. */
+    private const WP_CHECKS = ['wp_core_outdated', 'wp_plugin_outdated', 'wp_user_enumeration', 'wp_xmlrpc_enabled', 'wp_default_files',
+        'wp_debug_log_public', 'wp_directory_listing', 'wp_config_backup_exposed', 'wp_login_http', 'wp_search_indexable', 'wp_double_sitemap'];
+
     public function __construct(private Crawl $crawl) {}
 
     /**
@@ -76,7 +80,85 @@ class CrawlReport
             ])->all(),
             'findings' => $findings,
             'bots' => \App\Crawler\BotAccess::present($crawl->bot_access),
+            'ai' => $this->aiVisibility($groups->pluck('rule')->all()),
+            'wordpress' => $this->wordPress($groups->pluck('rule')->all()),
             'brand' => config('screamingrabbit.brand'),
+        ];
+    }
+
+    /**
+     * The signals AI search engines rely on, each as a line with a state: ok, warn or bad.
+     *
+     * @param  array<int, string>  $rules  rules raised in this crawl
+     * @return array<int, array{label: string, value: string, state: string}>
+     */
+    private function aiVisibility(array $rules): array
+    {
+        $lines = [];
+        $bots = collect($this->crawl->bot_access ?? []);
+        foreach (['search' => 'Arama motoru botları', 'ai_search' => 'AI arama botları (ChatGPT, Perplexity, Claude…)', 'ai_training' => 'AI eğitim botları'] as $kind => $label) {
+            $group = $bots->where('kind', $kind);
+            if ($group->isEmpty()) {
+                continue;
+            }
+            $open = $group->filter(fn ($bot) => $bot['robots_allowed'] && $bot['fetch'] !== 'refused')->count();
+            $state = $open === $group->count() ? 'ok' : ($kind === 'ai_training' ? 'warn' : ($open === 0 ? 'bad' : 'warn'));
+            $lines[] = ['label' => $label, 'value' => "{$open} / {$group->count()} erişebiliyor", 'state' => $state];
+        }
+
+        $llms = $this->crawl->llms_txt['status'] ?? null;
+        if ($llms !== null) {
+            $lines[] = ['label' => 'llms.txt dosyası', 'value' => ['ok' => 'Var', 'invalid' => 'Var, biçimi hatalı', 'missing' => 'Yok'][$llms] ?? $llms, 'state' => $llms === 'ok' ? 'ok' : 'warn'];
+        }
+
+        $pages = $this->crawl->pages()->where('status_code', 200)->where('content_type', 'like', '%html%');
+        $total = (clone $pages)->count();
+        if ($total > 0) {
+            $lines[] = ['label' => 'Ana sayfada kurum/kişi şeması', 'value' => in_array('home_missing_organization_schema', $rules, true) ? 'Yok' : 'Var',
+                'state' => in_array('home_missing_organization_schema', $rules, true) ? 'bad' : 'ok'];
+            $withSchema = (clone $pages)->whereNotNull('schema_types')->where('schema_types', '!=', '')->count();
+            $share = (int) round($withSchema / $total * 100);
+            $lines[] = ['label' => 'Yapısal veri (JSON-LD) olan sayfalar', 'value' => "%{$share} ({$withSchema} / {$total})", 'state' => $share >= 80 ? 'ok' : ($share > 0 ? 'warn' : 'bad')];
+            $broken = (clone $pages)->where('schema_errors', '>', 0)->count();
+            if ($broken > 0) {
+                $lines[] = ['label' => 'Bozuk JSON-LD olan sayfalar', 'value' => (string) $broken, 'state' => 'bad'];
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Version, plugins and a pass/fail security list; null when the site is not WordPress or the checks did not run.
+     *
+     * @param  array<int, string>  $rules  rules raised in this crawl
+     * @return array<string, mixed>|null
+     */
+    private function wordPress(array $rules): ?array
+    {
+        $checks = $this->crawl->wp_checks ?? [];
+        $probes = $checks['probes'] ?? [];
+        if ($probes === []) {
+            return null;
+        }
+
+        $value = fn (string $key) => $probes[$key]['value'] ?? null;
+        $version = $value('feed') ?? $value('readme');
+        $catalog = RuleCatalog::all();
+
+        return [
+            'version' => $version,
+            'latest' => $value('core_latest'),
+            'plugins' => collect($checks['inventory']['plugins'] ?? [])->map(fn ($seen, $slug) => [
+                'slug' => $slug,
+                'seen' => $seen !== $version ? $seen : null,
+                'latest' => $value('plugin:'.$slug),
+            ])->values()->all(),
+            'themes' => array_keys($checks['inventory']['themes'] ?? []),
+            'checks' => collect(self::WP_CHECKS)->map(fn (string $rule) => [
+                'title' => $catalog[$rule]['title'] ?? $rule,
+                'passed' => ! in_array($rule, $rules, true),
+            ])->all(),
         ];
     }
 
