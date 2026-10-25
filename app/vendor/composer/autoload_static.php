@@ -738,6 +738,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Crawler\\RobotsTxt' => __DIR__ . '/../..' . '/app/Crawler/RobotsTxt.php',
         'App\\Crawler\\SitemapReader' => __DIR__ . '/../..' . '/app/Crawler/SitemapReader.php',
         'App\\Crawler\\UrlNormalizer' => __DIR__ . '/../..' . '/app/Crawler/UrlNormalizer.php',
+        'App\\Exports\\CrawlCsv' => __DIR__ . '/../..' . '/app/Exports/CrawlCsv.php',
         'App\\Filament\\Resources\\Clients\\ClientResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Clients/ClientResource.php',
         'App\\Filament\\Resources\\Clients\\Pages\\CreateClient' => __DIR__ . '/../..' . '/app/Filament/Resources/Clients/Pages/CreateClient.php',
         'App\\Filament\\Resources\\Clients\\Pages\\EditClient' => __DIR__ . '/../..' . '/app/Filament/Resources/Clients/Pages/EditClient.php',

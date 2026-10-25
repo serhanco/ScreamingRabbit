@@ -20,6 +20,7 @@ return array(
     'App\\Crawler\\RobotsTxt' => $baseDir . '/app/Crawler/RobotsTxt.php',
     'App\\Crawler\\SitemapReader' => $baseDir . '/app/Crawler/SitemapReader.php',
     'App\\Crawler\\UrlNormalizer' => $baseDir . '/app/Crawler/UrlNormalizer.php',
+    'App\\Exports\\CrawlCsv' => $baseDir . '/app/Exports/CrawlCsv.php',
     'App\\Filament\\Resources\\Clients\\ClientResource' => $baseDir . '/app/Filament/Resources/Clients/ClientResource.php',
     'App\\Filament\\Resources\\Clients\\Pages\\CreateClient' => $baseDir . '/app/Filament/Resources/Clients/Pages/CreateClient.php',
     'App\\Filament\\Resources\\Clients\\Pages\\EditClient' => $baseDir . '/app/Filament/Resources/Clients/Pages/EditClient.php',
