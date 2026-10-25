@@ -1,9 +1,13 @@
 <?php
 
 use App\Crawler\CrawlMaintenance;
+use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+
+// Tells the external heartbeat service the scheduler is alive; it warns Serhan if these pings stop (docs/08 §2.3).
+Schedule::call(fn () => Channels::heartbeat())->name('heartbeat')->everyMinute();
 
 // Uptime checks first: the queue worker below can keep this process busy for up to 50 seconds (docs/08 §2.3).
 Schedule::call(fn () => MonitorRunner::run())

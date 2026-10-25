@@ -22,6 +22,12 @@ return [
         'grafit' => ['label' => 'Grafit', 'primary' => 'Slate', 'gray' => 'Zinc'],
     ],
 
+    // Defaults for the alert mailbox on the "Bildirim ayarları" page (Hostinger's SMTP server).
+    'alerts' => [
+        'smtp_host' => 'smtp.hostinger.com',
+        'smtp_port' => 465,
+    ],
+
     // How many finished crawls to keep per project; older ones are deleted every night to save database space.
     'crawl_retention' => (int) env('CRAWL_RETENTION', 10),
 
