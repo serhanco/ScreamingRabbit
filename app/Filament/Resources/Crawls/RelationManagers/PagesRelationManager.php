@@ -3,8 +3,11 @@
 namespace App\Filament\Resources\Crawls\RelationManagers;
 
 use App\Filament\Resources\Crawls\CrawlColors;
+use App\Filament\Resources\Crawls\Support\PageDetail;
 use App\Models\CrawlPage;
+use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -48,6 +51,15 @@ class PagesRelationManager extends RelationManager
                         : $query),
                 Filter::make('in_sitemap')->label('Sitemap\'te olanlar')->query(fn ($query) => $query->where('in_sitemap', true)),
                 Filter::make('queued')->label('Sırada bekleyenler')->query(fn ($query) => $query->where('state', 'queued')),
+            ])
+            ->recordActions([
+                Action::make('detail')
+                    ->label('Detay')
+                    ->icon(Heroicon::OutlinedEye)
+                    ->modalHeading(fn (CrawlPage $record): string => $record->url)
+                    ->modalContent(fn (CrawlPage $record) => view('crawls.page-detail', ['detail' => PageDetail::for($record)]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Kapat'),
             ])
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25);
