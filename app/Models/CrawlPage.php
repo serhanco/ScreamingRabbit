@@ -17,6 +17,7 @@ class CrawlPage extends Model
         return [
             'in_sitemap' => 'boolean',
             'wordpress_hint' => 'boolean',
+            'js_shell' => 'boolean',
             'fetched_at' => 'datetime',
         ];
     }

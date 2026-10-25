@@ -121,7 +121,8 @@ class CrawlRunner
 
         $this->addPage($start, 0);
         $this->crawl->bot_access = BotAccess::fromRobots($robotsBody, $start);
-        $this->crawl->llms_txt = LlmsTxt::analyze($this->fetchText($origin.'/llms.txt'));
+        $this->crawl->llms_txt = LlmsTxt::analyze($this->fetchText($origin.'/llms.txt'))
+            + ['full' => LlmsTxt::analyze($this->fetchText($origin.'/llms-full.txt'))['status'] !== 'missing'];
 
         $candidates = $robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml'];
         $limit = (int) $this->settings['max_urls'];
@@ -226,6 +227,7 @@ class CrawlRunner
                 'wordpress_hint' => $parsed['wordpress_hint'],
                 'images_missing_alt' => $parsed['images_missing_alt'],
                 'images_missing_size' => $parsed['images_missing_size'],
+                'js_shell' => $parsed['js_shell'],
                 'mixed_content' => $parsed['mixed_content'],
                 'meta_refresh' => $parsed['meta_refresh'] ? mb_substr($parsed['meta_refresh'], 0, 250) : null,
                 'page_type' => $parsed['page_type'],
