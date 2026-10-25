@@ -225,6 +225,7 @@ class CrawlRunner
                 'content_hash' => $parsed['content_hash'],
                 'wordpress_hint' => $parsed['wordpress_hint'],
                 'images_missing_alt' => $parsed['images_missing_alt'],
+                'images_missing_size' => $parsed['images_missing_size'],
                 'mixed_content' => $parsed['mixed_content'],
                 'meta_refresh' => $parsed['meta_refresh'] ? mb_substr($parsed['meta_refresh'], 0, 250) : null,
                 'page_type' => $parsed['page_type'],

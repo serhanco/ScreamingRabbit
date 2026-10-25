@@ -49,7 +49,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ○ Dış kırık link ve kırık iç linkin kaynak sayfa listesi, sitemapte olup taranmayan URL
 - ✓ Görseller: alt eksik
 - ✓ Görseller: büyük dosya (>100 KB, Screaming Frog varsayılanı), kırık görsel
-- ○ Görseller: boyut özniteliği eksik
+- ✓ Görseller: boyut özniteliği (width/height) eksik, CLS riski
 - ✓ Mimari: tek iç linkli sayfa
 - ✓ Güvenlik: mixed content, HTTPS sayfadan HTTP'ye iç link
 - ○ Güvensiz form
@@ -89,6 +89,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Saatlik "hâlâ kapalı" hatırlatması
 - ✓ SSL bitiş uyarısı, dış kalp atışı servisi (uygulamanın kendisi için)
 - ✓ Panelde 90 günlük uptime şeridi
+- ○ Kullanıcı başına bildirim: her üyenin kendi uyarı e-postası, kendi Telegram sohbeti (tek ortak bot) ve hangi uyarıları alacağı; gönderen posta kutusu ve bot anahtarı ortak
 
 ## 4. Faz 3 · GSC ve iş listesi (ana farklılaştırıcı)
 
@@ -129,6 +130,12 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 **Bildirim merkezi (M-2, [08 §3](08-izleme-ve-bildirimler.md))**
 - ○ Tüm olay türleri tek yerde: uptime, SSL, kritik sayfa değişimi, yeni kritik bulgu, GSC düşüşü, WordPress açığı, sistem hataları
 - ○ Önem bazlı yönlendirme, tekrar bastırma, toplu kesinti birleştirme, sessiz saatler, haftalık özet
+
+**Çoklu kullanıcı ve roller (U-1)** — giriş ve 2FA zaten kullanıcı başına (Faz 1)
+- ○ Panelden üye davet etme, devre dışı bırakma, 2FA zorunluluğu
+- ○ Roller: yönetici (her şey), uzman (atandığı müşteri/projeler), salt okunur/rapor görüntüleyici
+- ○ Müşteri/proje bazında erişim; bildirimler yalnızca erişebildiği projeler için
+- ○ İşlem günlüğü: kim neyi değiştirdi (ayar, onaylı WP değişikliği)
 
 **Raporlama**
 - ○ Markalı müşteri raporu (Serhan'ın logosu ve renkleri)
