@@ -8,7 +8,7 @@ use DOMXPath;
 class HtmlParser
 {
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, mixed_content: int, page_type: ?string, seo_plugin: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -53,6 +53,31 @@ class HtmlParser
             }
         }
 
+        $imagesMissingAlt = $xpath->query('//img[not(@alt)]')->length;
+
+        $mixedContent = 0;
+        if (str_starts_with($pageUrl, 'https://')) {
+            foreach ($xpath->query('//img/@src|//script/@src|//iframe/@src|//source/@src|//video/@src|//audio/@src|//link[@rel="stylesheet"]/@href') as $attribute) {
+                if (stripos(trim($attribute->nodeValue), 'http://') === 0) {
+                    $mixedContent++;
+                }
+            }
+        }
+
+        $bodyClass = ' '.strtolower((string) $xpath->query('//body/@class')->item(0)?->nodeValue).' ';
+        $pageType = match (true) {
+            str_contains($bodyClass, ' attachment ') || str_contains($bodyClass, ' attachment-') => 'attachment',
+            str_contains($bodyClass, ' archive ') => 'archive',
+            default => null,
+        };
+
+        $seoPlugins = [];
+        foreach (['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math', 'aioseo' => 'All in One SEO'] as $key => $needle) {
+            if (stripos($html, $needle) !== false) {
+                $seoPlugins[] = $key;
+            }
+        }
+
         foreach ($xpath->query('//script|//style|//noscript|//head') as $node) {
             $node->parentNode?->removeChild($node);
         }
@@ -75,6 +100,10 @@ class HtmlParser
             'links' => $links,
             'meta_refresh' => $metaRefresh,
             'generator' => $generator,
+            'images_missing_alt' => $imagesMissingAlt,
+            'mixed_content' => $mixedContent,
+            'page_type' => $pageType,
+            'seo_plugin' => $seoPlugins === [] ? null : implode(',', $seoPlugins),
             'wordpress_hint' => (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
                 || ($generator !== null && stripos($generator, 'wordpress') !== false),
         ];

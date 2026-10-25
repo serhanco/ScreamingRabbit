@@ -24,6 +24,16 @@ class CrawlColors
         };
     }
 
+    public static function health(?int $score): string
+    {
+        return match (true) {
+            $score === null => 'gray',
+            $score >= 80 => 'success',
+            $score >= 50 => 'warning',
+            default => 'danger',
+        };
+    }
+
     public static function httpStatus(?int $code): string
     {
         return match (true) {
