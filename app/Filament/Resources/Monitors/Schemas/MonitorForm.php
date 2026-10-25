@@ -7,6 +7,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 
 class MonitorForm
@@ -15,6 +16,11 @@ class MonitorForm
     {
         return $schema
             ->components([
+                Section::make('Son 90 gün')
+                    ->visible(fn (?Monitor $record): bool => $record !== null)
+                    ->schema([
+                        View::make('monitors.uptime-bar-record'),
+                    ]),
                 Section::make('İzleme hedefi')
                     ->columns(2)
                     ->schema([

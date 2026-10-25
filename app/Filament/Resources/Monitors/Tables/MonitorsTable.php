@@ -6,6 +6,7 @@ use App\Models\Monitor;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -31,6 +32,7 @@ class MonitorsTable
                     ->state(fn (Monitor $record): ?float => $record->uptime(24))
                     ->formatStateUsing(fn (?float $state): string => $state === null ? '—' : '%'.number_format($state, 2, ',', '.'))
                     ->placeholder('—'),
+                ViewColumn::make('uptime_bar')->label('Son 30 gün')->view('monitors.uptime-bar-column'),
                 TextColumn::make('last_response_ms')->label('Yanıt')->suffix(' ms')->placeholder('—')->sortable(),
                 TextColumn::make('ssl_expires_at')
                     ->label('SSL bitişi')

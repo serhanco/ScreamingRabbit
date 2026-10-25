@@ -86,9 +86,9 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Dakikada bir kontrol (1/5/15 dk): durum kodu, zaman aşımı, DNS, SSL, beklenen kelime, yanıt süresi
 - ✓ Yanlış alarm koruması (tekrar deneme + kanarya), kesinti kaydı ve süresi
 - ✓ E-posta + Telegram: "düştü", "düzeldi (süre)", yavaş, SSL bitiyor (panelden ayar, test düğmesi)
-- ○ Saatlik "hâlâ kapalı" hatırlatması
+- ✓ Saatlik "hâlâ kapalı" hatırlatması
 - ✓ SSL bitiş uyarısı, dış kalp atışı servisi (uygulamanın kendisi için)
-- ○ Panelde 90 günlük uptime şeridi
+- ✓ Panelde 90 günlük uptime şeridi
 
 ## 4. Faz 3 · GSC ve iş listesi (ana farklılaştırıcı)
 
