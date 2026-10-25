@@ -24,6 +24,7 @@ return array(
     'App\\Crawler\\SitemapReader' => $baseDir . '/app/Crawler/SitemapReader.php',
     'App\\Crawler\\UrlFilter' => $baseDir . '/app/Crawler/UrlFilter.php',
     'App\\Crawler\\UrlNormalizer' => $baseDir . '/app/Crawler/UrlNormalizer.php',
+    'App\\Crawler\\WordPressProbe' => $baseDir . '/app/Crawler/WordPressProbe.php',
     'App\\Exports\\CrawlCsv' => $baseDir . '/app/Exports/CrawlCsv.php',
     'App\\Filament\\Resources\\Clients\\ClientResource' => $baseDir . '/app/Filament/Resources/Clients/ClientResource.php',
     'App\\Filament\\Resources\\Clients\\Pages\\CreateClient' => $baseDir . '/app/Filament/Resources/Clients/Pages/CreateClient.php',
