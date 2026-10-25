@@ -752,6 +752,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Filament\\Resources\\Crawls\\RelationManagers\\IssuesRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/RelationManagers/IssuesRelationManager.php',
         'App\\Filament\\Resources\\Crawls\\RelationManagers\\PagesRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/RelationManagers/PagesRelationManager.php',
         'App\\Filament\\Resources\\Crawls\\Schemas\\CrawlInfolist' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Schemas/CrawlInfolist.php',
+        'App\\Filament\\Resources\\Crawls\\Support\\PageDetail' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Support/PageDetail.php',
         'App\\Filament\\Resources\\Crawls\\Tables\\CrawlsTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Tables/CrawlsTable.php',
         'App\\Filament\\Resources\\Projects\\Actions\\StartCrawlAction' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Actions/StartCrawlAction.php',
         'App\\Filament\\Resources\\Projects\\Pages\\CreateProject' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Pages/CreateProject.php',

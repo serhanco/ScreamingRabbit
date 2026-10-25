@@ -34,6 +34,7 @@ return array(
     'App\\Filament\\Resources\\Crawls\\RelationManagers\\IssuesRelationManager' => $baseDir . '/app/Filament/Resources/Crawls/RelationManagers/IssuesRelationManager.php',
     'App\\Filament\\Resources\\Crawls\\RelationManagers\\PagesRelationManager' => $baseDir . '/app/Filament/Resources/Crawls/RelationManagers/PagesRelationManager.php',
     'App\\Filament\\Resources\\Crawls\\Schemas\\CrawlInfolist' => $baseDir . '/app/Filament/Resources/Crawls/Schemas/CrawlInfolist.php',
+    'App\\Filament\\Resources\\Crawls\\Support\\PageDetail' => $baseDir . '/app/Filament/Resources/Crawls/Support/PageDetail.php',
     'App\\Filament\\Resources\\Crawls\\Tables\\CrawlsTable' => $baseDir . '/app/Filament/Resources/Crawls/Tables/CrawlsTable.php',
     'App\\Filament\\Resources\\Projects\\Actions\\StartCrawlAction' => $baseDir . '/app/Filament/Resources/Projects/Actions/StartCrawlAction.php',
     'App\\Filament\\Resources\\Projects\\Pages\\CreateProject' => $baseDir . '/app/Filament/Resources/Projects/Pages/CreateProject.php',
