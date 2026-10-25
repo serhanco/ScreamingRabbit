@@ -127,11 +127,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
 
-        App\Models\User::create([
+        // A reinstall on an existing database keeps the account but resets its two-factor secret,
+        // which can no longer be decrypted with the new application key.
+        $admin = App\Models\User::firstOrNew(['email' => $input['admin_email']]);
+        $admin->forceFill([
             'name' => $input['admin_name'],
-            'email' => $input['admin_email'],
             'password' => $adminPassword,
-        ]);
+            'app_authentication_secret' => null,
+            'app_authentication_recovery_codes' => null,
+        ])->save();
 
         $installer->markInstalled();
         @unlink(__FILE__);
