@@ -4,8 +4,9 @@ namespace App\Filament\Resources\Projects;
 
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
-use App\Filament\Resources\Projects\Pages\ProjectInsights;
 use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Resources\Projects\Pages\ProjectInsights;
+use App\Filament\Resources\Projects\Pages\ProjectSegments;
 use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
 use App\Models\Project;
@@ -49,6 +50,7 @@ class ProjectResource extends Resource
             'create' => CreateProject::route('/create'),
             'edit' => EditProject::route('/{record}/edit'),
             'insights' => ProjectInsights::route('/{record}/firsatlar'),
+            'segments' => ProjectSegments::route('/{record}/segmentler'),
         ];
     }
 }
