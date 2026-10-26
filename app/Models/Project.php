@@ -27,6 +27,11 @@ class Project extends Model
         ];
     }
 
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

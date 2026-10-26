@@ -40,6 +40,8 @@ class GscSync
                 self::run($project);
                 if ($project->gsc_queries_synced_on?->isToday() !== true) {
                     self::syncQueries($project);
+                    // Fresh query data once a day: refresh the Search Console tasks too.
+                    \App\Tasks\TaskBuilder::sync($project);
                 }
                 UrlInspector::run($project);
             } catch (\Throwable $e) {

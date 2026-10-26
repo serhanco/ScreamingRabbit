@@ -7,6 +7,7 @@ use App\Jobs\CrawlBatch;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\Project;
+use App\Tasks\TaskBuilder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
@@ -524,6 +525,8 @@ class CrawlRunner
         (new Auditor)->run($this->crawl);
 
         $this->crawl->update(['status' => 'completed', 'finished_at' => now()]);
+
+        TaskBuilder::sync($this->crawl->project);
     }
 
     private function fetchText(string $url): ?string
