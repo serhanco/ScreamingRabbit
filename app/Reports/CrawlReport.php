@@ -3,10 +3,13 @@
 namespace App\Reports;
 
 use App\Audit\RuleCatalog;
+use App\Crawler\BotAccess;
 use App\Models\Crawl;
 use App\Models\CrawlIssue;
+use App\Models\Task;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Str;
 
 /**
  * Builds the client report of a crawl as plain data, and renders it as HTML (web link) or PDF.
@@ -79,11 +82,31 @@ class CrawlReport
                 'count' => (int) $crawl->issues()->where('severity', $key)->count(),
             ])->all(),
             'findings' => $findings,
-            'bots' => \App\Crawler\BotAccess::present($crawl->bot_access),
+            'bots' => BotAccess::present($crawl->bot_access),
             'ai' => $this->aiVisibility($groups->pluck('rule')->all()),
             'wordpress' => $this->wordPress($groups->pluck('rule')->all()),
+            'tasks' => $this->tasks(),
             'brand' => config('screamingrabbit.brand'),
         ];
+    }
+
+    /**
+     * Work items the operator chose to show the client, grouped as done, in progress and planned.
+     *
+     * @return array<string, array<int, array{title: string, why: string, date: ?string}>>
+     */
+    private function tasks(): array
+    {
+        $groups = ['done' => ['done', 'verified'], 'doing' => ['doing'], 'open' => ['open']];
+        $tasks = Task::query()->where('project_id', $this->crawl->project_id)->where('show_in_report', true)
+            ->orderByDesc('score')->get();
+
+        return collect($groups)->map(fn (array $statuses) => $tasks->whereIn('status', $statuses)->map(fn (Task $task) => [
+            'title' => $task->title,
+            'why' => $task->why,
+            'date' => ($task->verified_at ?? $task->done_at)?->timezone(config('app.timezone'))->format('d.m.Y'),
+            'verified' => $task->status === 'verified',
+        ])->values()->all())->filter()->all();
     }
 
     /**
@@ -186,7 +209,7 @@ class CrawlReport
 
     public function filename(): string
     {
-        $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower(\Illuminate\Support\Str::ascii($this->crawl->project->name))) ?: 'rapor';
+        $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower(Str::ascii($this->crawl->project->name))) ?: 'rapor';
 
         return 'seo-raporu-'.trim($slug, '-').'-'.now()->format('Y-m-d').'.pdf';
     }

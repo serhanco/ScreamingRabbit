@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Audit\RuleCatalog;
 use App\Filament\Resources\Tasks\Pages\ListTasks;
 use App\Models\Crawl;
 use App\Models\CrawlIssue;
@@ -9,9 +10,11 @@ use App\Models\CrawlPage;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Reports\CrawlReport;
 use App\Tasks\TaskBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -74,5 +77,25 @@ class TaskListTest extends TestCase
             ->assertCanSeeTableRecords(Task::all())
             ->assertSee('Klinik')
             ->assertSee('1 sayfayı etkiliyor');
+    }
+
+    public function test_chosen_tasks_appear_in_the_client_report(): void
+    {
+        $project = Project::factory()->create();
+        $crawl = $this->crawlWith($project, [['http_4xx', 'high', '/gone'], ['title_missing', 'medium', '/a'], ['h1_missing', 'medium', '/a']]);
+        TaskBuilder::sync($project);
+        Task::where('key', 'rule:http_4xx')->first()->update(['status' => 'done', 'show_in_report' => true]);
+        Task::where('key', 'rule:title_missing')->first()->update(['show_in_report' => true]);
+
+        $report = new CrawlReport($crawl);
+        $tasks = $report->data()['tasks'];
+        $this->assertCount(1, $tasks['done']);
+        $this->assertCount(1, $tasks['open']);
+        $this->assertArrayNotHasKey('doing', $tasks);
+
+        $plan = Str::between($report->html(), 'Çalışma planı', 'Bulgular ve çözüm önerileri');
+        $this->assertStringContainsString('Tamamlanan çalışmalar', $plan);
+        $this->assertStringContainsString(RuleCatalog::all()['title_missing']['title'], $plan);
+        $this->assertStringNotContainsString(RuleCatalog::all()['h1_missing']['title'], $plan, 'unchosen tasks stay internal');
     }
 }

@@ -78,6 +78,26 @@
         <tr>@foreach ($report['by_severity'] as $row)<td class="num">{{ $row['count'] }}</td>@endforeach</tr>
     </table>
 
+    @if (! empty($report['tasks']))
+        <h2>Çalışma planı</h2>
+        @foreach (['done' => 'Tamamlanan çalışmalar', 'doing' => 'Devam eden çalışmalar', 'open' => 'Planlanan çalışmalar'] as $group => $heading)
+            @if (! empty($report['tasks'][$group]))
+                <h3 style="margin:10px 0 4px;font-size:14px">{{ $heading }}</h3>
+                <table class="grid">
+                    @foreach ($report['tasks'][$group] as $task)
+                        <tr>
+                            <td style="width:24px;text-align:center;{{ $group === 'done' ? 'color:#15803d' : 'color:#6b7280' }}">{{ $group === 'done' ? '✓' : ($group === 'doing' ? '…' : '○') }}</td>
+                            <td><strong>{{ $task['title'] }}</strong><br><span class="muted">{{ $task['why'] }}</span></td>
+                            @if ($group === 'done')
+                                <td style="width:140px" class="muted">{{ $task['date'] }}{{ $task['verified'] ? ' · taramayla doğrulandı' : '' }}</td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </table>
+            @endif
+        @endforeach
+    @endif
+
     @php($stateStyle = ['ok' => 'color:#15803d', 'warn' => 'color:#b45309;font-weight:bold', 'bad' => 'color:#b91c1c;font-weight:bold'])
     @php($stateMark = ['ok' => '✓', 'warn' => '!', 'bad' => '✗'])
     @if (! empty($report['ai']) || ! empty($report['bots']))
