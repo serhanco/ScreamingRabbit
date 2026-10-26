@@ -123,7 +123,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 
 **Zamanlama ve karşılaştırma**
 - ✓ Proje başına zamanlanmış tarama (günlük/haftalık/aylık); gece 01:00–06:00 arası başlar, devam eden tarama varsa başlamaz
-- ○ Otomatik tarama karşılaştırma: yeni/kaybolan sayfalar, yeni/düzelen sorunlar, title/meta/canonical/durum değişimleri
+- ✓ Otomatik tarama karşılaştırma: tarama sayfasında "Önceki taramaya göre değişenler" (yeni/kaybolan sayfalar, yeni/düzelen sorunlar, durum/title/meta/canonical/robots değişimleri, skor farkı)
 - ○ Kritik sayfa izleme (Lumar Protect fikri): seçili 5-50 URL saatlik/günlük (durum, noindex, canonical, title)
 - ○ Sağlık skoru trendi
 
