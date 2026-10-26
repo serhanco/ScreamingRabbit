@@ -143,6 +143,13 @@ class NotificationSettings extends Page
             null => 'ayarlanmamış',
         })->implode("\n");
 
-        Notification::make()->title('Test sonucu')->body($lines)->{in_array(false, $result, true) ? 'warning' : 'success'}()->send();
+        $hint = match (true) {
+            Channels::$telegramError === null => '',
+            str_contains(Channels::$telegramError, 'Unauthorized') => "\nBot anahtarı yanlış: BotFather'ın verdiği anahtarı baştan sona, boşluksuz yapıştır.",
+            str_contains(Channels::$telegramError, 'chat not found') => "\nSohbet kimliği yanlış ya da bota hiç mesaj yazılmamış: botu Telegram'da aç, Start'a bas, sonra kimlik kutusundaki büyüteç düğmesine (Sohbeti bul) bas.",
+            default => "\nTelegram'ın cevabı: ".Channels::$telegramError,
+        };
+
+        Notification::make()->title('Test sonucu')->body($lines.$hint)->{in_array(false, $result, true) ? 'warning' : 'success'}()->send();
     }
 }

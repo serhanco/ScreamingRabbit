@@ -71,19 +71,26 @@ class Channels
         return $options;
     }
 
+    /** Why the last Telegram send failed, in Telegram's words, so the settings page can say what to fix. */
+    public static ?string $telegramError = null;
+
     public static function telegram(?string $chat, string $title, string $body): ?bool
     {
+        self::$telegramError = null;
         $token = Setting::get('telegram_bot_token');
         if (! $token || ! $chat) {
             return null;
         }
 
         try {
-            return Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+            $response = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chat,
                 'text' => "{$title}\n\n{$body}",
                 'disable_web_page_preview' => true,
-            ])->successful();
+            ]);
+            self::$telegramError = $response->successful() ? null : (string) $response->json('description', 'HTTP '.$response->status());
+
+            return $response->successful();
         } catch (\Throwable $e) {
             Log::error('Telegram uyarısı gönderilemedi: '.$e->getMessage());
 

@@ -10,6 +10,7 @@ use App\Monitoring\Channels;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -37,6 +38,20 @@ class AlertsTest extends TestCase
         Http::assertSent(fn ($request) => $request->url() === 'https://api.telegram.org/bot123:abc/sendMessage'
             && $request['chat_id'] === '42' && str_contains($request['text'], 'Erişilemiyor: Klinik'));
         Http::assertNotSent(fn ($request) => $request['chat_id'] === '43');
+    }
+
+    public function test_telegram_failure_keeps_telegrams_reason(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::sequence()
+            ->push(['ok' => false, 'description' => 'Bad Request: chat not found'], 400)
+            ->push(['ok' => true])]);
+        Setting::put('telegram_bot_token', '123:abc');
+
+        $this->assertFalse(Channels::telegram('999', 'x', 'y'));
+        $this->assertSame('Bad Request: chat not found', Channels::$telegramError);
+
+        $this->assertTrue(Channels::telegram('42', 'x', 'y'));
+        $this->assertNull(Channels::$telegramError);
     }
 
     public function test_unconfigured_channels_are_skipped(): void
@@ -85,7 +100,7 @@ class AlertsTest extends TestCase
 
     public function test_email_uses_the_mailbox_from_settings(): void
     {
-        \Illuminate\Support\Facades\Mail::fake();
+        Mail::fake();
         Setting::put('smtp_username', 'bildirim@example.com');
         Setting::put('smtp_password', str_repeat('x', 8));
 
