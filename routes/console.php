@@ -1,6 +1,7 @@
 <?php
 
 use App\Crawler\CrawlMaintenance;
+use App\Crawler\CrawlScheduler;
 use App\Google\GscSync;
 use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
@@ -26,6 +27,9 @@ Schedule::call(fn () => Artisan::call('queue:work', ['--stop-when-empty' => true
 
 // Search Console numbers: one short window per project each run, so the 16-month backfill spreads over many runs.
 Schedule::call(fn () => GscSync::runAll())->name('gsc-sync')->everyTenMinutes()->withoutOverlapping(10);
+
+// Projects that asked for daily/weekly/monthly crawls get them started overnight.
+Schedule::call(fn () => CrawlScheduler::runDue())->name('crawl-schedule')->everyTenMinutes()->withoutOverlapping(10);
 
 Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')->everyFiveMinutes();
 

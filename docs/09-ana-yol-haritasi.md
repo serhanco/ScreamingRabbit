@@ -122,7 +122,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 ## 5. Faz 4 · Otomasyon, değişiklik takibi, raporlama
 
 **Zamanlama ve karşılaştırma**
-- ○ Proje başına zamanlanmış tarama (günlük/haftalık/aylık)
+- ✓ Proje başına zamanlanmış tarama (günlük/haftalık/aylık); gece 01:00–06:00 arası başlar, devam eden tarama varsa başlamaz
 - ○ Otomatik tarama karşılaştırma: yeni/kaybolan sayfalar, yeni/düzelen sorunlar, title/meta/canonical/durum değişimleri
 - ○ Kritik sayfa izleme (Lumar Protect fikri): seçili 5-50 URL saatlik/günlük (durum, noindex, canonical, title)
 - ○ Sağlık skoru trendi
