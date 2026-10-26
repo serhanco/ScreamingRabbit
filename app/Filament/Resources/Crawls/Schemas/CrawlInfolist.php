@@ -4,9 +4,10 @@ namespace App\Filament\Resources\Crawls\Schemas;
 
 use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
-use Filament\Infolists\Components\RepeatableEntry;
+use App\Crawler\CrawlComparison;
 use App\Filament\Resources\Crawls\CrawlColors;
 use App\Models\Crawl;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
@@ -62,6 +63,13 @@ class CrawlInfolist
                             ->label("Bulgu: {$label}")
                             ->state(fn (Crawl $record): int => $record->issues()->where('severity', $severity)->count())
                             ->color(CrawlColors::severity($severity)))->values()->all(),
+                    ]),
+                Section::make('Önceki taramaya göre değişenler')
+                    ->description('Aynı projenin bir önceki tamamlanmış taramasıyla karşılaştırma.')
+                    ->collapsible()
+                    ->visible(fn (Crawl $record): bool => $record->status === 'completed' && (new CrawlComparison($record))->previous() !== null)
+                    ->schema([
+                        ViewEntry::make('comparison')->hiddenLabel()->view('crawls.comparison'),
                     ]),
                 Section::make('Arama motorları ve AI botları erişimi')
                     ->description('robots.txt kuralı ve ana sayfanın her botun kimliğiyle bir kez istenmesi sonucu.')
