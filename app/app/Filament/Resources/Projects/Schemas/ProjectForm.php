@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Projects\Schemas;
 
+use App\Crawler\CrawlScheduler;
+use App\Crawler\UrlFilter;
 use App\Google\GoogleClient;
 use App\Models\Project;
 use Filament\Forms\Components\Select;
-use App\Crawler\UrlFilter;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -48,6 +49,11 @@ class ProjectForm
                             ->default('wordpress')
                             ->required()
                             ->helperText('WordPress seçilirse WordPress\'e özel denetimler de çalışır.'),
+                        Select::make('crawl_schedule')
+                            ->label('Otomatik tarama')
+                            ->options(CrawlScheduler::FREQUENCIES)
+                            ->placeholder('Elle başlatırım')
+                            ->helperText('Seçilirse tarama gece 01:00–06:00 arasında kendiliğinden başlar.'),
                         Select::make('gsc_property')
                             ->label('Search Console mülkü')
                             ->options(fn (): array => rescue(fn () => GoogleClient::sites(), [], false))

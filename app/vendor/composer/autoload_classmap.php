@@ -18,6 +18,7 @@ return array(
     'App\\Crawler\\BotAccess' => $baseDir . '/app/Crawler/BotAccess.php',
     'App\\Crawler\\CrawlMaintenance' => $baseDir . '/app/Crawler/CrawlMaintenance.php',
     'App\\Crawler\\CrawlRunner' => $baseDir . '/app/Crawler/CrawlRunner.php',
+    'App\\Crawler\\CrawlScheduler' => $baseDir . '/app/Crawler/CrawlScheduler.php',
     'App\\Crawler\\HtmlParser' => $baseDir . '/app/Crawler/HtmlParser.php',
     'App\\Crawler\\LlmsTxt' => $baseDir . '/app/Crawler/LlmsTxt.php',
     'App\\Crawler\\RobotsTxt' => $baseDir . '/app/Crawler/RobotsTxt.php',
