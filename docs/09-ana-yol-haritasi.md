@@ -115,9 +115,9 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Etki ölçümü: tamamlanınca etkilenen sayfalar kaydedilir, 28 gün sonra bu sayfaların tıklama/gösterimi önceki 28 günle karşılaştırılır (iş listesinde "Etki" sütunu, müşteri raporunda tamamlanan işin yanında)
 
 **Segmentler (Oncrawl/JetOctopus fikri)**
-- ○ URL desenine göre (`/blog/`, `/urun/`) ve WordPress post type/kategoriye göre segment
-- ○ Segment bazında sağlık skoru, trafik, sorun dağılımı
-- ○ Çapraz grafikler: derinlik × tıklama, iç link sayısı × pozisyon
+- ◐ URL klasörüne göre otomatik segment ✓ (proje listesinde "Segmentler"); WordPress post type/kategoriye göre ○
+- ✓ Segment bazında sağlık (önemli sorunsuz sayfa oranı), 28 gün tıklama/gösterim, sorunlu sayfa sayısı
+- ◐ Derinlik × tıklama tablosu ✓; iç link sayısı × pozisyon ○
 
 ## 5. Faz 4 · Otomasyon, değişiklik takibi, raporlama
 

@@ -6,10 +6,10 @@ use App\Filament\Resources\Projects\Actions\StartCrawlAction;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Project;
 use Filament\Actions\Action;
-use Filament\Support\Icons\Heroicon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -51,6 +51,11 @@ class ProjectsTable
                     ->color('gray')
                     ->visible(fn (Project $record): bool => filled($record->gsc_property))
                     ->url(fn (Project $record): string => ProjectResource::getUrl('insights', ['record' => $record])),
+                Action::make('segments')
+                    ->label('Segmentler')
+                    ->icon(Heroicon::OutlinedRectangleGroup)
+                    ->color('gray')
+                    ->url(fn (Project $record): string => ProjectResource::getUrl('segments', ['record' => $record])),
                 EditAction::make(),
             ])
             ->toolbarActions([
