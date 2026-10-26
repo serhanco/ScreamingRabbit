@@ -42,13 +42,14 @@ class AlertsTest extends TestCase
 
     public function test_telegram_failure_keeps_telegrams_reason(): void
     {
-        Http::fake(['api.telegram.org/*' => Http::response(['ok' => false, 'description' => 'Bad Request: chat not found'], 400)]);
+        Http::fake(['api.telegram.org/*' => Http::sequence()
+            ->push(['ok' => false, 'description' => 'Bad Request: chat not found'], 400)
+            ->push(['ok' => true])]);
         Setting::put('telegram_bot_token', '123:abc');
 
         $this->assertFalse(Channels::telegram('999', 'x', 'y'));
         $this->assertSame('Bad Request: chat not found', Channels::$telegramError);
 
-        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
         $this->assertTrue(Channels::telegram('42', 'x', 'y'));
         $this->assertNull(Channels::$telegramError);
     }
