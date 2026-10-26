@@ -7,6 +7,7 @@ use App\Crawler\BotAccess;
 use App\Models\Crawl;
 use App\Models\CrawlIssue;
 use App\Models\Task;
+use App\Tasks\ImpactMeter;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Str;
@@ -93,7 +94,7 @@ class CrawlReport
     /**
      * Work items the operator chose to show the client, grouped as done, in progress and planned.
      *
-     * @return array<string, array<int, array{title: string, why: string, date: ?string}>>
+     * @return array<string, array<int, array{title: string, why: string, date: ?string, verified: bool, impact: ?string}>>
      */
     private function tasks(): array
     {
@@ -106,6 +107,7 @@ class CrawlReport
             'why' => $task->why,
             'date' => ($task->verified_at ?? $task->done_at)?->timezone(config('app.timezone'))->format('d.m.Y'),
             'verified' => $task->status === 'verified',
+            'impact' => ImpactMeter::label($task->impact),
         ])->values()->all())->filter()->all();
     }
 

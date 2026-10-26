@@ -96,6 +96,7 @@ return array(
     'App\\Support\\DataDir' => $baseDir . '/app/Support/DataDir.php',
     'App\\Support\\Installer' => $baseDir . '/app/Support/Installer.php',
     'App\\Support\\Palette' => $baseDir . '/app/Support/Palette.php',
+    'App\\Tasks\\ImpactMeter' => $baseDir . '/app/Tasks/ImpactMeter.php',
     'App\\Tasks\\TaskBuilder' => $baseDir . '/app/Tasks/TaskBuilder.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'BladeUI\\Heroicons\\BladeHeroiconsServiceProvider' => $vendorDir . '/blade-ui-kit/blade-heroicons/src/BladeHeroiconsServiceProvider.php',

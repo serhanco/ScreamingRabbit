@@ -7,6 +7,7 @@ use App\Filament\Resources\Crawls\CrawlColors;
 use App\Filament\Resources\Tasks\Pages\EditTask;
 use App\Filament\Resources\Tasks\Pages\ListTasks;
 use App\Models\Task;
+use App\Tasks\ImpactMeter;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
@@ -62,6 +63,9 @@ class TaskResource extends Resource
                     TextEntry::make('baseline')->label('Tamamlandığında')
                         ->state(fn (Task $record): ?string => $record->baseline ? "{$record->baseline['at']}: etkilenen sayfalar 28 günde {$record->baseline['clicks']} tıklama" : null)
                         ->placeholder('—'),
+                    TextEntry::make('impact')->label('Etki (28 gün önce → 28 gün sonra)')
+                        ->state(fn (Task $record): ?string => ImpactMeter::label($record->impact))
+                        ->placeholder('Tamamlandıktan 28 gün sonra Search Console verisiyle ölçülür'),
                 ]),
         ]);
     }
@@ -80,6 +84,14 @@ class TaskResource extends Resource
                     ->color(fn (?string $state): string => CrawlColors::severity((string) $state)),
                 SelectColumn::make('status')->label('Durum')->options(Task::STATUSES)->selectablePlaceholder(false),
                 ToggleColumn::make('show_in_report')->label('Raporda')->tooltip('Müşteri raporunun "Çalışma planı" bölümünde göster'),
+                TextColumn::make('impact')->label('Etki')->toggleable()
+                    ->state(fn (Task $record): ?string => ImpactMeter::label($record->impact))
+                    ->color(fn (Task $record): ?string => match (true) {
+                        ($record->impact['change'] ?? null) === null => null,
+                        $record->impact['change'] >= 0 => 'success',
+                        default => 'danger',
+                    })
+                    ->placeholder('—'),
                 TextColumn::make('due_on')->label('Son tarih')->date('d.m.Y')->placeholder('—')->sortable()->toggleable(),
                 TextColumn::make('updated_at')->label('Güncellendi')->since()->toggleable(isToggledHiddenByDefault: true),
             ])

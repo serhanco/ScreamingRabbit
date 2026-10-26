@@ -814,6 +814,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Support\\DataDir' => __DIR__ . '/../..' . '/app/Support/DataDir.php',
         'App\\Support\\Installer' => __DIR__ . '/../..' . '/app/Support/Installer.php',
         'App\\Support\\Palette' => __DIR__ . '/../..' . '/app/Support/Palette.php',
+        'App\\Tasks\\ImpactMeter' => __DIR__ . '/../..' . '/app/Tasks/ImpactMeter.php',
         'App\\Tasks\\TaskBuilder' => __DIR__ . '/../..' . '/app/Tasks/TaskBuilder.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'BladeUI\\Heroicons\\BladeHeroiconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-heroicons/src/BladeHeroiconsServiceProvider.php',

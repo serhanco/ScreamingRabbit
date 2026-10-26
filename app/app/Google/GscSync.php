@@ -4,7 +4,10 @@ namespace App\Google;
 
 use App\Crawler\UrlNormalizer;
 use App\Models\Project;
+use App\Tasks\ImpactMeter;
+use App\Tasks\TaskBuilder;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -41,7 +44,8 @@ class GscSync
                 if ($project->gsc_queries_synced_on?->isToday() !== true) {
                     self::syncQueries($project);
                     // Fresh query data once a day: refresh the Search Console tasks too.
-                    \App\Tasks\TaskBuilder::sync($project);
+                    TaskBuilder::sync($project);
+                    ImpactMeter::run($project);
                 }
                 UrlInspector::run($project);
             } catch (\Throwable $e) {
@@ -153,7 +157,7 @@ class GscSync
     /**
      * Totals per page over the latest 28 days of data, for joining onto crawl pages by URL hash.
      */
-    public static function last28(int $projectId): \Illuminate\Database\Query\Builder
+    public static function last28(int $projectId): Builder
     {
         $latest = DB::table('gsc_page_days')->where('project_id', $projectId)->max('day');
         $from = $latest ? CarbonImmutable::parse($latest)->subDays(27)->toDateString() : '9999-12-31';
