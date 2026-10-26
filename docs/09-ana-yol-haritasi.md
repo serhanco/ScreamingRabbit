@@ -100,7 +100,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Sayfa tablosuna GSC sütunları: tıklama, gösterim, CTR, pozisyon (son 28 gün)
 
 **GSC'den türeyen analizler ([04 §4.2](04-mvp-kapsami-ve-yol-haritasi.md))**
-- ○ Trafik alan sayfada teknik sorun (öncelik yükseltme; iş listesiyle birlikte)
+- ✓ Trafik alan sayfada teknik sorun (iş listesinde öncelik skoru etkilenen sayfaların tıklamasıyla yükselir)
 - ✓ Yüksek gösterim / düşük CTR (pozisyona göre beklenen CTR'nin yarısının altı)
 - ✓ Fırsat sorguları (pozisyon 8-20)
 - ✓ Kannibalizasyon
@@ -108,11 +108,11 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ İndeks tutarsızlığı (Google canonical ≠ bizim, "taranmış, indekslenmemiş")
 
 **İş listesi ([04 §4.3](04-mvp-kapsami-ve-yol-haritasi.md))**
-- ○ Bulgulardan ve GSC analizlerinden otomatik aksiyon, tekrar etmeyen güncelleme
-- ○ Öncelik skoru (önem × etkilenen sayfa × trafik), "neden önce?" tek cümle açıklama
-- ○ Durumlar: açık → yapılıyor → tamamlandı → doğrulandı (otomatik)
-- ○ Not, son tarih, "müşteri raporunda göster"
-- ○ Etki ölçümü: tamamlanınca GSC anlık görüntüsü, 28 gün sonra önce/sonra
+- ✓ Bulgulardan ve GSC analizlerinden otomatik aksiyon, tekrar etmeyen güncelleme (her tarama sonunda ve günlük GSC senkronunda)
+- ✓ Öncelik skoru (önem × etkilenen sayfa × trafik), "neden önce?" tek cümle açıklama
+- ✓ Durumlar: açık → yapılıyor → tamamlandı → doğrulandı (otomatik); sorun geri gelirse yeniden açılır
+- ◐ Not, son tarih, "müşteri raporunda göster" işareti ✓; rapora yansıması ○
+- ◐ Etki ölçümü: tamamlanınca GSC anlık görüntüsü ✓; 28 gün sonra önce/sonra karşılaştırması ○
 
 **Segmentler (Oncrawl/JetOctopus fikri)**
 - ○ URL desenine göre (`/blog/`, `/urun/`) ve WordPress post type/kategoriye göre segment
