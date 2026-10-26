@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Projects\Tables;
 
 use App\Filament\Resources\Projects\Actions\StartCrawlAction;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Project;
+use Filament\Actions\Action;
+use Filament\Support\Icons\Heroicon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -42,6 +45,12 @@ class ProjectsTable
             ->defaultSort('name')
             ->recordActions([
                 StartCrawlAction::make(),
+                Action::make('insights')
+                    ->label('Fırsatlar')
+                    ->icon(Heroicon::OutlinedLightBulb)
+                    ->color('gray')
+                    ->visible(fn (Project $record): bool => filled($record->gsc_property))
+                    ->url(fn (Project $record): string => ProjectResource::getUrl('insights', ['record' => $record])),
                 EditAction::make(),
             ])
             ->toolbarActions([
