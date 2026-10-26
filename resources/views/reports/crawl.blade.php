@@ -89,7 +89,7 @@
                             <td style="width:24px;text-align:center;{{ $group === 'done' ? 'color:#15803d' : 'color:#6b7280' }}">{{ $group === 'done' ? '✓' : ($group === 'doing' ? '…' : '○') }}</td>
                             <td><strong>{{ $task['title'] }}</strong><br><span class="muted">{{ $task['why'] }}</span></td>
                             @if ($group === 'done')
-                                <td style="width:140px" class="muted">{{ $task['date'] }}{{ $task['verified'] ? ' · taramayla doğrulandı' : '' }}</td>
+                                <td style="width:140px" class="muted">{{ $task['date'] }}{{ $task['verified'] ? ' · taramayla doğrulandı' : '' }}@if ($task['impact'])<br><span style="color:#111827">{{ $task['impact'] }}</span>@endif</td>
                             @endif
                         </tr>
                     @endforeach
