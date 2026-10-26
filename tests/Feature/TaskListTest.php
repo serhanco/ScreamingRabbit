@@ -11,6 +11,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Reports\CrawlReport;
+use App\Tasks\ImpactMeter;
 use App\Tasks\TaskBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -77,6 +78,38 @@ class TaskListTest extends TestCase
             ->assertCanSeeTableRecords(Task::all())
             ->assertSee('Klinik')
             ->assertSee('1 sayfayı etkiliyor');
+    }
+
+    public function test_impact_is_measured_28_days_after_done(): void
+    {
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
+        $this->crawlWith($project, [['title_missing', 'medium', '/a'], ['h1_missing', 'medium', '/b']]);
+        TaskBuilder::sync($project);
+
+        $this->travelTo(now()->subDays(40));
+        $task = Task::where('key', 'rule:title_missing')->first();
+        $task->update(['status' => 'done']);
+        $this->travelBack();
+        $this->assertSame([sha1('https://example.com/a')], $task->fresh()->baseline['pages']);
+
+        $done = $task->fresh()->done_at->copy()->startOfDay();
+        $rows = [];
+        foreach ([['/a', -10, 5], ['/a', 10, 8], ['/b', 10, 50]] as [$path, $offset, $clicks]) {
+            $rows[] = ['project_id' => $project->id, 'day' => $done->copy()->addDays($offset)->toDateString(), 'page' => 'https://example.com'.$path, 'page_hash' => sha1('https://example.com'.$path), 'clicks' => $clicks, 'impressions' => $clicks * 10, 'position' => 5];
+        }
+        DB::table('gsc_page_days')->insert($rows);
+
+        // Not 28 days of data after it yet: nothing is measured.
+        $this->assertSame(0, ImpactMeter::run($project));
+
+        DB::table('gsc_page_days')->insert(['project_id' => $project->id, 'day' => $done->copy()->addDays(30)->toDateString(), 'page' => 'https://example.com/c', 'page_hash' => sha1('https://example.com/c'), 'clicks' => 1, 'impressions' => 1, 'position' => 5]);
+        $this->assertSame(1, ImpactMeter::run($project));
+
+        $impact = $task->fresh()->impact;
+        $this->assertSame(5, $impact['before_clicks']);
+        $this->assertSame(8, $impact['after_clicks'], 'only the affected page counts');
+        $this->assertSame('Tıklama 5 → 8 (+%60)', ImpactMeter::label($impact));
+        $this->assertSame(0, ImpactMeter::run($project), 'measured once');
     }
 
     public function test_chosen_tasks_appear_in_the_client_report(): void

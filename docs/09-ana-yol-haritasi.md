@@ -112,7 +112,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Öncelik skoru (önem × etkilenen sayfa × trafik), "neden önce?" tek cümle açıklama
 - ✓ Durumlar: açık → yapılıyor → tamamlandı → doğrulandı (otomatik); sorun geri gelirse yeniden açılır
 - ✓ Not, son tarih, "müşteri raporunda göster" işareti; seçilen işler raporda "Çalışma planı" bölümünde (tamamlanan, devam eden, planlanan)
-- ◐ Etki ölçümü: tamamlanınca GSC anlık görüntüsü ✓; 28 gün sonra önce/sonra karşılaştırması ○
+- ✓ Etki ölçümü: tamamlanınca etkilenen sayfalar kaydedilir, 28 gün sonra bu sayfaların tıklama/gösterimi önceki 28 günle karşılaştırılır (iş listesinde "Etki" sütunu, müşteri raporunda tamamlanan işin yanında)
 
 **Segmentler (Oncrawl/JetOctopus fikri)**
 - ○ URL desenine göre (`/blog/`, `/urun/`) ve WordPress post type/kategoriye göre segment
