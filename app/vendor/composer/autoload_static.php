@@ -734,6 +734,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Audit\\Auditor' => __DIR__ . '/../..' . '/app/Audit/Auditor.php',
         'App\\Audit\\RuleCatalog' => __DIR__ . '/../..' . '/app/Audit/RuleCatalog.php',
         'App\\Crawler\\BotAccess' => __DIR__ . '/../..' . '/app/Crawler/BotAccess.php',
+        'App\\Crawler\\CrawlComparison' => __DIR__ . '/../..' . '/app/Crawler/CrawlComparison.php',
         'App\\Crawler\\CrawlMaintenance' => __DIR__ . '/../..' . '/app/Crawler/CrawlMaintenance.php',
         'App\\Crawler\\CrawlRunner' => __DIR__ . '/../..' . '/app/Crawler/CrawlRunner.php',
         'App\\Crawler\\CrawlScheduler' => __DIR__ . '/../..' . '/app/Crawler/CrawlScheduler.php',

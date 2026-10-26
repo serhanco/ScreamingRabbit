@@ -16,6 +16,7 @@ return array(
     'App\\Audit\\Auditor' => $baseDir . '/app/Audit/Auditor.php',
     'App\\Audit\\RuleCatalog' => $baseDir . '/app/Audit/RuleCatalog.php',
     'App\\Crawler\\BotAccess' => $baseDir . '/app/Crawler/BotAccess.php',
+    'App\\Crawler\\CrawlComparison' => $baseDir . '/app/Crawler/CrawlComparison.php',
     'App\\Crawler\\CrawlMaintenance' => $baseDir . '/app/Crawler/CrawlMaintenance.php',
     'App\\Crawler\\CrawlRunner' => $baseDir . '/app/Crawler/CrawlRunner.php',
     'App\\Crawler\\CrawlScheduler' => $baseDir . '/app/Crawler/CrawlScheduler.php',
