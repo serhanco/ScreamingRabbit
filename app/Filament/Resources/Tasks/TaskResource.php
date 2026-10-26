@@ -20,6 +20,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -78,6 +79,7 @@ class TaskResource extends Resource
                     ->formatStateUsing(fn (?string $state): string => RuleCatalog::SEVERITIES[$state] ?? '—')
                     ->color(fn (?string $state): string => CrawlColors::severity((string) $state)),
                 SelectColumn::make('status')->label('Durum')->options(Task::STATUSES)->selectablePlaceholder(false),
+                ToggleColumn::make('show_in_report')->label('Raporda')->tooltip('Müşteri raporunun "Çalışma planı" bölümünde göster'),
                 TextColumn::make('due_on')->label('Son tarih')->date('d.m.Y')->placeholder('—')->sortable()->toggleable(),
                 TextColumn::make('updated_at')->label('Güncellendi')->since()->toggleable(isToggledHiddenByDefault: true),
             ])

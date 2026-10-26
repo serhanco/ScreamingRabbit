@@ -111,7 +111,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Bulgulardan ve GSC analizlerinden otomatik aksiyon, tekrar etmeyen güncelleme (her tarama sonunda ve günlük GSC senkronunda)
 - ✓ Öncelik skoru (önem × etkilenen sayfa × trafik), "neden önce?" tek cümle açıklama
 - ✓ Durumlar: açık → yapılıyor → tamamlandı → doğrulandı (otomatik); sorun geri gelirse yeniden açılır
-- ◐ Not, son tarih, "müşteri raporunda göster" işareti ✓; rapora yansıması ○
+- ✓ Not, son tarih, "müşteri raporunda göster" işareti; seçilen işler raporda "Çalışma planı" bölümünde (tamamlanan, devam eden, planlanan)
 - ◐ Etki ölçümü: tamamlanınca GSC anlık görüntüsü ✓; 28 gün sonra önce/sonra karşılaştırması ○
 
 **Segmentler (Oncrawl/JetOctopus fikri)**
