@@ -58,8 +58,8 @@ class InvitationTest extends TestCase
 
         Auth::logout();
         $this->get(route('invitation.show', $token))->assertOk()->assertSee('Klinik')->assertSee('Tarama başlatma')->assertSee('Hesabımı oluştur');
-        $this->post(route('invitation.accept', $token), ['name' => 'Ayşe', 'password' => 'kisa', 'password_confirmation' => 'kisa'])->assertSessionHasErrors('password');
-        $this->post(route('invitation.accept', $token), ['name' => 'Ayşe', 'password' => 'uzunbirsifre123', 'password_confirmation' => 'uzunbirsifre123'])
+        $this->post(route('invitation.accept', $token), ['name' => 'Ayşe', 'password' => str_repeat('p', 4), 'password_confirmation' => str_repeat('p', 4)])->assertSessionHasErrors('password');
+        $this->post(route('invitation.accept', $token), ['name' => 'Ayşe', 'password' => str_repeat('p', 12), 'password_confirmation' => str_repeat('p', 12)])
             ->assertRedirect(ProjectResource::getUrl('index'));
 
         $ayse = User::where('email', 'yeni@example.com')->firstOrFail();
