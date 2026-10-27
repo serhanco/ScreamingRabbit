@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
-#[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings', 'gsc_property'])]
+#[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings', 'gsc_property', 'crawl_schedule'])]
 class Project extends Model
 {
     use HasFactory;
@@ -46,6 +48,12 @@ class Project extends Model
     public function monitors(): HasMany
     {
         return $this->hasMany(Monitor::class);
+    }
+
+    /** Projects the user may see: all for admins, the assigned ones for everyone else. */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        return $user === null || $user->isAdmin() ? $query : $query->whereIn('projects.id', DB::table('project_user')->where('user_id', $user->id)->select('project_id'));
     }
 
     public function crawls(): HasMany

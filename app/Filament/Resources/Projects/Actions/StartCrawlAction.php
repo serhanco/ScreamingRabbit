@@ -20,7 +20,8 @@ class StartCrawlAction extends Action
     {
         parent::setUp();
 
-        $this->label('Taramayı başlat')
+        $this->visible(fn (): bool => auth()->user()?->canWrite() ?? false)
+            ->label('Taramayı başlat')
             ->icon(Heroicon::OutlinedPlay)
             ->requiresConfirmation()
             ->modalHeading('Tarama başlatılsın mı?')
