@@ -3,12 +3,14 @@
 namespace App\Google;
 
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /**
  * Talks to Google Search Console with one Google account connected from the panel (OAuth, offline access).
  * The OAuth client id/secret and the refresh token live in the settings table, the secret parts encrypted.
+ * Only the panel user who connected the account (the owner) may see its Search Console property list.
  */
 class GoogleClient
 {
@@ -28,6 +30,21 @@ class GoogleClient
     public static function connected(): bool
     {
         return self::configured() && filled(Setting::get('google_refresh_token'));
+    }
+
+    /** The connected account is private to the user who connected it; before that, any admin may set it up. */
+    public static function canManage(?User $user): bool
+    {
+        if ($user === null || ! $user->isAdmin()) {
+            return false;
+        }
+
+        return ! self::connected() || self::isOwner($user);
+    }
+
+    public static function isOwner(?User $user): bool
+    {
+        return $user !== null && self::connected() && (string) Setting::get('google_owner_id') === (string) $user->getKey();
     }
 
     public static function redirectUri(): string
@@ -50,7 +67,7 @@ class GoogleClient
     }
 
     /** Swaps the code from the consent screen for tokens and remembers the account. */
-    public static function connect(string $code): void
+    public static function connect(string $code, User $owner): void
     {
         $tokens = Http::asForm()->timeout(15)->post(self::TOKEN_URL, [
             'code' => $code,
@@ -64,6 +81,8 @@ class GoogleClient
 
         Setting::put('google_refresh_token', $tokens['refresh_token'] ?? null);
         Setting::put('google_email', $email);
+        Setting::put('google_owner_id', $owner->getKey());
+        Cache::forget('google_sites');
         Cache::put('google_access_token', $tokens['access_token'], now()->addSeconds(max(60, ($tokens['expires_in'] ?? 3600) - 300)));
     }
 
@@ -71,6 +90,7 @@ class GoogleClient
     {
         Setting::put('google_refresh_token', null);
         Setting::put('google_email', null);
+        Setting::put('google_owner_id', null);
         Cache::forget('google_access_token');
         Cache::forget('google_sites');
     }

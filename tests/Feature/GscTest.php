@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\GoogleSettings;
+use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Widgets\GoogleSetupGuide;
 use App\Filament\Resources\Crawls\Pages\ViewCrawl;
 use App\Filament\Resources\Crawls\RelationManagers\PagesRelationManager;
@@ -36,6 +37,7 @@ class GscTest extends TestCase
     {
         Setting::put('google_refresh_token', 'refresh-1');
         Setting::put('google_email', 'serhan@example.com');
+        Setting::put('google_owner_id', auth()->id());
     }
 
     public function test_settings_page_shows_redirect_uri_and_connect_button(): void
@@ -96,7 +98,40 @@ class GscTest extends TestCase
 
         $this->assertTrue(GoogleClient::connected());
         $this->assertSame('serhan@example.com', Setting::get('google_email'));
+        $this->assertTrue(GoogleClient::isOwner(auth()->user()));
         $this->assertNotSame('refresh-1', DB::table('settings')->where('key', 'google_refresh_token')->value('value'));
+    }
+
+    public function test_only_the_user_who_connected_google_sees_the_site_list(): void
+    {
+        $this->connect();
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'access-1', 'expires_in' => 3599]),
+            'www.googleapis.com/webmasters/v3/sites' => Http::response(['siteEntry' => [
+                ['siteUrl' => 'sc-domain:example.com', 'permissionLevel' => 'siteOwner'],
+                ['siteUrl' => 'sc-domain:gizli.com', 'permissionLevel' => 'siteOwner'],
+            ]]),
+        ]);
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
+
+        Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
+            ->assertSee('gizli.com')
+            ->assertFormFieldEnabled('gsc_property');
+
+        $this->actingAs(User::factory()->create(['role' => 'admin', 'app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
+
+        $this->assertFalse(GoogleSettings::canAccess());
+        $this->get(GoogleSettings::getUrl())->assertForbidden();
+        $this->get(route('filament.admin.google.connect'))->assertForbidden();
+        $this->get(route('filament.admin.google.callback', ['state' => 'x', 'code' => 'abc']))->assertForbidden();
+
+        Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
+            ->assertDontSee('gizli.com')
+            ->assertFormFieldDisabled('gsc_property')
+            ->fillForm(['gsc_property' => 'sc-domain:gizli.com'])
+            ->call('save');
+
+        $this->assertSame('sc-domain:example.com', $project->fresh()->gsc_property);
     }
 
     public function test_sites_and_sync_fill_page_metrics(): void

@@ -35,10 +35,10 @@ class GoogleSettings extends Page
 
     protected static ?int $navigationSort = 91;
 
-    /** The Google account and its keys are shared by the whole panel, so only admins manage them. */
+    /** Once connected, only the user who connected the Google account sees this page (it reveals the account and its sites). */
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return GoogleClient::canManage(auth()->user());
     }
 
     /** @var array<string, mixed> */
