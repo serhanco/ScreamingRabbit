@@ -4,8 +4,10 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\SharedReportController;
 use Illuminate\Support\Facades\Route;
 
-// This is a private tool: the root address only forwards to the admin panel.
-Route::redirect('/', '/admin');
+// Public pages: a short home page with a sign-in button, plus the privacy policy and terms that Google's OAuth consent screen links to.
+Route::view('/', 'legal.home')->name('home');
+Route::view('/gizlilik', 'legal.privacy')->name('legal.privacy');
+Route::view('/kosullar', 'legal.terms')->name('legal.terms');
 
 // Client report links: the long random token is the only access control, and Serhan can revoke it at any time.
 Route::middleware('throttle:60,1')->group(function () {

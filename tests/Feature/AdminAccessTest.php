@@ -47,8 +47,18 @@ class AdminAccessTest extends TestCase
         $this->assertSame('JBSWY3DPEHPK3PXP', $user->fresh()->getAppAuthenticationSecret());
     }
 
-    public function test_root_address_forwards_to_the_admin_panel(): void
+    public function test_root_address_is_a_public_home_page_with_sign_in_and_legal_links(): void
     {
-        $this->get('/')->assertRedirect('/admin');
+        $this->get('/')->assertOk()->assertSee(url('/admin'), false)->assertSee('/gizlilik', false)->assertSee('/kosullar', false);
+    }
+
+    public function test_privacy_and_terms_pages_are_public_and_attributed(): void
+    {
+        $this->get('/gizlilik')->assertOk()
+            ->assertSee('webmasters.readonly')
+            ->assertSee('Limited Use')
+            ->assertSee('https://myaccount.google.com/permissions', false)
+            ->assertSee('https://serhandemirel.com', false);
+        $this->get('/kosullar')->assertOk()->assertSee('Terms of Service')->assertSee('https://serhandemirel.com', false);
     }
 }
