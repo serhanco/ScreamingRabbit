@@ -806,6 +806,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Models\\CrawlIssue' => __DIR__ . '/../..' . '/app/Models/CrawlIssue.php',
         'App\\Models\\CrawlLink' => __DIR__ . '/../..' . '/app/Models/CrawlLink.php',
         'App\\Models\\CrawlPage' => __DIR__ . '/../..' . '/app/Models/CrawlPage.php',
+        'App\\Models\\GoogleConnection' => __DIR__ . '/../..' . '/app/Models/GoogleConnection.php',
         'App\\Models\\Incident' => __DIR__ . '/../..' . '/app/Models/Incident.php',
         'App\\Models\\Monitor' => __DIR__ . '/../..' . '/app/Models/Monitor.php',
         'App\\Models\\MonitorCheck' => __DIR__ . '/../..' . '/app/Models/MonitorCheck.php',

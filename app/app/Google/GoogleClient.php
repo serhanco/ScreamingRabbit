@@ -2,15 +2,17 @@
 
 namespace App\Google;
 
+use App\Models\GoogleConnection;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Talks to Google Search Console with one Google account connected from the panel (OAuth, offline access).
- * The OAuth client id/secret and the refresh token live in the settings table, the secret parts encrypted.
- * Only the panel user who connected the account (the owner) may see its Search Console property list.
+ * Talks to Google Search Console. The OAuth client id/secret (one Google Cloud app, set up by the primary admin) live
+ * in the settings table; each admin connects their own Google account and its refresh token sits encrypted in
+ * google_connections. A connection's Search Console site list is only ever shown to the member who made it, and a
+ * project reads its data with the connection of the member who picked its property.
  */
 class GoogleClient
 {
@@ -27,24 +29,27 @@ class GoogleClient
         return filled(Setting::get('google_client_id')) && filled(Setting::get('google_client_secret'));
     }
 
-    public static function connected(): bool
+    /** The user's own connection, if they have connected Google. */
+    public static function connectionOf(?User $user): ?GoogleConnection
     {
-        return self::configured() && filled(Setting::get('google_refresh_token'));
+        return $user === null ? null : GoogleConnection::query()->where('user_id', $user->getKey())->first();
     }
 
-    /** The connected account is private to the user who connected it; before that, any admin may set it up. */
-    public static function canManage(?User $user): bool
+    public static function connected(?User $user): bool
     {
-        if ($user === null || ! $user->isAdmin()) {
-            return false;
-        }
-
-        return ! self::connected() || self::isOwner($user);
+        return self::configured() && self::connectionOf($user) !== null;
     }
 
-    public static function isOwner(?User $user): bool
+    /** Admins connect their own Google account; invited members use the project owner's connection instead. */
+    public static function canConnect(?User $user): bool
     {
-        return $user !== null && self::connected() && (string) Setting::get('google_owner_id') === (string) $user->getKey();
+        return $user !== null && $user->isAdmin() && self::configured();
+    }
+
+    /** The OAuth client is shared by everyone, so only the primary admin sets or changes it. */
+    public static function canManageClient(?User $user): bool
+    {
+        return $user?->isPrimary() ?? false;
     }
 
     public static function redirectUri(): string
@@ -66,8 +71,8 @@ class GoogleClient
         ]);
     }
 
-    /** Swaps the code from the consent screen for tokens and remembers the account. */
-    public static function connect(string $code, User $owner): void
+    /** Swaps the code from the consent screen for tokens and stores them as the user's own connection. */
+    public static function connect(string $code, User $user): GoogleConnection
     {
         $tokens = Http::asForm()->timeout(15)->post(self::TOKEN_URL, [
             'code' => $code,
@@ -79,26 +84,24 @@ class GoogleClient
 
         $email = Http::withToken($tokens['access_token'])->timeout(15)->get('https://openidconnect.googleapis.com/v1/userinfo')->json('email');
 
-        Setting::put('google_refresh_token', $tokens['refresh_token'] ?? null);
-        Setting::put('google_email', $email);
-        Setting::put('google_owner_id', $owner->getKey());
-        Cache::forget('google_sites');
-        Cache::put('google_access_token', $tokens['access_token'], now()->addSeconds(max(60, ($tokens['expires_in'] ?? 3600) - 300)));
+        $connection = GoogleConnection::query()->updateOrCreate(['user_id' => $user->getKey()], ['email' => $email, 'refresh_token' => $tokens['refresh_token']]);
+        Cache::forget("google_sites:{$connection->id}");
+        Cache::put("google_access_token:{$connection->id}", $tokens['access_token'], now()->addSeconds(max(60, ($tokens['expires_in'] ?? 3600) - 300)));
+
+        return $connection;
     }
 
-    public static function disconnect(): void
+    public static function disconnect(GoogleConnection $connection): void
     {
-        Setting::put('google_refresh_token', null);
-        Setting::put('google_email', null);
-        Setting::put('google_owner_id', null);
-        Cache::forget('google_access_token');
-        Cache::forget('google_sites');
+        Cache::forget("google_access_token:{$connection->id}");
+        Cache::forget("google_sites:{$connection->id}");
+        $connection->delete();
     }
 
-    public static function accessToken(): string
+    public static function accessToken(GoogleConnection $connection): string
     {
-        return Cache::remember('google_access_token', now()->addMinutes(50), fn () => Http::asForm()->timeout(15)->post(self::TOKEN_URL, [
-            'refresh_token' => Setting::get('google_refresh_token'),
+        return Cache::remember("google_access_token:{$connection->id}", now()->addMinutes(50), fn () => Http::asForm()->timeout(15)->post(self::TOKEN_URL, [
+            'refresh_token' => $connection->refresh_token,
             'client_id' => Setting::get('google_client_id'),
             'client_secret' => Setting::get('google_client_secret'),
             'grant_type' => 'refresh_token',
@@ -106,18 +109,19 @@ class GoogleClient
     }
 
     /**
-     * Search Console properties the connected account can read.
+     * Search Console properties the user's own connection can read. Never call this for anyone but that user.
      *
      * @return array<string, string> property => label
      */
-    public static function sites(): array
+    public static function sites(?User $user): array
     {
-        if (! self::connected()) {
+        $connection = self::configured() ? self::connectionOf($user) : null;
+        if ($connection === null) {
             return [];
         }
 
-        return Cache::remember('google_sites', now()->addMinutes(10), fn () => collect(
-            Http::withToken(self::accessToken())->timeout(15)->get(self::API.'/sites')->throw()->json('siteEntry') ?? []
+        return Cache::remember("google_sites:{$connection->id}", now()->addMinutes(10), fn () => collect(
+            Http::withToken(self::accessToken($connection))->timeout(15)->get(self::API.'/sites')->throw()->json('siteEntry') ?? []
         )
             ->reject(fn ($site) => $site['permissionLevel'] === 'siteUnverifiedUser')
             ->mapWithKeys(fn ($site) => [$site['siteUrl'] => str_starts_with($site['siteUrl'], 'sc-domain:') ? substr($site['siteUrl'], 10).' (alan adı)' : $site['siteUrl']])
@@ -130,9 +134,11 @@ class GoogleClient
      *
      * @return array<string, mixed>
      */
-    public static function inspectUrl(string $property, string $url): array
+    public static function inspectUrl(GoogleConnection $connection, string $property, string $url): array
     {
-        return Http::withToken(self::accessToken())->timeout(30)
+        $connection->countCall(inspection: true);
+
+        return Http::withToken(self::accessToken($connection))->timeout(30)
             ->post('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', [
                 'inspectionUrl' => $url,
                 'siteUrl' => $property,
@@ -147,9 +153,11 @@ class GoogleClient
      * @param  array<string, mixed>  $body
      * @return array<int, array<string, mixed>>
      */
-    public static function searchAnalytics(string $property, array $body): array
+    public static function searchAnalytics(GoogleConnection $connection, string $property, array $body): array
     {
-        return Http::withToken(self::accessToken())->timeout(30)
+        $connection->countCall();
+
+        return Http::withToken(self::accessToken($connection))->timeout(30)
             ->post(self::API.'/sites/'.rawurlencode($property).'/searchAnalytics/query', $body)
             ->throw()->json('rows') ?? [];
     }

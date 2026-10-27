@@ -38,14 +38,17 @@ class ProjectResource extends Resource
         return auth()->user()?->isAdmin() ?? false;
     }
 
+    /** Admins delete only what they own; the primary admin anything. */
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = auth()->user();
+
+        return $user !== null && $user->isAdmin() && ($user->isPrimary() || $record->owner_id === $user->id);
     }
 
     public static function canDeleteAny(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return auth()->user()?->isPrimary() ?? false;
     }
 
     public static function form(Schema $schema): Schema

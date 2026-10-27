@@ -24,7 +24,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 /**
- * Team members: who can sign in, what role they have and which projects they work on. Admins only.
+ * Team members: who can sign in, what role they have and which projects they work on. Primary admin only: other
+ * admins only see their own projects, so they cannot hand out access to the rest.
  * Every member sets up their own 2FA on first sign-in (the panel requires it).
  */
 class UserResource extends Resource
@@ -41,7 +42,7 @@ class UserResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return auth()->user()?->isPrimary() ?? false;
     }
 
     public static function form(Schema $schema): Schema
@@ -58,11 +59,12 @@ class UserResource extends Resource
                 Select::make('role')->label('Rol')->options(User::ROLES)->required()->default('specialist')->live()
                     ->disabled(fn (?User $record): bool => $record?->is(auth()->user()) ?? false)
                     ->helperText(fn (?User $record): ?string => $record?->is(auth()->user()) ? 'Kendi rolünü değiştiremezsin; böylece panelde hiç yönetici kalmama riski olmaz.' : null),
-                Select::make('projects')->label('Çalışabildiği projeler')
+                Select::make('projects')
                     ->relationship('projects', 'name', fn ($query) => $query->orderBy('name'))
                     ->multiple()->preload()->searchable()
-                    ->visible(fn (Get $get): bool => $get('role') !== 'admin')
-                    ->helperText('Yönetici hepsini görür. Uzman ve salt okunur üye yalnızca burada seçilenleri görür; uyarılar da yalnızca bu projeler için gelir.')
+                    ->visible(fn (Get $get, ?User $record): bool => $get('role') !== 'admin' || ! ($record?->is_primary ?? false))
+                    ->label(fn (Get $get): string => $get('role') === 'admin' ? 'Ek projeler (kendi eklediği projeleri zaten görür)' : 'Çalışabildiği projeler')
+                    ->helperText('Uzman ve salt okunur üye yalnızca burada seçilenleri görür; uyarılar da yalnızca bu projeler için gelir.')
                     ->columnSpanFull(),
                 Toggle::make('is_active')->label('Hesap açık')->default(true)->disabled(fn (?User $record): bool => $record?->is(auth()->user()) ?? false)->helperText('Kapatılırsa üye giriş yapamaz; hesabı silmeden erişimi keser.'),
             ]),
@@ -77,7 +79,7 @@ class UserResource extends Resource
                 TextColumn::make('email')->label('E-posta')->searchable(),
                 TextColumn::make('role')->label('Rol')->badge()->formatStateUsing(fn (string $state): string => explode(' (', User::ROLES[$state] ?? $state)[0]),
                 TextColumn::make('projects_count')->label('Proje')->counts('projects')
-                    ->formatStateUsing(fn ($state, User $record): string => $record->isAdmin() ? 'Hepsi' : (string) $state),
+                    ->formatStateUsing(fn ($state, User $record): string => $record->isPrimary() ? 'Hepsi' : (string) $state),
                 IconColumn::make('has_2fa')->label('2FA')->boolean()->state(fn (User $record): bool => filled($record->app_authentication_secret)),
                 IconColumn::make('is_active')->label('Açık')->boolean(),
             ])

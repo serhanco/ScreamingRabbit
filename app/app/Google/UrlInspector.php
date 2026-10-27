@@ -3,6 +3,7 @@
 namespace App\Google;
 
 use App\Models\Crawl;
+use App\Models\GoogleConnection;
 use App\Models\Project;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
@@ -18,16 +19,24 @@ class UrlInspector
     /** Well under Google's 2,000 per property per day, leaving room for Search Console's own tools. */
     private const PER_DAY = 500;
 
+    /** One Google connection may serve several projects; this keeps its daily total modest as well. */
+    public const PER_CONNECTION_DAY = 1000;
+
     private const RECHECK_DAYS = 7;
 
     /**
      * @return int pages inspected
      */
-    public static function run(Project $project): int
+    public static function run(Project $project, ?GoogleConnection $connection = null): int
     {
+        $connection ??= $project->gscConnection();
+        if ($connection === null) {
+            return 0;
+        }
+
         $crawl = Crawl::query()->where('project_id', $project->id)->where('status', 'completed')->latest('id')->first();
         $today = DB::table('gsc_inspections')->where('project_id', $project->id)->where('inspected_at', '>=', now()->startOfDay())->count();
-        if ($crawl === null || $today >= self::PER_DAY) {
+        if ($crawl === null || $today >= self::PER_DAY || $connection->inspectionsToday() >= self::PER_CONNECTION_DAY) {
             return 0;
         }
 
@@ -40,13 +49,13 @@ class UrlInspector
             ->orderByRaw('COALESCE(gsc.gsc_clicks, 0) DESC')
             ->orderBy('crawl_pages.depth')
             ->orderBy('crawl_pages.id')
-            ->limit(min(self::PER_RUN, self::PER_DAY - $today))
+            ->limit(min(self::PER_RUN, self::PER_DAY - $today, self::PER_CONNECTION_DAY - $connection->inspectionsToday()))
             ->get(['crawl_pages.url', 'crawl_pages.url_hash']);
 
         foreach ($pages as $page) {
             $row = ['url' => $page->url, 'inspected_at' => now(), 'error' => null];
             try {
-                $result = GoogleClient::inspectUrl($project->gsc_property, $page->url);
+                $result = GoogleClient::inspectUrl($connection, $project->gsc_property, $page->url);
                 $row += [
                     'verdict' => $result['verdict'] ?? null,
                     'coverage_state' => isset($result['coverageState']) ? mb_substr($result['coverageState'], 0, 250) : null,
