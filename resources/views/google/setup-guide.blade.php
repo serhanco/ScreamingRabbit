@@ -1,0 +1,12 @@
+{{-- Click-by-click steps for creating the Google Cloud OAuth client; shared by the Google settings page and the dashboard widget. --}}
+@php($redirect = \App\Google\GoogleClient::redirectUri())
+<ol style="list-style: decimal; padding-inline-start: 1.25rem; display: grid; gap: .5rem; line-height: 1.6;">
+    <li><a class="text-primary-600 underline" href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">Yeni proje oluştur</a>: adı <strong>ScreamingRabbit</strong> olsun, <strong>Create</strong>. Sonraki adımlarda üstte bu projenin seçili olduğundan emin ol.</li>
+    <li><a class="text-primary-600 underline" href="https://console.cloud.google.com/apis/library/searchconsole.googleapis.com" target="_blank" rel="noopener">Search Console API</a> sayfasında <strong>Enable</strong>.</li>
+    <li><a class="text-primary-600 underline" href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> → <strong>Get started</strong>: App name <strong>ScreamingRabbit</strong>, iki e-posta alanına kendi adresin, Audience <strong>External</strong>, kutuyu işaretle, <strong>Create</strong>.</li>
+    <li><a class="text-primary-600 underline" href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener">Audience</a> sayfasında <strong>Publish app</strong> → <strong>Confirm</strong>. Bu adım şart: atlanırsa bağlantı 7 günde bir kopar.</li>
+    <li><a class="text-primary-600 underline" href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener">Clients</a> → <strong>Create client</strong> → tür <strong>Web application</strong>. <strong>Authorized redirect URIs</strong> → <strong>Add URI</strong> ve tam olarak şunu yapıştır: <code style="user-select: all; font-weight: 600;">{{ $redirect }}</code> → <strong>Create</strong>.</li>
+    <li>Açılan penceredeki <strong>Client ID</strong> ve <strong>Client secret</strong> değerlerini hemen kopyala; secret bir daha gösterilmez.</li>
+    <li><a class="text-primary-600 underline" href="{{ \App\Filament\Pages\GoogleSettings::getUrl() }}">Google bağlantısı</a> sayfasında ikisini yapıştır, <strong>Kaydet</strong>, sonra <strong>Google hesabını bağla</strong>. Search Console erişimi olan hesabı seç. "Google bu uygulamayı doğrulamadı" uyarısı çıkarsa <strong>Gelişmiş</strong> → <strong>ScreamingRabbit'e git</strong> → izin ver (uygulama senin, güvenli).</li>
+    <li>Bağlandıktan sonra her projenin ayarlarından Search Console mülkünü seç.</li>
+</ol>

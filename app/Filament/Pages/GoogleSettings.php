@@ -14,6 +14,7 @@ use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -59,6 +60,11 @@ class GoogleSettings extends Page
                             ? 'Bağlı hesap: '.Setting::get('google_email').'. Proje ayarlarından her projeye Search Console mülkünü seç.'
                             : 'Henüz bağlı değil. Önce aşağıya OAuth istemci bilgilerini kaydet, sonra "Google hesabını bağla" düğmesine bas.'),
                     ]),
+                Section::make('Kurulum rehberi')
+                    ->description('Google Cloud\'da OAuth istemcisi oluşturma adımları (bir kez, yaklaşık 10 dakika).')
+                    ->collapsible()
+                    ->collapsed(fn (): bool => GoogleClient::connected())
+                    ->schema([View::make('google.setup-guide')]),
                 Section::make('OAuth istemcisi')
                     ->description('Google Cloud Console\'da bir kez oluşturulur. "Yetkili yönlendirme URI\'si" olarak şunu ekle: '.GoogleClient::redirectUri())
                     ->columns(2)
