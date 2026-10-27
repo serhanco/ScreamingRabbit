@@ -11,7 +11,7 @@ class HtmlParser
     private const JS_SHELL_WORDS = 50;
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, js_shell: bool}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, js_shell: bool, wp_type: ?string, wp_category: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -85,6 +85,7 @@ class HtmlParser
         };
 
         [$schemaTypes, $schemaErrors] = self::jsonLd($xpath);
+        [$wpType, $wpCategory] = self::wordPressContent($xpath, $bodyClass);
 
         $seoPlugins = [];
         foreach (['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math', 'aioseo' => 'All in One SEO'] as $key => $needle) {
@@ -111,6 +112,9 @@ class HtmlParser
         $bodyText = preg_replace('/\s+/u', ' ', implode(' ', $texts));
         $wordCount = (int) preg_match_all('/[\p{L}\p{N}]+/u', $bodyText);
 
+        $wordpress = (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
+            || ($generator !== null && stripos($generator, 'wordpress') !== false);
+
         return [
             'title' => $title,
             'description' => $description,
@@ -131,8 +135,9 @@ class HtmlParser
             'schema_types' => $schemaTypes,
             'schema_errors' => $schemaErrors,
             'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
-            'wordpress_hint' => (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
-                || ($generator !== null && stripos($generator, 'wordpress') !== false),
+            'wordpress_hint' => $wordpress,
+            'wp_type' => $wordpress ? $wpType : null,
+            'wp_category' => $wordpress ? $wpCategory : null,
         ];
     }
 
@@ -166,6 +171,59 @@ class HtmlParser
         }
 
         return [array_values(array_unique($types)), $errors];
+    }
+
+    /**
+     * WordPress content type and category from the classes themes print with body_class() and post_class():
+     * "single single-post" → post, "page page-id-5" → page, "single-product" → product, "category category-news" → category archive.
+     * The category is the first category-{slug} (or WooCommerce product_cat-{slug}) on the post, or the archive's own slug.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private static function wordPressContent(DOMXPath $xpath, string $bodyClass): array
+    {
+        $body = preg_split('/\s+/', trim($bodyClass), -1, PREG_SPLIT_NO_EMPTY);
+        $has = fn (string $token) => in_array($token, $body, true);
+        $prefixed = function (array $tokens, string $pattern): ?string {
+            foreach ($tokens as $token) {
+                if (preg_match($pattern, $token, $m) && ! ctype_digit($m[1])) {
+                    return $m[1];
+                }
+            }
+
+            return null;
+        };
+
+        $type = match (true) {
+            $has('home') => 'home',
+            $has('error404') => '404',
+            $has('search') => 'search',
+            $has('attachment') => 'attachment',
+            $has('single') => $prefixed($body, '/^single-(?!format-)([a-z0-9_-]+)$/') ?? 'post',
+            $has('blog') => 'blog',
+            $has('page') && preg_grep('/^page-id-\d+$/', $body) !== [] => 'page',
+            $has('category') => 'category',
+            $has('tag') => 'tag',
+            $has('author') => 'author',
+            $has('date') => 'date',
+            ($archive = $prefixed($body, '/^post-type-archive-([a-z0-9_-]+)$/')) !== null => 'archive:'.$archive,
+            ($tax = $prefixed($body, '/^tax-([a-z0-9_-]+)$/')) !== null => 'tax:'.$tax,
+            default => null,
+        };
+
+        $category = null;
+        if ($type === 'category') {
+            $category = $prefixed($body, '/^category-([a-z0-9%_-]+)$/');
+        } elseif ($type !== null && ! in_array($type, ['home', 'blog', 'page', '404', 'search'], true)) {
+            foreach ($xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " status-publish ")]/@class') as $attribute) {
+                $category = $prefixed(preg_split('/\s+/', strtolower($attribute->nodeValue), -1, PREG_SPLIT_NO_EMPTY), '/^(?:category|product_cat)-([a-z0-9%_-]+)$/');
+                if ($category !== null) {
+                    break;
+                }
+            }
+        }
+
+        return [$type, $category === null ? null : mb_substr(urldecode($category), 0, 190)];
     }
 
     private static function meta(DOMXPath $xpath, string $name): ?string
