@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Tasks;
 
 use App\Audit\RuleCatalog;
+use App\Filament\Concerns\ScopedToUserProjects;
 use App\Filament\Resources\Crawls\CrawlColors;
 use App\Filament\Resources\Tasks\Pages\EditTask;
 use App\Filament\Resources\Tasks\Pages\ListTasks;
@@ -30,6 +31,8 @@ use Filament\Tables\Table;
  */
 class TaskResource extends Resource
 {
+    use ScopedToUserProjects;
+
     protected static ?string $model = Task::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
@@ -82,8 +85,8 @@ class TaskResource extends Resource
                 TextColumn::make('severity')->label('Önem')->badge()
                     ->formatStateUsing(fn (?string $state): string => RuleCatalog::SEVERITIES[$state] ?? '—')
                     ->color(fn (?string $state): string => CrawlColors::severity((string) $state)),
-                SelectColumn::make('status')->label('Durum')->options(Task::STATUSES)->selectablePlaceholder(false),
-                ToggleColumn::make('show_in_report')->label('Raporda')->tooltip('Müşteri raporunun "Çalışma planı" bölümünde göster'),
+                SelectColumn::make('status')->label('Durum')->options(Task::STATUSES)->selectablePlaceholder(false)->disabled(fn (): bool => ! auth()->user()->canWrite()),
+                ToggleColumn::make('show_in_report')->label('Raporda')->disabled(fn (): bool => ! auth()->user()->canWrite())->tooltip('Müşteri raporunun "Çalışma planı" bölümünde göster'),
                 TextColumn::make('impact')->label('Etki')->toggleable()
                     ->state(fn (Task $record): ?string => ImpactMeter::label($record->impact))
                     ->color(fn (Task $record): ?string => match (true) {

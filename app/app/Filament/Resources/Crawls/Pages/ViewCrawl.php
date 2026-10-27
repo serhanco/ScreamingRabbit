@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Crawls\Pages;
 
-use App\Filament\Resources\Crawls\CrawlResource;
 use App\Crawler\CrawlRunner;
 use App\Exports\CrawlCsv;
+use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
 use App\Reports\CrawlReport;
 use Filament\Actions\Action;
@@ -39,7 +39,7 @@ class ViewCrawl extends ViewRecord
                 ->icon(Heroicon::OutlinedPlay)
                 ->requiresConfirmation()
                 ->modalDescription('Aynı proje için yeni bir tarama başlatılır; bu sonuçlar silinmez.')
-                ->visible(fn (Crawl $record): bool => ! $record->isActive())
+                ->visible(fn (Crawl $record): bool => ! $record->isActive() && auth()->user()->canWrite())
                 ->action(function (Crawl $record): void {
                     $crawl = CrawlRunner::start($record->project);
                     Notification::make()->title('Yeni tarama başlatıldı')->success()->send();
@@ -49,7 +49,7 @@ class ViewCrawl extends ViewRecord
                 ->label('Müşteri raporu')
                 ->icon(Heroicon::OutlinedLink)
                 ->color('primary')
-                ->visible(fn (Crawl $record): bool => $record->status === 'completed')
+                ->visible(fn (Crawl $record): bool => $record->status === 'completed' && auth()->user()->canWrite())
                 ->modalHeading('Müşteri raporu')
                 ->modalDescription(fn (Crawl $record): string => $record->share_token
                     ? 'Bu bağlantıya sahip herkes raporu görebilir: '.route('report.show', $record->share_token)
@@ -109,7 +109,7 @@ class ViewCrawl extends ViewRecord
                 ->icon(Heroicon::OutlinedStop)
                 ->color('danger')
                 ->requiresConfirmation()
-                ->visible(fn (Crawl $record): bool => $record->isActive())
+                ->visible(fn (Crawl $record): bool => $record->isActive() && auth()->user()->canWrite())
                 ->action(fn (Crawl $record) => $record->update(['status' => 'cancelled', 'finished_at' => now()])),
         ];
     }

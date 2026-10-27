@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Crawls;
 
+use App\Filament\Concerns\ScopedToUserProjects;
 use App\Filament\Resources\Crawls\Pages\ListCrawls;
 use App\Filament\Resources\Crawls\Pages\ViewCrawl;
 use App\Filament\Resources\Crawls\RelationManagers\IssuesRelationManager;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class CrawlResource extends Resource
 {
+    use ScopedToUserProjects;
+
     protected static ?string $model = Crawl::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMagnifyingGlass;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Monitors;
 
+use App\Filament\Concerns\ScopedToUserProjects;
 use App\Filament\Resources\Monitors\Pages\CreateMonitor;
 use App\Filament\Resources\Monitors\Pages\EditMonitor;
 use App\Filament\Resources\Monitors\Pages\ListMonitors;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class MonitorResource extends Resource
 {
+    use ScopedToUserProjects;
+
     protected static ?string $model = Monitor::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;

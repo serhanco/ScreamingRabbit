@@ -34,6 +34,12 @@ class GoogleSettings extends Page
 
     protected static ?int $navigationSort = 91;
 
+    /** The Google account and its keys are shared by the whole panel, so only admins manage them. */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     /** @var array<string, mixed> */
     public ?array $data = [];
 
