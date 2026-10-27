@@ -43,6 +43,17 @@ class Project extends Model
     {
         // Every new site is watched for downtime from the start (docs/08 §2.1: default target is the home page).
         static::created(fn (Project $project) => $project->monitors()->create(['url' => $project->base_url]));
+
+        static::creating(function (Project $project) {
+            $project->owner_id ??= auth()->id();
+        });
+
+        // Whoever picks the Search Console property links it with their own Google connection.
+        static::saving(function (Project $project) {
+            if ($project->isDirty('gsc_property') && auth()->check()) {
+                $project->gsc_user_id = filled($project->gsc_property) ? auth()->id() : null;
+            }
+        });
     }
 
     public function monitors(): HasMany
@@ -50,10 +61,32 @@ class Project extends Model
         return $this->hasMany(Monitor::class);
     }
 
-    /** Projects the user may see: all for admins, the assigned ones for everyone else. */
+    /** Projects the user may see: all for the primary admin, the owned and assigned ones for everyone else. */
     public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
-        return $user === null || $user->isAdmin() ? $query : $query->whereIn('projects.id', DB::table('project_user')->where('user_id', $user->id)->select('project_id'));
+        if ($user === null || $user->isPrimary()) {
+            return $query;
+        }
+
+        return $query->where(fn (Builder $q) => $q
+            ->whereIn('projects.id', DB::table('project_user')->where('user_id', $user->id)->select('project_id'))
+            ->orWhere('projects.owner_id', $user->id));
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /** The member whose Google connection reads this project's Search Console data. */
+    public function gscUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'gsc_user_id');
+    }
+
+    public function gscConnection(): ?GoogleConnection
+    {
+        return $this->gsc_user_id ? GoogleConnection::query()->where('user_id', $this->gsc_user_id)->first() : null;
     }
 
     public function crawls(): HasMany

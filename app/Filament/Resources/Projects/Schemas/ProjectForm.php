@@ -26,7 +26,7 @@ class ProjectForm
                     ->schema([
                         Select::make('client_id')
                             ->label('Müşteri')
-                            ->relationship('client', 'name')
+                            ->relationship('client', 'name', fn ($query) => $query->visibleTo(auth()->user()))
                             ->searchable()
                             ->preload()
                             ->required()
@@ -56,18 +56,14 @@ class ProjectForm
                             ->helperText('Seçilirse tarama gece 01:00–06:00 arasında kendiliğinden başlar.'),
                         Select::make('gsc_property')
                             ->label('Search Console mülkü')
-                            // Only the account owner gets the property list; everyone else sees just this project's property, read-only.
-                            ->options(fn (?Project $record): array => GoogleClient::isOwner(auth()->user())
-                                ? rescue(fn () => GoogleClient::sites(), [], false)
-                                : array_filter([$record?->gsc_property => $record?->gsc_property]))
-                            ->disabled(fn (): bool => ! GoogleClient::isOwner(auth()->user()))
+                            // Only the signed-in admin's own site list is offered, plus this project's current property;
+                            // nobody ever sees another member's Google sites.
+                            ->options(fn (?Project $record): array => array_filter([$record?->gsc_property => $record?->gsc_property])
+                                + rescue(fn () => GoogleClient::sites(auth()->user()), [], false))
+                            ->disabled(fn (): bool => ! GoogleClient::connected(auth()->user()))
                             ->searchable()
                             ->placeholder('Bağlı değil')
-                            ->helperText(fn (): string => match (true) {
-                                GoogleClient::isOwner(auth()->user()) => 'Tıklama ve gösterim verileri bu mülkten günlük çekilir.',
-                                GoogleClient::connected() => 'Mülkü yalnızca Google hesabını bağlayan kişi seçebilir.',
-                                default => 'Önce "Google bağlantısı" sayfasından Google hesabını bağla.',
-                            }),
+                            ->helperText(fn (?Project $record): string => self::gscHelp($record)),
                     ]),
                 Section::make('Tarama ayarları')
                     ->description('Boş bırakılan alanlar varsayılan değeri kullanır. Müşteri sitesini yormamak için düşük değerlerle başlayın.')
@@ -117,6 +113,22 @@ class ProjectForm
                             ->rule(fn (): \Closure => self::regexRule()),
                     ]),
             ]);
+    }
+
+    private static function gscHelp(?Project $record): string
+    {
+        $user = auth()->user();
+        $linkedBy = $record?->gsc_user_id;
+        $stale = filled($record?->gsc_property) && $record->gscConnection() === null;
+
+        return match (true) {
+            $stale => 'Bu mülkü bağlayan hesabın Google bağlantısı yok; veriler güncellenmiyor.'.(GoogleClient::connected($user) ? ' Kendi listenden mülkü yeniden seçebilirsin.' : ''),
+            GoogleClient::connected($user) && $linkedBy !== null && $linkedBy !== $user->id => 'Veriler '.($record->gscUser?->name ?? 'başka bir üye').'\'nin Google bağlantısıyla çekiliyor. Kendi listenden seçersen senin bağlantına geçer.',
+            GoogleClient::connected($user) => 'Tıklama ve gösterim verileri bu mülkten senin Google bağlantınla günlük çekilir.',
+            GoogleClient::canConnect($user) => 'Önce "Google bağlantısı" sayfasından kendi Google hesabını bağla.',
+            filled($record?->gsc_property) => 'Veriler proje sahibinin Google bağlantısıyla çekilir.',
+            default => 'Search Console mülkünü proje sahibi bağlar.',
+        };
     }
 
     private static function regexRule(): \Closure

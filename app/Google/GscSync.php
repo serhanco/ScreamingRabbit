@@ -3,6 +3,7 @@
 namespace App\Google;
 
 use App\Crawler\UrlNormalizer;
+use App\Models\GoogleConnection;
 use App\Models\Project;
 use App\Tasks\ImpactMeter;
 use App\Tasks\TaskBuilder;
@@ -34,20 +35,23 @@ class GscSync
 
     public static function runAll(): void
     {
-        if (! GoogleClient::connected()) {
+        if (! GoogleClient::configured()) {
             return;
         }
 
-        Project::query()->whereNotNull('gsc_property')->each(function (Project $project) {
+        // Each project is read with the Google connection of the member who picked its property.
+        $connections = GoogleConnection::query()->get()->keyBy('user_id');
+        Project::query()->whereNotNull('gsc_property')->whereIn('gsc_user_id', $connections->keys())->each(function (Project $project) use ($connections) {
+            $connection = $connections[$project->gsc_user_id];
             try {
-                self::run($project);
+                self::run($project, $connection);
                 if ($project->gsc_queries_synced_on?->isToday() !== true) {
-                    self::syncQueries($project);
+                    self::syncQueries($project, $connection);
                     // Fresh query data once a day: refresh the Search Console tasks too.
                     TaskBuilder::sync($project);
                     ImpactMeter::run($project);
                 }
-                UrlInspector::run($project);
+                UrlInspector::run($project, $connection);
             } catch (\Throwable $e) {
                 Log::error("GSC senkronu başarısız ({$project->name}): ".$e->getMessage());
             }
@@ -57,8 +61,13 @@ class GscSync
     /**
      * @return int rows stored
      */
-    public static function run(Project $project): int
+    public static function run(Project $project, ?GoogleConnection $connection = null): int
     {
+        $connection ??= $project->gscConnection();
+        if ($connection === null) {
+            return 0;
+        }
+
         $end = CarbonImmutable::today()->subDays(self::LAG_DAYS);
         $oldest = $end->subDays(self::HISTORY_DAYS);
         $first = DB::table('gsc_page_days')->where('project_id', $project->id)->min('day');
@@ -79,7 +88,7 @@ class GscSync
 
         $stored = 0;
         for ($page = 0; $page < self::MAX_PAGES; $page++) {
-            $rows = GoogleClient::searchAnalytics($project->gsc_property, [
+            $rows = GoogleClient::searchAnalytics($connection, $project->gsc_property, [
                 'startDate' => $from->toDateString(),
                 'endDate' => $to->toDateString(),
                 'dimensions' => ['date', 'page'],
@@ -116,12 +125,17 @@ class GscSync
      *
      * @return int rows stored
      */
-    public static function syncQueries(Project $project): int
+    public static function syncQueries(Project $project, ?GoogleConnection $connection = null): int
     {
+        $connection ??= $project->gscConnection();
+        if ($connection === null) {
+            return 0;
+        }
+
         $end = CarbonImmutable::today()->subDays(self::LAG_DAYS);
         $rows = [];
         for ($page = 0; $page < self::MAX_PAGES; $page++) {
-            $batch = GoogleClient::searchAnalytics($project->gsc_property, [
+            $batch = GoogleClient::searchAnalytics($connection, $project->gsc_property, [
                 'startDate' => $end->subDays(27)->toDateString(),
                 'endDate' => $end->toDateString(),
                 'dimensions' => ['page', 'query'],

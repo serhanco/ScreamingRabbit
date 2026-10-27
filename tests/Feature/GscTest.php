@@ -11,6 +11,7 @@ use App\Google\GoogleClient;
 use App\Google\GscSync;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
+use App\Models\GoogleConnection;
 use App\Models\Project;
 use App\Models\Setting;
 use App\Models\User;
@@ -33,11 +34,9 @@ class GscTest extends TestCase
         Setting::put('google_client_secret', str_repeat('s', 12));
     }
 
-    private function connect(): void
+    private function connect(?User $user = null, string $token = 'refresh-1'): void
     {
-        Setting::put('google_refresh_token', 'refresh-1');
-        Setting::put('google_email', 'serhan@example.com');
-        Setting::put('google_owner_id', auth()->id());
+        GoogleConnection::create(['user_id' => ($user ?? auth()->user())->id, 'email' => 'serhan@example.com', 'refresh_token' => $token]);
     }
 
     public function test_settings_page_shows_redirect_uri_and_connect_button(): void
@@ -90,48 +89,110 @@ class GscTest extends TestCase
         parse_str(parse_url($redirect, PHP_URL_QUERY), $query);
 
         $this->get(route('filament.admin.google.callback', ['state' => 'wrong', 'code' => 'abc']))->assertRedirect(GoogleSettings::getUrl());
-        $this->assertFalse(GoogleClient::connected());
+        $this->assertFalse(GoogleClient::connected(auth()->user()));
 
         $this->withSession(['google_oauth_state' => $query['state']])
             ->get(route('filament.admin.google.callback', ['state' => $query['state'], 'code' => 'abc']))
             ->assertRedirect(GoogleSettings::getUrl());
 
-        $this->assertTrue(GoogleClient::connected());
-        $this->assertSame('serhan@example.com', Setting::get('google_email'));
-        $this->assertTrue(GoogleClient::isOwner(auth()->user()));
-        $this->assertNotSame('refresh-1', DB::table('settings')->where('key', 'google_refresh_token')->value('value'));
+        $this->assertTrue(GoogleClient::connected(auth()->user()));
+        $this->assertSame('serhan@example.com', GoogleClient::connectionOf(auth()->user())->email);
+        $this->assertSame('refresh-1', GoogleClient::connectionOf(auth()->user())->refresh_token);
+        $this->assertNotSame('refresh-1', DB::table('google_connections')->value('refresh_token'), 'stored encrypted');
     }
 
-    public function test_only_the_user_who_connected_google_sees_the_site_list(): void
+    /** Each refresh token gets its own access token, and each access token its own site list. */
+    private function fakeGoogleAccounts(): void
+    {
+        Http::fake([
+            'oauth2.googleapis.com/token' => fn ($request) => Http::response(['access_token' => 'access-'.$request['refresh_token'], 'expires_in' => 3599]),
+            'www.googleapis.com/webmasters/v3/sites' => fn ($request) => Http::response(['siteEntry' => $request->hasHeader('Authorization', 'Bearer access-refresh-1')
+                ? [['siteUrl' => 'sc-domain:example.com', 'permissionLevel' => 'siteOwner'], ['siteUrl' => 'sc-domain:gizli.com', 'permissionLevel' => 'siteOwner']]
+                : [['siteUrl' => 'sc-domain:ikinci.com', 'permissionLevel' => 'siteOwner']]]),
+            'www.googleapis.com/webmasters/v3/sites/*/searchAnalytics/query' => Http::response(['rows' => []]),
+        ]);
+    }
+
+    public function test_each_admin_sees_only_their_own_google_site_list(): void
     {
         $this->connect();
-        Http::fake([
-            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'access-1', 'expires_in' => 3599]),
-            'www.googleapis.com/webmasters/v3/sites' => Http::response(['siteEntry' => [
-                ['siteUrl' => 'sc-domain:example.com', 'permissionLevel' => 'siteOwner'],
-                ['siteUrl' => 'sc-domain:gizli.com', 'permissionLevel' => 'siteOwner'],
-            ]]),
-        ]);
+        $this->fakeGoogleAccounts();
+        $serhan = auth()->user();
         $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
+        $this->assertSame($serhan->id, $project->gsc_user_id);
 
         Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
             ->assertSee('gizli.com')
             ->assertFormFieldEnabled('gsc_property');
 
-        $this->actingAs(User::factory()->create(['role' => 'admin', 'app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
-
-        $this->assertFalse(GoogleSettings::canAccess());
-        $this->get(GoogleSettings::getUrl())->assertForbidden();
-        $this->get(route('filament.admin.google.connect'))->assertForbidden();
-        $this->get(route('filament.admin.google.callback', ['state' => 'x', 'code' => 'abc']))->assertForbidden();
+        // A second admin assigned to the project, before connecting Google: no site list, the property is read-only.
+        $other = User::factory()->create(['role' => 'admin', 'app_authentication_secret' => 'JBSWY3DPEHPK3PXP']);
+        $other->projects()->attach($project);
+        $this->actingAs($other);
+        $this->assertFalse($other->isPrimary());
+        $this->assertTrue(GoogleSettings::canAccess(), 'every admin may connect their own account');
+        $this->get(GoogleSettings::getUrl())->assertOk()->assertDontSee('serhan@example.com')->assertDontSee('İstemci kimliği (Client ID)');
 
         Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
             ->assertDontSee('gizli.com')
             ->assertFormFieldDisabled('gsc_property')
             ->fillForm(['gsc_property' => 'sc-domain:gizli.com'])
             ->call('save');
-
         $this->assertSame('sc-domain:example.com', $project->fresh()->gsc_property);
+
+        // After connecting: their own list only, never Serhan's.
+        $this->connect($other, 'refresh-2');
+        $this->assertSame(['sc-domain:ikinci.com' => 'ikinci.com (alan adı)'], GoogleClient::sites($other));
+        Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
+            ->assertDontSee('gizli.com')
+            ->assertSee('ikinci.com')
+            ->assertFormFieldEnabled('gsc_property')
+            ->fillForm(['gsc_property' => 'sc-domain:gizli.com'])
+            ->call('save')
+            ->assertHasFormErrors(['gsc_property']);
+
+        // Picking from their own list moves the project to their connection.
+        Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
+            ->fillForm(['gsc_property' => 'sc-domain:ikinci.com'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+        $this->assertSame($other->id, $project->fresh()->gsc_user_id);
+        GscSync::run($project->fresh());
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'searchAnalytics') && $request->hasHeader('Authorization', 'Bearer access-refresh-2'));
+        $this->assertSame(1, GoogleClient::connectionOf($other)->callsToday());
+        $this->assertSame(0, GoogleClient::connectionOf($serhan)->callsToday(), 'quota is counted per connection');
+    }
+
+    public function test_invited_members_never_connect_google_or_see_the_guide(): void
+    {
+        $this->connect();
+        $project = Project::factory()->create(['gsc_property' => 'sc-domain:example.com']);
+        $specialist = User::factory()->create(['role' => 'specialist', 'app_authentication_secret' => 'JBSWY3DPEHPK3PXP']);
+        $specialist->projects()->attach($project);
+        $this->actingAs($specialist);
+
+        $this->assertFalse(GoogleSettings::canAccess());
+        $this->get(GoogleSettings::getUrl())->assertForbidden();
+        $this->get(route('filament.admin.google.connect'))->assertForbidden();
+        $this->get(route('filament.admin.google.callback', ['state' => 'x', 'code' => 'abc']))->assertForbidden();
+        $this->get('/admin')->assertOk()->assertDontSee('Başlarken: Google Search Console bağlantısı');
+        $this->assertFalse(GoogleSetupGuide::canView());
+
+        Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])
+            ->assertFormFieldDisabled('gsc_property')
+            ->assertSee('proje sahibinin Google bağlantısıyla');
+    }
+
+    public function test_second_admin_gets_only_the_connect_step_and_cannot_change_the_shared_key(): void
+    {
+        $this->connect();
+        $other = User::factory()->create(['role' => 'admin', 'app_authentication_secret' => 'JBSWY3DPEHPK3PXP']);
+        $this->actingAs($other);
+
+        $this->get('/admin')->assertOk()->assertSee('Başlarken: Google Search Console bağlantısı')->assertSee('Adım 1/1')->assertDontSee('Uygulamayı yayınla');
+        Livewire::test(GoogleSetupGuide::class)->set('clientId', 'x')->set('clientSecret', 'y')->call('saveKeys')->assertForbidden();
+        Livewire::test(GoogleSettings::class)->call('save')->assertForbidden();
+        $this->assertSame('client-123', Setting::get('google_client_id'));
     }
 
     public function test_sites_and_sync_fill_page_metrics(): void
@@ -149,7 +210,7 @@ class GscTest extends TestCase
             ]]),
         ]);
 
-        $this->assertSame(['sc-domain:example.com' => 'example.com (alan adı)'], GoogleClient::sites());
+        $this->assertSame(['sc-domain:example.com' => 'example.com (alan adı)'], GoogleClient::sites(auth()->user()));
 
         $project = Project::factory()->create(['base_url' => 'https://example.com', 'gsc_property' => 'sc-domain:example.com']);
         $this->assertSame(2, GscSync::run($project));
