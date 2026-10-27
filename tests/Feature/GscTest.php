@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\GoogleSettings;
+use App\Filament\Widgets\GoogleSetupGuide;
 use App\Filament\Resources\Crawls\Pages\ViewCrawl;
 use App\Filament\Resources\Crawls\RelationManagers\PagesRelationManager;
 use App\Google\GoogleClient;
@@ -46,15 +47,33 @@ class GscTest extends TestCase
 
     public function test_dashboard_shows_setup_guide_until_google_is_connected(): void
     {
-        $this->get('/admin')->assertOk()->assertSee('Başlarken: Search Console bağlantısı')->assertSee(GoogleClient::redirectUri());
+        $this->get('/admin')->assertOk()->assertSee('Başlarken: Google Search Console bağlantısı')->assertSee(GoogleClient::redirectUri());
 
         $this->connect();
-        $this->get('/admin')->assertOk()->assertDontSee('Başlarken: Search Console bağlantısı');
+        $this->get('/admin')->assertOk()->assertDontSee('Başlarken: Google Search Console bağlantısı');
+    }
+
+    public function test_dashboard_guide_saves_the_keys(): void
+    {
+        Setting::put('google_client_id', null);
+        Setting::put('google_client_secret', null);
+
+        Livewire::test(GoogleSetupGuide::class)
+            ->assertSee('Adım 1/7')
+            ->assertSee('Bu düğme 6. adımda')
+            ->set('clientId', ' id-1.apps.googleusercontent.com ')
+            ->set('clientSecret', 'secret-1')
+            ->call('saveKeys')
+            ->assertHasNoErrors()
+            ->assertSee(route('filament.admin.google.connect'));
+
+        $this->assertSame('id-1.apps.googleusercontent.com', Setting::get('google_client_id'));
+        $this->assertTrue(GoogleClient::configured());
     }
 
     public function test_settings_page_includes_setup_guide(): void
     {
-        Livewire::test(GoogleSettings::class)->assertSee('Kurulum rehberi')->assertSee('Publish app');
+        Livewire::test(GoogleSettings::class)->assertSee('Kurulum rehberi')->assertSee('Uygulamayı yayınla');
     }
 
     public function test_oauth_callback_stores_the_refresh_token(): void

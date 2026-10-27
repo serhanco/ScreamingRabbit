@@ -61,7 +61,7 @@ class GoogleSettings extends Page
                             : 'Henüz bağlı değil. Önce aşağıya OAuth istemci bilgilerini kaydet, sonra "Google hesabını bağla" düğmesine bas.'),
                     ]),
                 Section::make('Kurulum rehberi')
-                    ->description('Google Cloud\'da OAuth istemcisi oluşturma adımları (bir kez, yaklaşık 10 dakika).')
+                    ->description('Bir kereye mahsus, yaklaşık 10 dakika.')
                     ->collapsible()
                     ->collapsed(fn (): bool => GoogleClient::connected())
                     ->schema([View::make('google.setup-guide')]),
