@@ -56,10 +56,18 @@ class ProjectForm
                             ->helperText('Seçilirse tarama gece 01:00–06:00 arasında kendiliğinden başlar.'),
                         Select::make('gsc_property')
                             ->label('Search Console mülkü')
-                            ->options(fn (): array => rescue(fn () => GoogleClient::sites(), [], false))
+                            // Only the account owner gets the property list; everyone else sees just this project's property, read-only.
+                            ->options(fn (?Project $record): array => GoogleClient::isOwner(auth()->user())
+                                ? rescue(fn () => GoogleClient::sites(), [], false)
+                                : array_filter([$record?->gsc_property => $record?->gsc_property]))
+                            ->disabled(fn (): bool => ! GoogleClient::isOwner(auth()->user()))
                             ->searchable()
                             ->placeholder('Bağlı değil')
-                            ->helperText(fn (): string => GoogleClient::connected() ? 'Tıklama ve gösterim verileri bu mülkten günlük çekilir.' : 'Önce "Google bağlantısı" sayfasından Google hesabını bağla.'),
+                            ->helperText(fn (): string => match (true) {
+                                GoogleClient::isOwner(auth()->user()) => 'Tıklama ve gösterim verileri bu mülkten günlük çekilir.',
+                                GoogleClient::connected() => 'Mülkü yalnızca Google hesabını bağlayan kişi seçebilir.',
+                                default => 'Önce "Google bağlantısı" sayfasından Google hesabını bağla.',
+                            }),
                     ]),
                 Section::make('Tarama ayarları')
                     ->description('Boş bırakılan alanlar varsayılan değeri kullanır. Müşteri sitesini yormamak için düşük değerlerle başlayın.')
