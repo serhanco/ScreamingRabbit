@@ -132,9 +132,9 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ○ Önem bazlı yönlendirme, tekrar bastırma, toplu kesinti birleştirme, sessiz saatler, haftalık özet
 
 **Çoklu kullanıcı ve roller (U-1)** — giriş ve 2FA zaten kullanıcı başına (Faz 1)
-- ○ Panelden üye davet etme, devre dışı bırakma, 2FA zorunluluğu
-- ○ Roller: yönetici (her şey), uzman (atandığı müşteri/projeler), salt okunur/rapor görüntüleyici
-- ○ Müşteri/proje bazında erişim; bildirimler yalnızca erişebildiği projeler için
+- ✓ Panelden üye ekleme ("Ekip" sayfası), hesabı kapatma, 2FA sıfırlama; 2FA panelde zaten herkes için zorunlu
+- ✓ Roller: yönetici (her şey), uzman (atandığı projeleri yönetir), salt okunur (atandığı projeleri görür)
+- ✓ Proje bazında erişim (müşteri, tarama, iş, izleme listeleri de süzülür); uyarılar yalnızca erişilen projeler için; ortak ayarlar (Google, SMTP, bot) yalnızca yönetici
 - ○ İşlem günlüğü: kim neyi değiştirdi (ayar, onaylı WP değişikliği)
 
 **Raporlama**

@@ -84,6 +84,7 @@ class NotificationSettings extends Page
                         CheckboxList::make('alert_kinds')->label('Hangi uyarıları alayım?')->options(Alerts::KINDS)->columnSpanFull(),
                     ]),
                 Section::make('Ortak ayarlar: gönderen e-posta hesabı')
+                    ->visible(fn (): bool => auth()->user()->isAdmin())
                     ->description('Tüm üyelere uyarılar Hostinger\'da açtığın tek bir e-posta hesabından (örn. bildirim@alanadin.com) gönderilir.')
                     ->columns(2)
                     ->schema([
@@ -93,11 +94,13 @@ class NotificationSettings extends Page
                         TextInput::make('smtp_port')->label('SMTP portu')->numeric(),
                     ]),
                 Section::make('Ortak ayarlar: Telegram botu')
+                    ->visible(fn (): bool => auth()->user()->isAdmin())
                     ->description('Bir kez yapılır: Telegram\'da @BotFather\'a /newbot yaz, verdiği anahtarı buraya yapıştır. Tüm üyeler bu botu kullanır.')
                     ->schema([
                         TextInput::make('telegram_bot_token')->label('Bot anahtarı')->password()->revealable(),
                     ]),
                 Section::make('Uygulamanın kendisi için kalp atışı')
+                    ->visible(fn (): bool => auth()->user()->isAdmin())
                     ->description('Sunucu tamamen düşerse uygulama da haber veremez. Healthchecks.io\'da ücretsiz bir kontrol aç, ping adresini buraya yapıştır; dakikada bir ping gelmezse sana o haber verir.')
                     ->schema([
                         TextInput::make('heartbeat_url')->label('Ping adresi')->url()->placeholder('https://hc-ping.com/...'),
@@ -123,8 +126,11 @@ class NotificationSettings extends Page
     public function save(): void
     {
         $state = $this->form->getState();
-        foreach (self::SHARED_KEYS as $key) {
-            Setting::put($key, $state[$key] ?? null);
+        // The sender mailbox, bot and heartbeat are shared by everyone, so only admins change them.
+        if (auth()->user()->isAdmin()) {
+            foreach (self::SHARED_KEYS as $key) {
+                Setting::put($key, $state[$key] ?? null);
+            }
         }
         auth()->user()->update(array_intersect_key($state, array_flip(self::USER_KEYS)));
 

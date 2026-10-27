@@ -18,9 +18,9 @@ class Alerts
         'ssl' => 'SSL sertifikası bitiyor',
     ];
 
-    public static function send(string $kind, string $title, string $body): void
+    public static function send(string $kind, string $title, string $body, ?int $projectId = null): void
     {
         Log::warning('[ScreamingRabbit uyarı] '.$title, ['body' => $body]);
-        MonitorAlert::dispatch($kind, $title, $body);
+        MonitorAlert::dispatch($kind, $title, $body, $projectId);
     }
 }

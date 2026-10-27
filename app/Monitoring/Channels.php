@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Delivers alerts to every user who wants that kind: by e-mail through the shared SMTP mailbox and by Telegram
+ * Delivers alerts to every active user who wants that kind and can see the project the alert is about: by e-mail through the shared SMTP mailbox and by Telegram
  * through the shared bot, each to the user's own address and chat.
  */
 class Channels
@@ -17,10 +17,10 @@ class Channels
     /**
      * @return array<int, array<string, bool|null>> user id => channel results
      */
-    public static function deliver(string $kind, string $title, string $body): array
+    public static function deliver(string $kind, string $title, string $body, ?int $projectId = null): array
     {
         return User::query()->orderBy('id')->get()
-            ->filter(fn (User $user) => $user->wantsAlert($kind))
+            ->filter(fn (User $user) => $user->is_active && $user->wantsAlert($kind) && $user->canSeeProject($projectId))
             ->mapWithKeys(fn (User $user) => [$user->id => self::toUser($user, $title, $body)])
             ->all();
     }

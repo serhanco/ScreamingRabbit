@@ -14,6 +14,14 @@ class CrawlScheduleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_schedule_can_be_saved_from_the_project_form(): void
+    {
+        $project = Project::factory()->create();
+        $project->update(['crawl_schedule' => 'weekly']);
+
+        $this->assertSame('weekly', $project->fresh()->crawl_schedule);
+    }
+
     public function test_due_projects_start_overnight_only_once(): void
     {
         Queue::fake();
