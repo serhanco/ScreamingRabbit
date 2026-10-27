@@ -117,6 +117,10 @@ class GoogleSettings extends Page
                 : 'Henüz bağlı değil. Önce aşağıya OAuth istemci bilgilerini kaydet, sonra "Google hesabını bağla" düğmesine bas.';
         }
 
+        if ($problem = GoogleClient::sitesProblem(auth()->user())) {
+            return "Bağlı hesap: {$connection->email}. Sorun: {$problem}";
+        }
+
         $projects = Project::query()->where('gsc_user_id', auth()->id())->count();
 
         return "Bağlı hesap: {$connection->email}. Bu hesapla {$projects} proje okunuyor. Bugün {$connection->callsToday()} istek, {$connection->inspectionsToday()}/".UrlInspector::PER_CONNECTION_DAY.' URL denetimi yapıldı. Proje ayarlarından her projeye Search Console mülkünü seç; site listeni yalnızca sen görürsün.';

@@ -16,6 +16,7 @@ use App\Models\Project;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -110,6 +111,36 @@ class GscTest extends TestCase
                 ? [['siteUrl' => 'sc-domain:example.com', 'permissionLevel' => 'siteOwner'], ['siteUrl' => 'sc-domain:gizli.com', 'permissionLevel' => 'siteOwner']]
                 : [['siteUrl' => 'sc-domain:ikinci.com', 'permissionLevel' => 'siteOwner']]]),
             'www.googleapis.com/webmasters/v3/sites/*/searchAnalytics/query' => Http::response(['rows' => []]),
+        ]);
+    }
+
+    public function test_empty_site_list_explains_what_to_fix(): void
+    {
+        $this->connect();
+        $project = Project::factory()->create();
+        $this->fakeSitesResponse(['error' => ['code' => 403, 'status' => 'PERMISSION_DENIED',
+            'message' => 'Google Search Console API has not been used in project 123 before or it is disabled.',
+            'details' => [['reason' => 'SERVICE_DISABLED']]]], 403);
+
+        $this->assertStringContainsString('searchconsole.googleapis.com', GoogleClient::sitesProblem(auth()->user()));
+        Livewire::test(EditProject::class, ['record' => $project->getRouteKey()])->assertSee('Search Console API');
+        $this->get(GoogleSettings::getUrl())->assertOk()->assertSee('Etkinleştir');
+
+        $this->fakeSitesResponse(['error' => ['code' => 403, 'status' => 'PERMISSION_DENIED',
+            'message' => 'Request had insufficient authentication scopes.', 'details' => [['reason' => 'ACCESS_TOKEN_SCOPE_INSUFFICIENT']]]], 403);
+        $this->assertStringContainsString('Search Console kutusunu', GoogleClient::sitesProblem(auth()->user()));
+
+        $this->fakeSitesResponse([]);
+        $this->assertStringContainsString('mülkü yok', GoogleClient::sitesProblem(auth()->user()));
+    }
+
+    private function fakeSitesResponse(array $body, int $status = 200): void
+    {
+        Cache::flush();
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'access-1', 'expires_in' => 3599]),
+            'www.googleapis.com/webmasters/v3/sites' => Http::response($body, $status),
         ]);
     }
 
