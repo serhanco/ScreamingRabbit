@@ -20,6 +20,8 @@ class CrawlResource extends Resource
 {
     use ScopedToUserProjects;
 
+    protected static string $permission = 'crawl';
+
     protected static ?string $model = Crawl::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMagnifyingGlass;

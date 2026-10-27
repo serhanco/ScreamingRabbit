@@ -20,7 +20,7 @@ class StartCrawlAction extends Action
     {
         parent::setUp();
 
-        $this->visible(fn (): bool => auth()->user()?->canWrite() ?? false)
+        $this->visible(fn (?Project $record): bool => auth()->user()?->canDo('crawl', $record?->id) ?? false)
             ->label('Taramayı başlat')
             ->icon(Heroicon::OutlinedPlay)
             ->requiresConfirmation()

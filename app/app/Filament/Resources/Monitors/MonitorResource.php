@@ -20,6 +20,8 @@ class MonitorResource extends Resource
 {
     use ScopedToUserProjects;
 
+    protected static string $permission = 'monitor';
+
     protected static ?string $model = Monitor::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;

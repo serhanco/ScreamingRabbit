@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,18 @@ class Project extends Model
         'wordpress' => 'WordPress',
         'generic' => 'Genel (diğer)',
     ];
+
+    /** What an invited member may change on a project; seeing the project's data needs no permission. */
+    public const PERMISSIONS = [
+        'crawl' => 'Tarama başlatma ve durdurma',
+        'tasks' => 'İş listesini düzenleme',
+        'report' => 'Müşteri raporu bağlantısı paylaşma',
+        'monitor' => 'Erişilebilirlik izlemelerini yönetme',
+        'settings' => 'Proje ayarlarını düzenleme (Search Console mülkü hariç)',
+    ];
+
+    /** The usual set for a specialist working on a client site. */
+    public const DEFAULT_PERMISSIONS = ['crawl', 'tasks', 'report'];
 
     protected function casts(): array
     {
@@ -71,6 +84,11 @@ class Project extends Model
         return $query->where(fn (Builder $q) => $q
             ->whereIn('projects.id', DB::table('project_user')->where('user_id', $user->id)->select('project_id'))
             ->orWhere('projects.owner_id', $user->id));
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->using(ProjectMember::class)->withPivot('permissions');
     }
 
     public function owner(): BelongsTo

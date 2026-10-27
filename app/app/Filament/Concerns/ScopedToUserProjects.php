@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  * cannot create, edit or delete (docs/09 Faz 4, roles).
  *
  * Resources set $projectColumn to the column holding the project id; the project resource itself uses 'id'.
+ * Resources may set $permission to one of Project::PERMISSIONS: editing and deleting a row then needs that
+ * permission on the row's project (see User::canDo).
  */
 trait ScopedToUserProjects
 {
@@ -33,12 +35,25 @@ trait ScopedToUserProjects
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()?->canWrite() ?? false;
+        return static::canChange($record);
     }
 
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()?->canWrite() ?? false;
+        return static::canChange($record);
+    }
+
+    protected static function canChange(Model $record): bool
+    {
+        $user = auth()->user();
+        if ($user === null || ! $user->canWrite()) {
+            return false;
+        }
+        if (! property_exists(static::class, 'permission')) {
+            return true;
+        }
+
+        return $user->canDo(static::$permission, $record->getAttribute(property_exists(static::class, 'projectColumn') ? static::$projectColumn : 'project_id'));
     }
 
     public static function canDeleteAny(): bool
