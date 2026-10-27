@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('crawl_pages', function (Blueprint $table) {
+            $table->string('wp_type', 64)->nullable();
+            $table->string('wp_category', 191)->nullable();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('crawl_pages', function (Blueprint $table) {
+            $table->dropColumn(['wp_type', 'wp_category']);
+        });
+    }
+};
