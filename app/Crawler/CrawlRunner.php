@@ -234,6 +234,8 @@ class CrawlRunner
                 'mixed_content' => $parsed['mixed_content'],
                 'meta_refresh' => $parsed['meta_refresh'] ? mb_substr($parsed['meta_refresh'], 0, 250) : null,
                 'page_type' => $parsed['page_type'],
+                'wp_type' => $parsed['wp_type'],
+                'wp_category' => $parsed['wp_category'],
                 'seo_plugin' => $parsed['seo_plugin'],
                 'schema_types' => $parsed['schema_types'] === [] ? null : mb_substr(implode(',', $parsed['schema_types']), 0, 250),
                 'schema_errors' => $parsed['schema_errors'],
