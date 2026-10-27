@@ -70,6 +70,7 @@ return array(
     'App\\Filament\\Resources\\Users\\Pages\\EditUser' => $baseDir . '/app/Filament/Resources/Users/Pages/EditUser.php',
     'App\\Filament\\Resources\\Users\\Pages\\ListUsers' => $baseDir . '/app/Filament/Resources/Users/Pages/ListUsers.php',
     'App\\Filament\\Resources\\Users\\UserResource' => $baseDir . '/app/Filament/Resources/Users/UserResource.php',
+    'App\\Filament\\Widgets\\GoogleSetupGuide' => $baseDir . '/app/Filament/Widgets/GoogleSetupGuide.php',
     'App\\Google\\GoogleClient' => $baseDir . '/app/Google/GoogleClient.php',
     'App\\Google\\GscInsights' => $baseDir . '/app/Google/GscInsights.php',
     'App\\Google\\GscSync' => $baseDir . '/app/Google/GscSync.php',

@@ -788,6 +788,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Filament\\Resources\\Users\\Pages\\EditUser' => __DIR__ . '/../..' . '/app/Filament/Resources/Users/Pages/EditUser.php',
         'App\\Filament\\Resources\\Users\\Pages\\ListUsers' => __DIR__ . '/../..' . '/app/Filament/Resources/Users/Pages/ListUsers.php',
         'App\\Filament\\Resources\\Users\\UserResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Users/UserResource.php',
+        'App\\Filament\\Widgets\\GoogleSetupGuide' => __DIR__ . '/../..' . '/app/Filament/Widgets/GoogleSetupGuide.php',
         'App\\Google\\GoogleClient' => __DIR__ . '/../..' . '/app/Google/GoogleClient.php',
         'App\\Google\\GscInsights' => __DIR__ . '/../..' . '/app/Google/GscInsights.php',
         'App\\Google\\GscSync' => __DIR__ . '/../..' . '/app/Google/GscSync.php',
