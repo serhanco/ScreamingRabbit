@@ -35,7 +35,10 @@ class GoogleAuthController
 
         try {
             GoogleClient::connect((string) $request->query('code'), $request->user());
-            Notification::make()->title('Google hesabı bağlandı')->success()->send();
+            $problem = GoogleClient::sitesProblem($request->user());
+            $problem
+                ? Notification::make()->title('Google bağlandı ama site listesi alınamadı')->body($problem)->warning()->persistent()->send()
+                : Notification::make()->title('Google hesabı bağlandı')->success()->send();
         } catch (\Throwable $e) {
             report($e);
             Notification::make()->title('Google bağlantısı başarısız')->body('İstemci kimliği ve gizli anahtarı kontrol et.')->danger()->send();

@@ -119,11 +119,13 @@ class ProjectForm
     {
         $user = auth()->user();
         $linkedBy = $record?->gsc_user_id;
+        $problem = null;
         $stale = filled($record?->gsc_property) && $record->gscConnection() === null;
 
         return match (true) {
             $stale => 'Bu mülkü bağlayan hesabın Google bağlantısı yok; veriler güncellenmiyor.'.(GoogleClient::connected($user) ? ' Kendi listenden mülkü yeniden seçebilirsin.' : ''),
             GoogleClient::connected($user) && $linkedBy !== null && $linkedBy !== $user->id => 'Veriler '.($record->gscUser?->name ?? 'başka bir üye').'\'nin Google bağlantısıyla çekiliyor. Kendi listenden seçersen senin bağlantına geçer.',
+            GoogleClient::connected($user) && ($problem = GoogleClient::sitesProblem($user)) !== null => $problem,
             GoogleClient::connected($user) => 'Tıklama ve gösterim verileri bu mülkten senin Google bağlantınla günlük çekilir.',
             GoogleClient::canConnect($user) => 'Önce "Google bağlantısı" sayfasından kendi Google hesabını bağla.',
             filled($record?->gsc_property) => 'Veriler proje sahibinin Google bağlantısıyla çekilir.',
