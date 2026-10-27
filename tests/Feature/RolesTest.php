@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Clients\ClientResource;
 use App\Filament\Resources\Crawls\CrawlResource;
+use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Tasks\TaskResource;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\UserResource;
+use App\Models\Client;
 use App\Models\Crawl;
 use App\Models\Project;
 use App\Models\Setting;
@@ -16,6 +18,8 @@ use App\Models\User;
 use App\Monitoring\Channels;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -117,5 +121,79 @@ class RolesTest extends TestCase
 
         $sent = collect(Http::recorded())->map(fn ($pair) => $pair[0]['chat_id'])->sort()->values()->all();
         $this->assertSame(['1', '2'], $sent);
+    }
+
+    public function test_a_second_admin_only_sees_projects_they_own_or_are_assigned_to(): void
+    {
+        Filament::setCurrentPanel('admin');
+        $serhan = $this->member('admin');
+        $this->assertTrue($serhan->fresh()->isPrimary(), 'the first admin is the primary admin');
+        $this->actingAs($serhan);
+        $serhansProject = Project::factory()->create(['name' => 'Serhan']);
+        $shared = Project::factory()->create(['name' => 'Ortak']);
+
+        $ali = $this->member('admin', [$shared]);
+        $this->assertFalse($ali->isPrimary());
+        $this->actingAs($ali);
+        Livewire::test(CreateProject::class)
+            ->fillForm(['client_id' => Client::create(['name' => 'Ali müşteri'])->id, 'name' => 'Ali', 'base_url' => 'https://ali.com', 'platform' => 'generic'])
+            ->call('create')
+            ->assertHasNoFormErrors();
+        $alisProject = Project::where('name', 'Ali')->first();
+        $this->assertSame($ali->id, $alisProject->owner_id);
+
+        $this->assertEqualsCanonicalizing([$shared->id, $alisProject->id], ProjectResource::getEloquentQuery()->pluck('id')->all());
+        $this->assertEqualsCanonicalizing([$shared->client_id, $alisProject->client_id], ClientResource::getEloquentQuery()->pluck('id')->all());
+        $this->get(ProjectResource::getUrl('edit', ['record' => $serhansProject]))->assertNotFound();
+        $this->assertFalse($ali->canSeeProject($serhansProject->id));
+        $this->assertTrue(ProjectResource::canDelete($alisProject));
+        $this->assertFalse(ProjectResource::canDelete($shared), 'only the owner or the primary admin deletes');
+        $this->get(UserResource::getUrl('index'))->assertForbidden();
+
+        $this->actingAs($serhan);
+        $this->assertCount(3, ProjectResource::getEloquentQuery()->get());
+        $this->assertTrue(ProjectResource::canDelete($alisProject));
+    }
+
+    public function test_alerts_for_a_second_admin_follow_their_projects(): void
+    {
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
+        Setting::put('telegram_bot_token', '123:abc');
+        $this->actingAs(User::factory()->create(['role' => 'admin', 'telegram_chat_id' => '1']));
+        $other = Project::factory()->create();
+        $ali = User::factory()->create(['role' => 'admin', 'telegram_chat_id' => '2']);
+        $this->actingAs($ali);
+        $alis = Project::factory()->create();
+
+        Channels::deliver('down', 'Erişilemiyor', 'x', $other->id);
+        $this->assertSame(['1'], collect(Http::recorded())->map(fn ($pair) => $pair[0]['chat_id'])->all());
+
+        Channels::deliver('down', 'Erişilemiyor', 'x', $alis->id);
+        $this->assertSame(['1', '1', '2'], collect(Http::recorded())->map(fn ($pair) => $pair[0]['chat_id'])->sort()->values()->all());
+    }
+
+    public function test_migration_moves_the_old_google_connection_to_its_owner(): void
+    {
+        $this->artisan('migrate:rollback', ['--step' => 1]);
+        $first = DB::table('users')->insertGetId(['name' => 'İlk', 'email' => 'ilk@example.com', 'password' => 'x', 'role' => 'admin']);
+        $serhan = DB::table('users')->insertGetId(['name' => 'Serhan', 'email' => 's@example.com', 'password' => 'x', 'role' => 'admin']);
+        $client = DB::table('clients')->insertGetId(['name' => 'Müşteri']);
+        $project = DB::table('projects')->insertGetId(['client_id' => $client, 'name' => 'P', 'base_url' => 'https://p.com', 'platform' => 'generic', 'gsc_property' => 'sc-domain:p.com']);
+        DB::table('settings')->insert([
+            ['key' => 'google_refresh_token', 'value' => Crypt::encryptString('refresh-old')],
+            ['key' => 'google_email', 'value' => 'serhan@example.com'],
+            ['key' => 'google_owner_id', 'value' => (string) $serhan],
+        ]);
+
+        $this->artisan('migrate');
+
+        $this->assertTrue(User::find($serhan)->isPrimary(), 'the Google owner becomes the primary admin');
+        $this->assertFalse(User::find($first)->isPrimary());
+        $this->assertSame('refresh-old', User::find($serhan)->googleConnection->refresh_token);
+        $this->assertSame('serhan@example.com', User::find($serhan)->googleConnection->email);
+        $this->assertSame($serhan, Project::find($project)->gsc_user_id);
+        $this->assertSame($serhan, Project::find($project)->owner_id);
+        $this->assertSame($serhan, Client::find($client)->owner_id);
+        $this->assertNull(Setting::get('google_owner_id'));
     }
 }

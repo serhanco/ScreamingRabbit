@@ -7,7 +7,10 @@ use App\Models\Setting;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
 
-/** Walks an admin through creating the Google sign-in key on the dashboard, until a Google account is connected. */
+/**
+ * Walks an admin through Google on the dashboard until they have connected their own account: the primary admin gets
+ * the whole OAuth client setup, other admins only the connect step. Invited members never see it.
+ */
 class GoogleSetupGuide extends Widget
 {
     protected string $view = 'google.setup-widget';
@@ -25,7 +28,9 @@ class GoogleSetupGuide extends Widget
 
     public static function canView(): bool
     {
-        return (auth()->user()?->isAdmin() ?? false) && ! GoogleClient::connected();
+        $user = auth()->user();
+
+        return (GoogleClient::canManageClient($user) || GoogleClient::canConnect($user)) && ! GoogleClient::connected($user);
     }
 
     public function mount(): void
@@ -36,7 +41,7 @@ class GoogleSetupGuide extends Widget
 
     public function saveKeys(): void
     {
-        abort_unless(static::canView(), 403);
+        abort_unless(static::canView() && GoogleClient::canManageClient(auth()->user()), 403);
 
         $this->validate(['clientId' => 'required|string', 'clientSecret' => 'required|string'], [], ['clientId' => 'İstemci kimliği', 'clientSecret' => 'Gizli anahtar']);
 

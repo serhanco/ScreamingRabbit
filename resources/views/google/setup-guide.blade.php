@@ -3,9 +3,11 @@
     Used by the dashboard widget ($withForm = true: the key fields and connect button sit inside step 6/7)
     and by the Google settings page ($withForm = false: the fields are in the section below the guide).
     Google Cloud button names are given in both Turkish and English because the console follows the account language.
+    Only the primary admin sets up the shared key; every other admin just connects their own Google account (last step).
 --}}
 @php
     $withForm ??= false;
+    $connectOnly = ! \App\Google\GoogleClient::canManageClient(auth()->user());
     $redirect = \App\Google\GoogleClient::redirectUri();
     $configured = \App\Google\GoogleClient::configured();
     $steps = [
@@ -50,14 +52,23 @@
             'connect' => true,
         ],
     ];
+    if ($connectOnly) {
+        $steps = [array_merge(end($steps), ['body' => '<b>Google hesabını bağla</b> düğmesine bas ve kendi müşteri sitelerini Search Console\'da gören hesabını seç. "Google bu uygulamayı doğrulamadı" yazısı çıkarsa <b>Gelişmiş</b>\'e, sonra <b>ScreamingRabbit\'e git</b>\'e bas ve izin ver. Bitince kendi projelerinin ayarlarından ilgili Search Console mülkünü seç. Site listeni yalnızca sen görürsün.'])];
+    }
     $total = count($steps);
 @endphp
 
 <div style="display: grid; gap: .75rem;">
+    @if ($connectOnly)
+        <p style="margin: 0; line-height: 1.6;">
+            Projelerinin Google'daki tıklama, gösterim ve arama sorgusu verilerini görmek için kendi Google hesabını bir kez bağlaman yeterli.
+        </p>
+    @else
     <p style="margin: 0; line-height: 1.6;">
         ScreamingRabbit'in müşteri sitelerinin Google'daki tıklama, gösterim ve arama sorgusu verilerini okuyabilmesi için Google'dan bir kerelik izin alması gerekiyor.
         Bunun için Google'da sana özel bir giriş anahtarı oluşturacaksın. Yaklaşık 10 dakika sürer; her adımda "Aç" düğmesi doğru sayfayı yeni sekmede açar.
     </p>
+    @endif
 
     @foreach ($steps as $i => $step)
         <div style="display: flex; gap: .875rem; padding: .875rem 1rem; border: 1px solid rgba(127, 127, 127, .25); border-radius: .75rem;">

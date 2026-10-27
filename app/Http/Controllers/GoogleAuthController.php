@@ -14,7 +14,7 @@ class GoogleAuthController
     public function redirect(Request $request): RedirectResponse
     {
         abort_unless(GoogleClient::configured(), 404);
-        abort_unless(GoogleClient::canManage($request->user()), 403);
+        abort_unless(GoogleClient::canConnect($request->user()), 403);
 
         $state = Str::random(40);
         $request->session()->put('google_oauth_state', $state);
@@ -24,7 +24,7 @@ class GoogleAuthController
 
     public function callback(Request $request): RedirectResponse
     {
-        abort_unless(GoogleClient::canManage($request->user()), 403);
+        abort_unless(GoogleClient::canConnect($request->user()), 403);
 
         $expected = $request->session()->pull('google_oauth_state');
         if (! $expected || ! hash_equals($expected, (string) $request->query('state')) || ! $request->filled('code')) {

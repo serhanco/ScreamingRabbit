@@ -31,13 +31,10 @@ class ClientResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Müşteriler';
 
-    /** Non-admins only see clients that have at least one project assigned to them. */
+    /** Members only see clients they own or that have at least one project they can see. */
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-        $user = auth()->user();
-
-        return $user === null || $user->isAdmin() ? $query : $query->whereHas('projects', fn (Builder $projects) => $projects->visibleTo($user));
+        return parent::getEloquentQuery()->visibleTo(auth()->user());
     }
 
     /** Adding and removing clients/projects is for admins; specialists only work on what is assigned to them. */
@@ -46,14 +43,17 @@ class ClientResource extends Resource
         return auth()->user()?->isAdmin() ?? false;
     }
 
+    /** Admins delete only what they own; the primary admin anything. */
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = auth()->user();
+
+        return $user !== null && $user->isAdmin() && ($user->isPrimary() || $record->owner_id === $user->id);
     }
 
     public static function canDeleteAny(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        return auth()->user()?->isPrimary() ?? false;
     }
 
     public static function form(Schema $schema): Schema

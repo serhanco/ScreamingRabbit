@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -22,7 +23,7 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     use HasFactory, Notifiable;
 
     public const ROLES = [
-        'admin' => 'Yönetici (her şey)',
+        'admin' => 'Yönetici (kendi projelerini ekler, Google\'ı bağlar)',
         'specialist' => 'Uzman (atandığı projeleri yönetir)',
         'viewer' => 'Salt okunur (atandığı projeleri görür)',
     ];
@@ -43,7 +44,18 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             'app_authentication_recovery_codes' => 'encrypted:array',
             'alert_kinds' => 'array',
             'is_active' => 'boolean',
+            'is_primary' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // The first admin (the one who installs the panel) becomes the primary admin who sees every project.
+        static::creating(function (User $user) {
+            if ($user->isAdmin() && ! static::query()->where('is_primary', true)->exists()) {
+                $user->is_primary = true;
+            }
+        });
     }
 
     // Registration is closed; accounts are created by an admin in the panel (or with `php artisan make:filament-user`).
@@ -63,15 +75,26 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         return $this->role !== 'viewer';
     }
 
+    /** The primary admin sees every project and alone manages the team and the shared settings. */
+    public function isPrimary(): bool
+    {
+        return $this->isAdmin() && $this->is_primary;
+    }
+
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class);
     }
 
-    /** Whether this user may see the project: admins all of them, others only the ones assigned to them. */
+    public function googleConnection(): HasOne
+    {
+        return $this->hasOne(GoogleConnection::class);
+    }
+
+    /** Whether this user may see the project: the primary admin all of them, others the ones they own or are assigned to. */
     public function canSeeProject(?int $projectId): bool
     {
-        return $this->isAdmin() || $projectId === null || $this->projects()->whereKey($projectId)->exists();
+        return $this->isPrimary() || $projectId === null || Project::query()->visibleTo($this)->whereKey($projectId)->exists();
     }
 
     public function getAppAuthenticationSecret(): ?string
