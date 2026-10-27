@@ -130,6 +130,45 @@ class GoogleClient
     }
 
     /**
+     * Why the user's site list is empty, in plain Turkish, or null when it isn't. Google's own error is turned into
+     * the one thing to fix, because an empty dropdown alone tells the user nothing.
+     */
+    public static function sitesProblem(?User $user): ?string
+    {
+        $connection = self::configured() ? self::connectionOf($user) : null;
+        if ($connection === null) {
+            return null;
+        }
+
+        try {
+            return self::sites($user) === []
+                ? "Bağlı Google hesabında ({$connection->email}) doğrulanmış Search Console mülkü yok. Siteleri Search Console'da gören hesapla yeniden bağla."
+                : null;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return self::explain($e);
+        }
+    }
+
+    private static function explain(\Throwable $e): string
+    {
+        $body = $e instanceof \Illuminate\Http\Client\RequestException ? (string) $e->response->body() : $e->getMessage();
+
+        return match (true) {
+            str_contains($body, 'SERVICE_DISABLED') || str_contains($body, 'has not been used') || str_contains($body, 'accessNotConfigured')
+                => 'Google Cloud projende "Google Search Console API" kapalı. https://console.cloud.google.com/apis/library/searchconsole.googleapis.com adresini aç, "Etkinleştir" (Enable) düğmesine bas, 2 dakika sonra bu sayfayı yenile.',
+            str_contains($body, 'insufficient') || str_contains($body, 'ACCESS_TOKEN_SCOPE_INSUFFICIENT')
+                => 'Google bağlanırken Search Console izni verilmemiş. "Google bağlantısı" sayfasında "Başka hesapla yeniden bağla"ya bas ve izin ekranındaki Search Console kutusunu işaretle.',
+            str_contains($body, 'invalid_grant')
+                => 'Google bağlantısının süresi dolmuş veya iptal edilmiş. "Google bağlantısı" sayfasından yeniden bağla.',
+            str_contains($body, 'invalid_client') || str_contains($body, 'unauthorized_client')
+                => 'OAuth istemci kimliği veya gizli anahtarı hatalı. "Google bağlantısı" sayfasında kontrol et.',
+            default => 'Google site listesini vermedi: '.\Illuminate\Support\Str::limit(strip_tags($body), 200),
+        };
+    }
+
+    /**
      * Google's view of one URL: indexStatusResult of the URL Inspection API.
      *
      * @return array<string, mixed>
