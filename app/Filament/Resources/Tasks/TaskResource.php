@@ -33,6 +33,8 @@ class TaskResource extends Resource
 {
     use ScopedToUserProjects;
 
+    protected static string $permission = 'tasks';
+
     protected static ?string $model = Task::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
@@ -85,8 +87,8 @@ class TaskResource extends Resource
                 TextColumn::make('severity')->label('Önem')->badge()
                     ->formatStateUsing(fn (?string $state): string => RuleCatalog::SEVERITIES[$state] ?? '—')
                     ->color(fn (?string $state): string => CrawlColors::severity((string) $state)),
-                SelectColumn::make('status')->label('Durum')->options(Task::STATUSES)->selectablePlaceholder(false)->disabled(fn (): bool => ! auth()->user()->canWrite()),
-                ToggleColumn::make('show_in_report')->label('Raporda')->disabled(fn (): bool => ! auth()->user()->canWrite())->tooltip('Müşteri raporunun "Çalışma planı" bölümünde göster'),
+                SelectColumn::make('status')->label('Durum')->options(Task::STATUSES)->selectablePlaceholder(false)->disabled(fn (Task $record): bool => ! auth()->user()->canDo('tasks', $record->project_id)),
+                ToggleColumn::make('show_in_report')->label('Raporda')->disabled(fn (Task $record): bool => ! auth()->user()->canDo('tasks', $record->project_id))->tooltip('Müşteri raporunun "Çalışma planı" bölümünde göster'),
                 TextColumn::make('impact')->label('Etki')->toggleable()
                     ->state(fn (Task $record): ?string => ImpactMeter::label($record->impact))
                     ->color(fn (Task $record): ?string => match (true) {

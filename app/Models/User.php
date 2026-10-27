@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable(['name', 'email', 'password', 'alert_email', 'telegram_chat_id', 'alert_kinds', 'role', 'is_active'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
@@ -83,7 +84,34 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
 
     public function projects(): BelongsToMany
     {
-        return $this->belongsToMany(Project::class);
+        return $this->belongsToMany(Project::class)->using(ProjectMember::class)->withPivot('permissions');
+    }
+
+    /**
+     * Whether the user may do one of Project::PERMISSIONS on the project: the primary admin and the project's owner
+     * always, viewers never, everyone else as set on their invitation (or, for older assignments, by their role).
+     */
+    public function canDo(string $permission, ?int $projectId): bool
+    {
+        if ($this->isPrimary()) {
+            return true;
+        }
+        if (! $this->canWrite()) {
+            return false;
+        }
+        if ($projectId === null) {
+            return true;
+        }
+        if (Project::query()->whereKey($projectId)->where('owner_id', $this->id)->exists()) {
+            return true;
+        }
+
+        $membership = DB::table('project_user')->where('project_id', $projectId)->where('user_id', $this->id)->first();
+        if ($membership === null) {
+            return false;
+        }
+
+        return $membership->permissions === null || in_array($permission, json_decode($membership->permissions, true) ?? [], true);
     }
 
     public function googleConnection(): HasOne
