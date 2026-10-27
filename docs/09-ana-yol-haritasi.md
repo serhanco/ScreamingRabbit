@@ -137,7 +137,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Proje bazında erişim (müşteri, tarama, iş, izleme listeleri de süzülür); uyarılar yalnızca erişilen projeler için; ortak ayarlar (Google, SMTP, bot) yalnızca yönetici
 - ✓ Ana yönetici (ilk yönetici, Serhan) her şeyi görür; diğer yöneticiler yalnızca kendi ekledikleri ve atandıkları projeleri görür. Ekip sayfası ve ortak ayarlar (Google anahtarı, SMTP, bot) yalnızca ana yöneticide
 - ✓ Her yönetici kendi Google hesabını bağlar (token kullanıcı başına, şifreli); site listesini yalnızca bağlayan görür; proje, mülkünü seçen yöneticinin bağlantısıyla okunur; günlük istek/URL denetimi bağlantı başına sayılır. Davetli üyeler Google bağlamaz, proje sahibinin bağlantısıyla gelen veriyi görür
-- ○ E-postayla davet (yeni kullanıcıya platform + proje, mevcut kullanıcıya proje daveti) ve proje bazında yetki seçimi
+- ✓ E-postayla davet (yeni kullanıcıya hesap açma + proje, mevcut kullanıcıya proje daveti; 7 gün geçerli, e-posta gitmezse bağlantı panelde gösterilir). Proje sayfasındaki "Ekip ve yetkiler" listesinden proje sahibi davet eder, yetkileri değiştirir, üyeyi çıkarır. Proje bazında yetkiler: tarama, iş listesi, rapor paylaşma, izleme, proje ayarları; görüntüleme herkese açık
 - ○ İşlem günlüğü: kim neyi değiştirdi (ayar, onaylı WP değişikliği)
 
 **Raporlama**

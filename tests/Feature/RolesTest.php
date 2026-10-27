@@ -174,7 +174,7 @@ class RolesTest extends TestCase
 
     public function test_migration_moves_the_old_google_connection_to_its_owner(): void
     {
-        $this->artisan('migrate:rollback', ['--step' => 1]);
+        $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_10_27_100000_create_google_connections_and_owners.php']);
         $first = DB::table('users')->insertGetId(['name' => 'İlk', 'email' => 'ilk@example.com', 'password' => 'x', 'role' => 'admin']);
         $serhan = DB::table('users')->insertGetId(['name' => 'Serhan', 'email' => 's@example.com', 'password' => 'x', 'role' => 'admin']);
         $client = DB::table('clients')->insertGetId(['name' => 'Müşteri']);
