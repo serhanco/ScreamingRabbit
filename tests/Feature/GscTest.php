@@ -44,6 +44,19 @@ class GscTest extends TestCase
             ->assertSee('Google hesabını bağla');
     }
 
+    public function test_dashboard_shows_setup_guide_until_google_is_connected(): void
+    {
+        $this->get('/admin')->assertOk()->assertSee('Başlarken: Search Console bağlantısı')->assertSee(GoogleClient::redirectUri());
+
+        $this->connect();
+        $this->get('/admin')->assertOk()->assertDontSee('Başlarken: Search Console bağlantısı');
+    }
+
+    public function test_settings_page_includes_setup_guide(): void
+    {
+        Livewire::test(GoogleSettings::class)->assertSee('Kurulum rehberi')->assertSee('Publish app');
+    }
+
     public function test_oauth_callback_stores_the_refresh_token(): void
     {
         Http::fake([
