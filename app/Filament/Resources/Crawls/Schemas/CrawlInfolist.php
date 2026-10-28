@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Crawls\Schemas;
 
+use App\Audit\HealthScore;
 use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
 use App\Crawler\CrawlComparison;
@@ -12,6 +13,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 class CrawlInfolist
 {
@@ -34,7 +36,8 @@ class CrawlInfolist
                             ->suffix(' / 100')
                             ->size('lg')
                             ->weight('bold')
-                            ->color(fn (?int $state): string => CrawlColors::health($state)),
+                            ->color(fn (?int $state): string => CrawlColors::health($state))
+                            ->hintIcon(Heroicon::OutlinedInformationCircle, tooltip: HealthScore::EXPLANATION),
                         TextEntry::make('started_at')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('finished_at')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('error')->label('Hata')->visible(fn (Crawl $record): bool => filled($record->error))->columnSpanFull(),
@@ -63,6 +66,14 @@ class CrawlInfolist
                             ->label("Bulgu: {$label}")
                             ->state(fn (Crawl $record): int => $record->issues()->where('severity', $severity)->count())
                             ->color(CrawlColors::severity($severity)))->values()->all(),
+                    ]),
+                Section::make('Sağlık skoru nasıl hesaplandı?')
+                    ->description(HealthScore::EXPLANATION)
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn (Crawl $record): bool => $record->health_score !== null)
+                    ->schema([
+                        ViewEntry::make('score_breakdown')->hiddenLabel()->view('crawls.score-breakdown'),
                     ]),
                 Section::make('Önceki taramaya göre değişenler')
                     ->description('Aynı projenin bir önceki tamamlanmış taramasıyla karşılaştırma.')

@@ -78,6 +78,22 @@
         <tr>@foreach ($report['by_severity'] as $row)<td class="num">{{ $row['count'] }}</td>@endforeach</tr>
     </table>
 
+    <h3 style="font-size:13px;margin:16px 0 4px">Sağlık skoru nasıl hesaplanır?</h3>
+    <p style="margin:0" class="muted">{{ \App\Audit\HealthScore::EXPLANATION }}</p>
+    @if (! empty($report['deductions']))
+        <table class="grid">
+            <tr><th>Puanı en çok düşüren sorunlar</th><th>Önem</th><th>Etkilenen sayfa</th><th>Düşülen puan</th></tr>
+            @foreach ($report['deductions'] as $row)
+                <tr>
+                    <td>{{ $row['title'] }}</td>
+                    <td><span class="badge" style="background: {{ $sevColor[$row['severity']] ?? '#6b7280' }}">{{ $row['severity_label'] }}</span></td>
+                    <td>{{ $row['pages'] }}</td>
+                    <td>-{{ number_format($row['points'], 1, ',', '.') }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
+
     @if (count($report['trend'] ?? []) >= 2)
         <div style="margin-top: 14px" class="muted">Sağlık skoru trendi (son taramalar)</div>
         <x-score-trend :points="$report['trend']" />
@@ -105,35 +121,47 @@
 
     @php($stateStyle = ['ok' => 'color:#15803d', 'warn' => 'color:#b45309;font-weight:bold', 'bad' => 'color:#b91c1c;font-weight:bold'])
     @php($stateMark = ['ok' => '✓', 'warn' => '!', 'bad' => '✗'])
-    @if (! empty($report['ai']) || ! empty($report['bots']))
+    @if (! empty($report['crawlability']))
+        <h2>Botlar tarafından taranabilirlik</h2>
+        <p style="margin:4px 0">Google ve diğer botların siteye ulaşıp sayfaları dizine ekleyebilmesi için gereken temel koşullar.</p>
+        <table class="grid">
+            @foreach ($report['crawlability'] as $line)
+                <tr>
+                    <td style="width:24px;text-align:center;{{ $stateStyle[$line['state']] }}">{{ $stateMark[$line['state']] }}</td>
+                    <td>{{ $line['label'] }}</td>
+                    <td style="{{ $stateStyle[$line['state']] }}">{{ $line['value'] }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
+    @if (! empty($report['bots']))
+        <h3 style="font-size:13px;margin:14px 0 0">Bot bazında erişim</h3>
+        <table class="grid">
+            <tr><th>Bot</th><th>Tür</th><th>robots.txt</th><th>Erişim testi</th></tr>
+            @foreach ($report['bots'] as $bot)
+                <tr>
+                    <td>{{ $bot['name'] }}</td>
+                    <td>{{ $bot['kind'] }}</td>
+                    <td style="{{ $bot['robots'] === 'Engelli' ? 'color:#b91c1c;font-weight:bold' : '' }}">{{ $bot['robots'] }}</td>
+                    <td style="{{ str_starts_with($bot['fetch'], 'Reddedildi') ? 'color:#b45309;font-weight:bold' : '' }}">{{ $bot['fetch'] }}</td>
+                </tr>
+            @endforeach
+        </table>
+        <p style="font-size:11px;color:#6b7280">Erişim testi ana sayfayı her botun kimliğiyle bir kez ister. "Reddedildi", güvenlik duvarının bu kimliği engellediğini gösterir; gerçek botlar IP doğrulamasıyla geçebilir.</p>
+    @endif
+
+    @if (! empty($report['ai']))
         <h2>AI arama görünürlüğü</h2>
         <p style="margin:4px 0">ChatGPT, Perplexity, Google AI Overviews gibi yapay zekâ aramalarında yer alabilmek için sitenin bu botlara açık ve makinelerin anlayacağı biçimde olması gerekir.</p>
-        @if (! empty($report['ai']))
-            <table class="grid">
-                @foreach ($report['ai'] as $line)
-                    <tr>
-                        <td style="width:24px;text-align:center;{{ $stateStyle[$line['state']] }}">{{ $stateMark[$line['state']] }}</td>
-                        <td>{{ $line['label'] }}</td>
-                        <td style="{{ $stateStyle[$line['state']] }}">{{ $line['value'] }}</td>
-                    </tr>
-                @endforeach
-            </table>
-        @endif
-        @if (! empty($report['bots']))
-            <h3 style="font-size:13px;margin:14px 0 0">Bot bazında erişim</h3>
-            <table class="grid">
-                <tr><th>Bot</th><th>Tür</th><th>robots.txt</th><th>Erişim testi</th></tr>
-                @foreach ($report['bots'] as $bot)
-                    <tr>
-                        <td>{{ $bot['name'] }}</td>
-                        <td>{{ $bot['kind'] }}</td>
-                        <td style="{{ $bot['robots'] === 'Engelli' ? 'color:#b91c1c;font-weight:bold' : '' }}">{{ $bot['robots'] }}</td>
-                        <td style="{{ str_starts_with($bot['fetch'], 'Reddedildi') ? 'color:#b45309;font-weight:bold' : '' }}">{{ $bot['fetch'] }}</td>
-                    </tr>
-                @endforeach
-            </table>
-            <p style="font-size:11px;color:#6b7280">Erişim testi ana sayfayı her botun kimliğiyle bir kez ister. "Reddedildi", güvenlik duvarının bu kimliği engellediğini gösterir; gerçek botlar IP doğrulamasıyla geçebilir.</p>
-        @endif
+        <table class="grid">
+            @foreach ($report['ai'] as $line)
+                <tr>
+                    <td style="width:24px;text-align:center;{{ $stateStyle[$line['state']] }}">{{ $stateMark[$line['state']] }}</td>
+                    <td>{{ $line['label'] }}</td>
+                    <td style="{{ $stateStyle[$line['state']] }}">{{ $line['value'] }}</td>
+                </tr>
+            @endforeach
+        </table>
     @endif
 
     @if (! empty($report['wordpress']))

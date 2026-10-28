@@ -61,6 +61,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Her URL'nin ayrıntı penceresi: başlıklar, gelen/giden linkler, bulgular
 - ✓ CSV export (URL ve sorun bazında)
 - ✓ Müşteri raporu: paylaşılabilir link (iptal edilebilir token) + PDF, Serhan Demirel imzası
+- ✓ Sağlık skorunun nasıl hesaplandığı panelde (tarama sayfası) ve raporda açıklanır, puanı en çok düşüren sorunlar listelenir; raporda "Botlar tarafından taranabilirlik" bölümü (robots.txt, sitemap, engellenen/noindex/indekslenebilir sayfalar, derinlik, bot bazında erişim)
 
 ## 3. Faz 2 · Hızlı kazançlar
 

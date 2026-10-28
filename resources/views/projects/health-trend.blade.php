@@ -1,5 +1,5 @@
 <x-filament-widgets::widget>
-    <x-filament::section heading="Sağlık skoru trendi" description="Son taramaların sağlık skoru, en eskisi solda.">
+    <x-filament::section heading="Sağlık skoru trendi" description="Son taramaların sağlık skoru, en eskisi solda. Skor 100'den başlar; her sorun türü önemine (yüksek 12, orta 6, düşük 2 puana kadar) ve etkilediği sayfa oranına göre puan düşürür. Ayrıntısı tarama sayfasında.">
         @if ($points->isEmpty())
             <div class="text-sm opacity-70">Henüz tamamlanmış tarama yok. İlk taramadan sonra burada görünecek.</div>
         @else

@@ -65,28 +65,8 @@ class Auditor
         }
         $this->flush();
 
-        $crawl->update(['health_score' => $this->healthScore()]);
+        $crawl->update(['health_score' => HealthScore::compute($crawl)]);
         ProjectScore::record($crawl);
-    }
-
-    /**
-     * 0-100. Every rule that fires costs part of its severity weight (30% for existing at all, the rest in
-     * proportion to the share of pages it affects), so one broken page matters, but a site-wide problem matters more.
-     */
-    private function healthScore(): int
-    {
-        $total = max(1, $this->crawl->pages()->where('state', 'done')->count());
-        $weights = ['high' => 12, 'medium' => 6, 'low' => 2, 'info' => 0];
-
-        $penalty = 0.0;
-        $perRule = $this->crawl->issues()->selectRaw('rule, severity, COUNT(DISTINCT page_id) as pages')->groupBy('rule', 'severity')->get();
-
-        foreach ($perRule as $row) {
-            $ratio = min(1, $row->pages / $total);
-            $penalty += $weights[$row->severity] * (0.3 + 0.7 * $ratio);
-        }
-
-        return (int) max(0, min(100, round(100 - $penalty)));
     }
 
     /**
