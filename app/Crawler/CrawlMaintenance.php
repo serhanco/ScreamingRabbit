@@ -24,10 +24,16 @@ class CrawlMaintenance
      */
     public static function rescueStalled(): array
     {
-        $failed = Crawl::query()
+        $failed = 0;
+        Crawl::query()->with('project')
             ->whereIn('status', ['pending', 'running'])
             ->where('updated_at', '<', now()->subMinutes(self::GIVE_UP_AFTER_MINUTES))
-            ->update(['status' => 'failed', 'error' => 'Tarama uzun süre ilerlemedi ve durduruldu.', 'finished_at' => now()]);
+            ->get()
+            ->each(function (Crawl $crawl) use (&$failed) {
+                $crawl->update(['status' => 'failed', 'error' => 'Tarama uzun süre ilerlemedi ve durduruldu.', 'finished_at' => now()]);
+                CrawlAlerts::failed($crawl);
+                $failed++;
+            });
 
         $resumed = 0;
         Crawl::query()

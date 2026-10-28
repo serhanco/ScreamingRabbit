@@ -2,9 +2,11 @@
 
 use App\Crawler\CrawlMaintenance;
 use App\Crawler\CrawlScheduler;
+use App\Google\GscDrop;
 use App\Google\GscSync;
 use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
+use App\Monitoring\Notifier;
 use App\Monitoring\PageWatcher;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -42,4 +44,11 @@ Schedule::call(fn () => CrawlMaintenance::prune())->name('crawl-prune')->dailyAt
 Schedule::call(function () {
     MonitorRunner::rollup(now()->subDay());
     MonitorRunner::prune();
+    Notifier::prune();
 })->name('monitor-daily')->dailyAt('00:10');
+
+// Notification center: alerts held during someone's quiet hours go out when they end; GSC drops are checked each
+// morning; the weekly summary goes out on Monday. The server runs on UTC: 06:00 is 09:00 in Istanbul.
+Schedule::call(fn () => Notifier::releaseHeld())->name('alerts-release')->everyTenMinutes();
+Schedule::call(fn () => GscDrop::runAll())->name('gsc-drop')->dailyAt('06:00');
+Schedule::call(fn () => Notifier::weeklyDigest())->name('alerts-weekly')->weeklyOn(1, '06:00');

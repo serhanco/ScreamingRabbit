@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Crawler\CrawlAlerts;
 use App\Crawler\CrawlRunner;
 use App\Models\Crawl;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,10 +38,11 @@ class CrawlBatch implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Crawl::whereKey($this->crawlId)->update([
-            'status' => 'failed',
-            'error' => mb_substr($exception->getMessage(), 0, 500),
-            'finished_at' => now(),
-        ]);
+        $crawl = Crawl::with('project')->find($this->crawlId);
+        if ($crawl === null) {
+            return;
+        }
+        $crawl->update(['status' => 'failed', 'error' => mb_substr($exception->getMessage(), 0, 500), 'finished_at' => now()]);
+        CrawlAlerts::failed($crawl);
     }
 }

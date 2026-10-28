@@ -26,6 +26,8 @@ return [
     'alerts' => [
         'smtp_host' => 'smtp.hostinger.com',
         'smtp_port' => 465,
+        // Quiet hours and the weekly summary follow the operator's clock, not the server's (UTC).
+        'timezone' => env('ALERTS_TIMEZONE', 'Europe/Istanbul'),
     ],
 
     // How many finished crawls to keep per project; older ones are deleted every night to save database space.

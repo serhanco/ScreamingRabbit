@@ -128,8 +128,8 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Sağlık skoru trendi: her tarama sonrası skor saklanır (eski taramalar silinse de kalır); proje sayfasında son 12 tarama, müşteri raporunda (web + PDF) "Genel sağlık" altında
 
 **Bildirim merkezi (M-2, [08 §3](08-izleme-ve-bildirimler.md))**
-- ○ Tüm olay türleri tek yerde: uptime, SSL, kritik sayfa değişimi, yeni kritik bulgu, GSC düşüşü, WordPress açığı, sistem hataları
-- ○ Önem bazlı yönlendirme, tekrar bastırma, toplu kesinti birleştirme, sessiz saatler, haftalık özet
+- ✓ Tüm olay türleri tek yerde ("Bildirimler" menüsü, 180 gün saklanır): uptime, yavaşlık, SSL, kritik sayfa değişimi, taramada yeni yüksek önemli sorun, GSC tıklama düşüşü (7 gün / önceki 7 gün, %30+, en az 50 tıklama; haftada bir), tarama hatası. WordPress açığı ○ (WP-2 ile)
+- ✓ Önem bazlı yönlendirme (kritik → Telegram + e-posta, yüksek → Telegram, yoksa e-posta, orta/düşük → yalnızca haftalık özet), aynı uyarı 6 saat içinde tekrar gönderilmez, aynı kontrolde 3+ site düşerse tek mesaj, kullanıcı başına sessiz saatler (kritikler yine gelir, diğerleri bitişte tek mesaj), pazartesi 09:00 haftalık özet e-postası
 
 **Çoklu kullanıcı ve roller (U-1)** — giriş ve 2FA zaten kullanıcı başına (Faz 1)
 - ✓ Panelden üye ekleme ("Ekip" sayfası), hesabı kapatma, 2FA sıfırlama; 2FA panelde zaten herkes için zorunlu
