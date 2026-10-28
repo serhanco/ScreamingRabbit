@@ -2,6 +2,7 @@
 
 namespace App\Reports;
 
+use App\Audit\HealthScore;
 use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
 use App\Models\Crawl;
@@ -74,6 +75,10 @@ class CrawlReport
             'site' => $crawl->project->base_url,
             'date' => ($crawl->finished_at ?? $crawl->started_at ?? $crawl->created_at)->timezone(config('app.timezone'))->format('d.m.Y'),
             'score' => $crawl->health_score,
+            'deductions' => HealthScore::deductions($crawl)->take(5)->map(fn (array $row) => $row + [
+                'severity_label' => RuleCatalog::SEVERITIES[$row['severity']] ?? $row['severity'],
+            ])->all(),
+            'crawlability' => $this->crawlability(),
             'trend' => ProjectScore::trend($crawl->project_id, 12, $crawl->finished_at ?? now())->all(),
             'crawled' => (clone $pages)->where('state', 'done')->count(),
             'ok' => (clone $pages)->where('status_code', 200)->count(),
@@ -111,6 +116,49 @@ class CrawlReport
             'verified' => $task->status === 'verified',
             'impact' => ImpactMeter::label($task->impact),
         ])->values()->all())->filter()->all();
+    }
+
+    /**
+     * Can search engines reach and index the site: robots.txt, sitemap, blocked and noindex pages, depth, bot access.
+     *
+     * @return array<int, array{label: string, value: string, state: string}>
+     */
+    private function crawlability(): array
+    {
+        $crawl = $this->crawl;
+        $lines = [];
+        $lines[] = ['label' => 'robots.txt dosyası', 'value' => filled($crawl->robots_txt) ? 'Var' : 'Yok', 'state' => filled($crawl->robots_txt) ? 'ok' : 'warn'];
+        $lines[] = ['label' => 'XML site haritası (sitemap)', 'value' => $crawl->sitemap_found ? 'Bulundu' : 'Bulunamadı', 'state' => $crawl->sitemap_found ? 'ok' : 'warn'];
+
+        $blocked = $crawl->pages()->where('state', 'blocked')->count();
+        $lines[] = ['label' => 'robots.txt\'nin engellediği adresler', 'value' => (string) $blocked, 'state' => $blocked === 0 ? 'ok' : 'warn'];
+
+        $html = $crawl->pages()->where('state', 'done')->where('status_code', 200)->where('content_type', 'like', '%html%');
+        $total = (clone $html)->count();
+        if ($total > 0) {
+            $noindex = (clone $html)->where(fn ($q) => $q->where('meta_robots', 'like', '%noindex%')->orWhere('x_robots', 'like', '%noindex%'))->count();
+            $canonicalElsewhere = (clone $html)->whereNotNull('canonical')->where('canonical', '!=', '')->whereColumn('canonical', '!=', 'url')->count();
+            $indexable = (clone $html)->get(['url', 'meta_robots', 'x_robots', 'canonical', 'state', 'status_code', 'content_type'])
+                ->filter->isIndexable()->count();
+            $share = (int) round($indexable / $total * 100);
+            $lines[] = ['label' => 'İndekslenebilir sayfalar (200, noindex yok, canonical kendisi)', 'value' => "%{$share} ({$indexable} / {$total})", 'state' => $share >= 80 ? 'ok' : 'warn'];
+            $lines[] = ['label' => 'Noindex sayfalar', 'value' => (string) $noindex, 'state' => $noindex === 0 ? 'ok' : 'warn'];
+            $lines[] = ['label' => 'Canonical\'ı başka adresi gösteren sayfalar', 'value' => (string) $canonicalElsewhere, 'state' => 'ok'];
+            if ($crawl->sitemap_found) {
+                $missing = (clone $html)->where('in_sitemap', false)->count();
+                $lines[] = ['label' => 'Site haritasında olmayan sayfalar', 'value' => (string) $missing, 'state' => $missing === 0 ? 'ok' : 'warn'];
+            }
+            $deep = (clone $html)->where('depth', '>', 3)->count();
+            $lines[] = ['label' => 'Ana sayfadan 3 tıktan derindeki sayfalar', 'value' => (string) $deep, 'state' => $deep === 0 ? 'ok' : 'warn'];
+        }
+
+        $search = collect($crawl->bot_access ?? [])->where('kind', 'search');
+        if ($search->isNotEmpty()) {
+            $open = $search->filter(fn ($bot) => $bot['robots_allowed'] && $bot['fetch'] !== 'refused')->count();
+            $lines[] = ['label' => 'Arama motoru botları (Google, Bing…)', 'value' => "{$open} / {$search->count()} erişebiliyor", 'state' => $open === $search->count() ? 'ok' : 'bad'];
+        }
+
+        return $lines;
     }
 
     /**

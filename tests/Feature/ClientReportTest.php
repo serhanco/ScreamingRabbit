@@ -72,6 +72,26 @@ class ClientReportTest extends TestCase
         $this->get('/rapor/tok123/pdf')->assertOk();
     }
 
+    public function test_report_explains_the_score_and_shows_crawlability(): void
+    {
+        $crawl = $this->crawl();
+        $crawl->update(['health_score' => 88, 'robots_txt' => "User-agent: *\nDisallow: /wp-admin/", 'sitemap_found' => true, 'bot_access' => [
+            ['token' => 'googlebot', 'name' => 'Googlebot', 'kind' => 'search', 'robots_allowed' => true, 'fetch' => 'ok', 'status' => 200],
+        ]]);
+        CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/', 'url_hash' => sha1('home'), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html', 'depth' => 0, 'in_sitemap' => true]);
+        CrawlPage::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com/gizli', 'url_hash' => sha1('gizli'), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html', 'depth' => 5, 'meta_robots' => 'noindex']);
+
+        $this->get('/rapor/tok123')
+            ->assertOk()
+            ->assertSee('Sağlık skoru nasıl hesaplanır?')
+            ->assertSee('Puanı en çok düşüren sorunlar')
+            ->assertSee('Botlar tarafından taranabilirlik')
+            ->assertSee('%50 (1 / 2)')
+            ->assertSee('Googlebot')
+            ->assertSee('1 / 1 erişebiliyor');
+        $this->assertStringStartsWith('%PDF', $this->get('/rapor/tok123/pdf')->getContent());
+    }
+
     public function test_unknown_revoked_or_unfinished_is_404(): void
     {
         $this->get('/rapor/nope')->assertNotFound();
