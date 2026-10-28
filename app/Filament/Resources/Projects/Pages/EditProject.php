@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\Actions\StartCrawlAction;
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\Projects\Widgets\HealthTrend;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Support\Icons\Heroicon;
@@ -25,5 +26,10 @@ class EditProject extends EditRecord
                 ->url(fn (): string => ProjectResource::getUrl('insights', ['record' => $this->record])),
             DeleteAction::make(),
         ];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [HealthTrend::class];
     }
 }

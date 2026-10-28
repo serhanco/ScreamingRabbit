@@ -4,6 +4,7 @@ namespace App\Audit;
 
 use App\Models\Crawl;
 use App\Models\CrawlPage;
+use App\Models\ProjectScore;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -65,6 +66,7 @@ class Auditor
         $this->flush();
 
         $crawl->update(['health_score' => $this->healthScore()]);
+        ProjectScore::record($crawl);
     }
 
     /**
