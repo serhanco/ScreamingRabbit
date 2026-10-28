@@ -124,7 +124,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 **Zamanlama ve karşılaştırma**
 - ✓ Proje başına zamanlanmış tarama (günlük/haftalık/aylık); gece 01:00–06:00 arası başlar, devam eden tarama varsa başlamaz
 - ✓ Otomatik tarama karşılaştırma: tarama sayfasında "Önceki taramaya göre değişenler" (yeni/kaybolan sayfalar, yeni/düzelen sorunlar, durum/title/meta/canonical/robots değişimleri, skor farkı)
-- ○ Kritik sayfa izleme (Lumar Protect fikri): seçili 5-50 URL saatlik/günlük (durum, noindex, canonical, title)
+- ✓ Kritik sayfa izleme (Lumar Protect fikri): proje başına en fazla 50 URL, saatlik/günlük; durum kodu, yönlendirme hedefi, noindex (meta + X-Robots-Tag), canonical, title değişirse ikinci okumayla doğrulanır, geçmişe yazılır ve e-posta/Telegram uyarısı gider ("Kritik sayfalar" menüsü)
 - ✓ Sağlık skoru trendi: her tarama sonrası skor saklanır (eski taramalar silinse de kalır); proje sayfasında son 12 tarama, müşteri raporunda (web + PDF) "Genel sağlık" altında
 
 **Bildirim merkezi (M-2, [08 §3](08-izleme-ve-bildirimler.md))**
