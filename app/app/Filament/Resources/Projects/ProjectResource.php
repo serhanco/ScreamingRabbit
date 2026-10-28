@@ -11,6 +11,7 @@ use App\Filament\Resources\Projects\Pages\ProjectSegments;
 use App\Filament\Resources\Projects\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
+use App\Filament\Resources\Projects\Widgets\HealthTrend;
 use App\Models\Project;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -52,6 +53,11 @@ class ProjectResource extends Resource
     public static function getRelations(): array
     {
         return [MembersRelationManager::class];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [HealthTrend::class];
     }
 
     public static function canDeleteAny(): bool

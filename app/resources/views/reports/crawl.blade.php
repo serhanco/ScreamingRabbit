@@ -78,6 +78,11 @@
         <tr>@foreach ($report['by_severity'] as $row)<td class="num">{{ $row['count'] }}</td>@endforeach</tr>
     </table>
 
+    @if (count($report['trend'] ?? []) >= 2)
+        <div style="margin-top: 14px" class="muted">Sağlık skoru trendi (son taramalar)</div>
+        <x-score-trend :points="$report['trend']" />
+    @endif
+
     @if (! empty($report['tasks']))
         <h2>Çalışma planı</h2>
         @foreach (['done' => 'Tamamlanan çalışmalar', 'doing' => 'Devam eden çalışmalar', 'open' => 'Planlanan çalışmalar'] as $group => $heading)

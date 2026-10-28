@@ -6,6 +6,7 @@ use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
 use App\Models\Crawl;
 use App\Models\CrawlIssue;
+use App\Models\ProjectScore;
 use App\Models\Task;
 use App\Tasks\ImpactMeter;
 use Dompdf\Dompdf;
@@ -73,6 +74,7 @@ class CrawlReport
             'site' => $crawl->project->base_url,
             'date' => ($crawl->finished_at ?? $crawl->started_at ?? $crawl->created_at)->timezone(config('app.timezone'))->format('d.m.Y'),
             'score' => $crawl->health_score,
+            'trend' => ProjectScore::trend($crawl->project_id, 12, $crawl->finished_at ?? now())->all(),
             'crawled' => (clone $pages)->where('state', 'done')->count(),
             'ok' => (clone $pages)->where('status_code', 200)->count(),
             'redirects' => (clone $pages)->whereBetween('status_code', [300, 399])->count(),
