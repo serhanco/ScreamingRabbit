@@ -5,6 +5,7 @@ use App\Crawler\CrawlScheduler;
 use App\Google\GscSync;
 use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
+use App\Monitoring\PageWatcher;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
@@ -24,6 +25,9 @@ Schedule::call(fn () => Artisan::call('queue:work', ['--stop-when-empty' => true
     ->name('queue-worker')
     ->everyMinute()
     ->withoutOverlapping(3);
+
+// Critical pages: hourly or daily, a handful per run so a run stays short.
+Schedule::call(fn () => PageWatcher::runDue())->name('page-watch')->everyFiveMinutes()->withoutOverlapping(5);
 
 // Search Console numbers: one short window per project each run, so the 16-month backfill spreads over many runs.
 Schedule::call(fn () => GscSync::runAll())->name('gsc-sync')->everyTenMinutes()->withoutOverlapping(10);
