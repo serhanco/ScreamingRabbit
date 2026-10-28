@@ -4,6 +4,7 @@ namespace App\Monitoring;
 
 use App\Models\Setting;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -19,10 +20,21 @@ class Channels
      */
     public static function deliver(string $kind, string $title, string $body, ?int $projectId = null): array
     {
-        return User::query()->orderBy('id')->get()
-            ->filter(fn (User $user) => $user->is_active && $user->wantsAlert($kind) && $user->canSeeProject($projectId))
+        return self::recipients($kind, $projectId)
             ->mapWithKeys(fn (User $user) => [$user->id => self::toUser($user, $title, $body)])
             ->all();
+    }
+
+    /**
+     * Active users who want this kind of alert and can see the project it is about.
+     *
+     * @return Collection<int, User>
+     */
+    public static function recipients(string $kind, ?int $projectId): Collection
+    {
+        return User::query()->orderBy('id')->get()
+            ->filter(fn (User $user) => $user->is_active && $user->wantsAlert($kind) && $user->canSeeProject($projectId))
+            ->values();
     }
 
     /**

@@ -527,6 +527,7 @@ class CrawlRunner
         (new Auditor)->run($this->crawl);
 
         $this->crawl->update(['status' => 'completed', 'finished_at' => now()]);
+        CrawlAlerts::newIssues($this->crawl);
 
         TaskBuilder::sync($this->crawl->project);
     }

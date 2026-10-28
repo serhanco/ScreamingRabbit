@@ -8,5 +8,5 @@ class MonitorAlert
 {
     use Dispatchable;
 
-    public function __construct(public string $kind, public string $title, public string $body, public ?int $projectId = null) {}
+    public function __construct(public string $kind, public string $title, public string $body, public ?int $projectId = null, public ?int $eventId = null) {}
 }

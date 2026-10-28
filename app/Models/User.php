@@ -16,7 +16,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 
-#[Fillable(['name', 'email', 'password', 'alert_email', 'telegram_chat_id', 'alert_kinds', 'role', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'alert_email', 'telegram_chat_id', 'alert_kinds', 'quiet_from', 'quiet_to', 'weekly_digest', 'role', 'is_active'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
@@ -46,6 +46,9 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             'alert_kinds' => 'array',
             'is_active' => 'boolean',
             'is_primary' => 'boolean',
+            'quiet_from' => 'integer',
+            'quiet_to' => 'integer',
+            'weekly_digest' => 'boolean',
         ];
     }
 
