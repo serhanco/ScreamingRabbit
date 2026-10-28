@@ -8,7 +8,9 @@ use App\Monitoring\Channels;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -30,7 +32,7 @@ class NotificationSettings extends Page
 {
     private const SHARED_KEYS = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'telegram_bot_token', 'heartbeat_url'];
 
-    private const USER_KEYS = ['alert_email', 'telegram_chat_id', 'alert_kinds'];
+    private const USER_KEYS = ['alert_email', 'telegram_chat_id', 'alert_kinds', 'quiet_from', 'quiet_to', 'weekly_digest'];
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
 
@@ -50,7 +52,8 @@ class NotificationSettings extends Page
         $values['smtp_port'] ??= config('screamingrabbit.alerts.smtp_port');
 
         $user = auth()->user();
-        $values += ['alert_email' => $user->alert_email ?? $user->email, 'telegram_chat_id' => $user->telegram_chat_id, 'alert_kinds' => $user->alert_kinds ?? array_keys(Alerts::KINDS)];
+        $values += ['alert_email' => $user->alert_email ?? $user->email, 'telegram_chat_id' => $user->telegram_chat_id, 'alert_kinds' => $user->alert_kinds ?? array_keys(Alerts::KINDS),
+            'quiet_from' => $user->quiet_from, 'quiet_to' => $user->quiet_to, 'weekly_digest' => $user->weekly_digest ?? true];
 
         $this->form->fill($values);
     }
@@ -81,7 +84,12 @@ class NotificationSettings extends Page
                                     $set('telegram_chat_id', $chat);
                                     Notification::make()->title('Sohbet bulundu, kaydetmeyi unutma')->success()->send();
                                 })),
-                        CheckboxList::make('alert_kinds')->label('Hangi uyarıları alayım?')->options(Alerts::KINDS)->columnSpanFull(),
+                        CheckboxList::make('alert_kinds')->label('Hangi uyarıları alayım?')->options(Alerts::KINDS)->columns(2)->columnSpanFull()
+                            ->helperText('Kritik olanlar (site erişilemiyor/düzeldi, kritik sayfa değişti) Telegram ve e-postayla, diğerleri Telegram\'la gelir; Telegram yoksa e-postayla. Aynı uyarı 6 saat içinde tekrar gönderilmez.'),
+                        Select::make('quiet_from')->label('Sessiz saatler: başlangıç')->options(self::hours())->placeholder('Kapalı'),
+                        Select::make('quiet_to')->label('Sessiz saatler: bitiş')->options(self::hours())->placeholder('Kapalı')
+                            ->helperText('Bu saatler arasında yalnızca kritik uyarılar gelir; diğerleri bitişte tek mesajda toplanır. Türkiye saati.'),
+                        Toggle::make('weekly_digest')->label('Pazartesi sabahı haftalık özet e-postası')->columnSpanFull(),
                     ]),
                 Section::make('Ortak ayarlar: gönderen e-posta hesabı')
                     ->visible(fn (): bool => auth()->user()->isPrimary())
@@ -106,6 +114,12 @@ class NotificationSettings extends Page
                         TextInput::make('heartbeat_url')->label('Ping adresi')->url()->placeholder('https://hc-ping.com/...'),
                     ]),
             ]);
+    }
+
+    /** @return array<int, string> */
+    private static function hours(): array
+    {
+        return collect(range(0, 23))->mapWithKeys(fn (int $h) => [$h => sprintf('%02d:00', $h)])->all();
     }
 
     public function content(Schema $schema): Schema

@@ -60,9 +60,12 @@ class MonitorRunner
         $stillFailed = $due->filter(fn (Monitor $m) => ! $results[$m->id]['ok']);
         $suppressed = $stillFailed->isNotEmpty() && ! self::canariesReachable();
 
-        foreach ($due as $monitor) {
-            self::record($monitor, $results[$monitor->id], $suppressed);
-        }
+        // Delivered together at the end, so several sites going down at once reach each person as one message.
+        Alerts::collect(function () use ($due, $results, $suppressed) {
+            foreach ($due as $monitor) {
+                self::record($monitor, $results[$monitor->id], $suppressed);
+            }
+        });
 
         return ['checked' => $due->count(), 'down' => $stillFailed->count(), 'suppressed' => $suppressed];
     }
