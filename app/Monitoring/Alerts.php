@@ -16,6 +16,7 @@ class Alerts
         'up' => 'Site düzeldi',
         'slow' => 'Site yavaş',
         'ssl' => 'SSL sertifikası bitiyor',
+        'page_change' => 'Kritik sayfada değişiklik (durum, noindex, canonical, title)',
     ];
 
     public static function send(string $kind, string $title, string $body, ?int $projectId = null): void
