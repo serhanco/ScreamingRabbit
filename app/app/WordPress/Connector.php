@@ -4,7 +4,9 @@ namespace App\WordPress;
 
 use App\Models\Project;
 use App\Models\WpConnection;
+use App\Models\WpEvent;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -145,6 +147,46 @@ class Connector
         return collect($inventory['plugins'] ?? [])
             ->filter(fn (array $plugin) => ($plugin['active'] ?? false) && in_array(strtok((string) ($plugin['file'] ?? ''), '/'), self::CACHE_PLUGINS, true))
             ->pluck('name')->values()->all();
+    }
+
+    /**
+     * Stores a content change the plugin reported, after checking its signature (same scheme as the app's calls to
+     * the plugin, nonces single-use for 10 minutes). Returns an error message, or null when it was accepted.
+     *
+     * @param  array<string, string>  $headers  site, timestamp, nonce, signature
+     */
+    public static function receiveEvent(array $headers, string $body): ?string
+    {
+        $host = strtolower($headers['site']);
+        $timestamp = $headers['timestamp'];
+        if ($host === '' || ! ctype_digit($timestamp) || abs(time() - (int) $timestamp) > 300 || preg_match('/^[A-Za-z0-9]{16,64}$/', $headers['nonce']) !== 1) {
+            return 'stale';
+        }
+        $connection = WpConnection::query()->whereNotNull('connected_at')->whereNotNull('site_url')->get()
+            ->filter(fn (WpConnection $connection) => self::sameSite('https://'.$host, (string) $connection->site_url) && filled($connection->secret))
+            ->first(fn (WpConnection $connection) => hash_equals(self::sign((string) $connection->secret, 'POST', '/wp-baglanti/olay', $timestamp, $headers['nonce'], $body), $headers['signature']));
+        if ($connection === null) {
+            return 'bad_signature';
+        }
+        if (! Cache::add('wp-event-nonce:'.$headers['nonce'], 1, 600)) {
+            return 'replayed';
+        }
+
+        $data = json_decode($body, true);
+        $url = is_array($data) ? (string) ($data['url'] ?? '') : '';
+        if (! isset(WpEvent::EVENTS[$data['event'] ?? '']) || mb_strlen($url) > 2048 || ! self::sameSite($url, $connection->project->base_url)) {
+            return 'bad_payload';
+        }
+
+        WpEvent::create([
+            'project_id' => $connection->project_id,
+            'event' => $data['event'],
+            'url' => $url,
+            'post_type' => mb_substr((string) ($data['post_type'] ?? ''), 0, 40) ?: null,
+            'received_at' => now(),
+        ]);
+
+        return null;
     }
 
     /** Version in the header of the plugin copy in this repository, the one the app hands out. */

@@ -35,6 +35,11 @@ Route::post('/wp-baglanti/eslestir', [WordPressController::class, 'pair'])
     ->withoutMiddleware(ValidateCsrfToken::class)
     ->name('wordpress.pair');
 Route::get('/wp-baglanti/eklenti.zip', [WordPressController::class, 'plugin'])->name('wordpress.plugin');
+// Content changes from paired sites; signed with the site's secret, so no session or CSRF token.
+Route::post('/wp-baglanti/olay', [WordPressController::class, 'event'])
+    ->middleware('throttle:60,1')
+    ->withoutMiddleware(ValidateCsrfToken::class)
+    ->name('wordpress.event');
 // Installed plugins look for new versions here and download them with a link signed by their own secret.
 Route::get('/wp-baglanti/surum', [WordPressController::class, 'version'])->middleware('throttle:60,1')->name('wordpress.version');
 Route::get('/wp-baglanti/paket.zip', [WordPressController::class, 'package'])->middleware('throttle:20,1')->name('wordpress.package');
