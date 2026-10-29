@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
@@ -22,6 +23,8 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    use LogsActivity;
 
     public const ROLES = [
         'admin' => 'Yönetici (kendi projelerini ekler, Google\'ı bağlar)',
@@ -159,5 +162,16 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function wantsAlert(string $kind): bool
     {
         return $this->alert_kinds === null || in_array($kind, $this->alert_kinds, true);
+    }
+
+    public function activityLabel(): string
+    {
+        return 'Üye: '.$this->name.' ('.$this->email.')';
+    }
+
+    /** @return array<int, string> */
+    public function activityOnly(): array
+    {
+        return ['name', 'email', 'password', 'role', 'is_active', 'app_authentication_secret'];
     }
 }

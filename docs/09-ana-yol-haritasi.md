@@ -139,7 +139,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Ana yönetici (ilk yönetici, Serhan) her şeyi görür; diğer yöneticiler yalnızca kendi ekledikleri ve atandıkları projeleri görür. Ekip sayfası ve ortak ayarlar (Google anahtarı, SMTP, bot) yalnızca ana yöneticide
 - ✓ Her yönetici kendi Google hesabını bağlar (token kullanıcı başına, şifreli); site listesini yalnızca bağlayan görür; proje, mülkünü seçen yöneticinin bağlantısıyla okunur; günlük istek/URL denetimi bağlantı başına sayılır. Davetli üyeler Google bağlamaz, proje sahibinin bağlantısıyla gelen veriyi görür
 - ✓ E-postayla davet (yeni kullanıcıya hesap açma + proje, mevcut kullanıcıya proje daveti; 7 gün geçerli, e-posta gitmezse bağlantı panelde gösterilir). Proje sayfasındaki "Ekip ve yetkiler" listesinden proje sahibi davet eder, yetkileri değiştirir, üyeyi çıkarır. Proje bazında yetkiler: tarama, iş listesi, rapor paylaşma, izleme, proje ayarları; görüntüleme herkese açık
-- ○ İşlem günlüğü: kim neyi değiştirdi (ayar, onaylı WP değişikliği)
+- ✓ İşlem günlüğü ("İşlem günlüğü" menüsü, 1 yıl saklanır): üyelerin proje, müşteri, ekip, ortak ayar, iş, rapor, izleme, kritik sayfa ve tarama değişiklikleri; gizli değerler yazılmaz; arka plan işleri kaydedilmez. Onaylı WP değişiklikleri ○ (Faz 6)
 
 **Raporlama**
 - ○ Markalı müşteri raporu (Serhan'ın logosu ve renkleri)

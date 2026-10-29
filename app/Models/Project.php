@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 class Project extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     public const PLATFORMS = [
         'wordpress' => 'WordPress',
@@ -128,5 +130,10 @@ class Project extends Model
         $overrides = array_filter($this->crawl_settings ?? [], fn ($value) => $value !== null && $value !== '');
 
         return array_merge(config('screamingrabbit.crawl_defaults'), $overrides);
+    }
+
+    public function activityLabel(): string
+    {
+        return 'Proje: '.$this->name;
     }
 }
