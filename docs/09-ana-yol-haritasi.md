@@ -209,6 +209,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 **WP-2 · Salt okunur**
 - ✓ Eşleştirme ekranı (proje → WordPress sayfasında tek kullanımlık, 30 dk geçerli bağlantı kodu; eklenti ZIP'i aynı sayfadan iner), HMAC imzalı istekler (zaman damgası ±5 dk, tek kullanımlık nonce, dakikada 60 istek)
 - ✓ Tam envanter: çekirdek, eklentiler, temalar, aktif/pasif, güncelleme durumu (günde bir ve "Şimdi yenile" ile)
+- ✓ Envanterden bulgular (eklenti bağlıysa dış tahminin yerine geçer): çekirdek/eklenti/tema güncellemesi, pasif eklentiler, arama motorlarını engelle, düz kalıcı bağlantı, WP_DEBUG, panelden dosya düzenleme, 3'ten fazla yönetici, desteği bitmiş PHP
 - ○ Açık veritabanı eşleştirmesi (Wordfence Intelligence feed, günlük)
 - ◐ Ortam ve kritik ayarlar (`blog_public`, `WP_DEBUG`, dosya düzenleyici, otomatik güncelleme, yönetici sayısı) ✓; Site Sağlığı sonuçları ○
 - ◐ Taslak/zamanlanmış içerik sayıları ✓; Yoast/Rank Math alanları, çekirdek dosya bütünlüğü ○
