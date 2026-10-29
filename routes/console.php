@@ -4,6 +4,7 @@ use App\Crawler\CrawlMaintenance;
 use App\Crawler\CrawlScheduler;
 use App\Google\GscDrop;
 use App\Google\GscSync;
+use App\Models\ActivityLog;
 use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
 use App\Monitoring\Notifier;
@@ -49,6 +50,7 @@ Schedule::call(function () {
     MonitorRunner::rollup(now()->subDay());
     MonitorRunner::prune();
     Notifier::prune();
+    ActivityLog::query()->where('created_at', '<', now()->subDays(ActivityLog::RETENTION_DAYS))->delete();
 })->name('monitor-daily')->dailyAt('00:10');
 
 // Notification center: alerts held during someone's quiet hours go out when they end; GSC drops are checked each

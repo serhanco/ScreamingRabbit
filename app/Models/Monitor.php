@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Monitor extends Model
 {
+    use LogsActivity;
+
     public const INTERVALS = [1 => 'Her dakika', 5 => '5 dakikada bir', 15 => '15 dakikada bir'];
 
     public const STATUSES = ['unknown' => 'Bekliyor', 'up' => 'Çalışıyor', 'down' => 'Erişilemiyor'];
@@ -60,5 +63,16 @@ class Monitor extends Model
             ->selectRaw('COUNT(*) as total, SUM(CASE WHEN ok THEN 1 ELSE 0 END) as up')->first();
 
         return $row && $row->total > 0 ? round($row->up / $row->total * 100, 2) : null;
+    }
+
+    public function activityLabel(): string
+    {
+        return 'İzleme: '.$this->url;
+    }
+
+    /** @return array<int, string> */
+    public function activityOnly(): array
+    {
+        return ['url', 'interval_minutes', 'keyword', 'is_active'];
     }
 }
