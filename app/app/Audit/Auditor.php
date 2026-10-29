@@ -296,6 +296,9 @@ class Auditor
         if ($recommended->isNotEmpty()) {
             $this->emit('schema_missing_recommended', $page, mb_substr($recommended->map(fn (array $p) => $p['type'].': '.implode(', ', str_replace('|', ' veya ', $p['recommended'])))->implode(' · '), 0, 250));
         }
+        if (! empty($page->schema_vocabulary)) {
+            $this->emit('schema_vocabulary_error', $page, mb_substr(implode(' · ', $page->schema_vocabulary), 0, 250));
+        }
         if (! empty($page->schema_mismatch)) {
             $this->emit('schema_page_mismatch', $page, implode(' · ', $page->schema_mismatch));
         }

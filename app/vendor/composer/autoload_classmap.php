@@ -21,6 +21,7 @@ return array(
     'App\\Audit\\RuleCatalog' => $baseDir . '/app/Audit/RuleCatalog.php',
     'App\\Audit\\SchemaInventory' => $baseDir . '/app/Audit/SchemaInventory.php',
     'App\\Audit\\SchemaRules' => $baseDir . '/app/Audit/SchemaRules.php',
+    'App\\Audit\\SchemaVocabulary' => $baseDir . '/app/Audit/SchemaVocabulary.php',
     'App\\Audit\\SecurityHeaders' => $baseDir . '/app/Audit/SecurityHeaders.php',
     'App\\Audit\\SimHash' => $baseDir . '/app/Audit/SimHash.php',
     'App\\Crawler\\BotAccess' => $baseDir . '/app/Crawler/BotAccess.php',
