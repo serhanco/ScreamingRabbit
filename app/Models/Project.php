@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
 #[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings', 'crawl_auth', 'gsc_property', 'crawl_schedule'])]
@@ -138,6 +139,11 @@ class Project extends Model
     public function gscConnection(): ?GoogleConnection
     {
         return $this->gsc_user_id ? GoogleConnection::query()->where('user_id', $this->gsc_user_id)->first() : null;
+    }
+
+    public function wpConnection(): HasOne
+    {
+        return $this->hasOne(WpConnection::class);
     }
 
     public function crawls(): HasMany

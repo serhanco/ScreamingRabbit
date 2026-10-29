@@ -132,7 +132,7 @@ Envanteri bilinen açıklarla eşleştirmek için **Wordfence Intelligence Vulne
 - Uyumluluk: WordPress 6.0+, PHP 7.4+ (müşteri sitelerinin eski olabileceği varsayımıyla).
 - Ön yüzde sıfır yük: ziyaretçi sayfalarına hiçbir CSS/JS eklemez, ağır WP-cron işi yoktur.
 - Dağıtım: önce wordpress.org dışında, uygulamanın proje sayfasından ZIP indirme (WP yönetim panelinde "Eklenti yükle" ile kurulur; bu müşteri sitesi tarafında, Hostinger'daki ZIP sorunumuzla ilgisi yok). Güncellemeler: eklenti uygulamadan yeni sürümü kontrol eder (WP-3).
-- Kod yeri: aynı repoda `wordpress-plugin/screamingrabbit-connector/`. `deploy` dalına dahil edilmez, ayrı bir GitHub iş akışı ZIP'i üretir.
+- Kod yeri: aynı repoda `wordpress-plugin/screamingrabbit-connector/`. `deploy` dalına uygulamayla birlikte gider; ZIP'i uygulama indirme anında üretir (`/wp-baglanti/eklenti.zip`, yalnızca giriş yapmış üyeler).
 
 ## 4. Veri modeli eklemeleri
 

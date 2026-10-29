@@ -1,0 +1,119 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Filament\Resources\Projects\Pages\ProjectWordPress;
+use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\Project;
+use App\Models\User;
+use App\Models\WpConnection;
+use App\WordPress\Connector;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
+use SR_Signature;
+use Tests\TestCase;
+
+class WordPressConnectorTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function codeOf(string $token): string
+    {
+        $this->assertStringStartsWith('SR1.', $token);
+
+        return json_decode(base64_decode(strtr(substr($token, 4), '-_', '+/')), true)['c'];
+    }
+
+    public function test_pairing_gives_the_site_a_secret_once(): void
+    {
+        $project = Project::factory()->create(['base_url' => 'https://www.klinik.com']);
+        $code = $this->codeOf(Connector::newCode($project));
+
+        $this->postJson('/wp-baglanti/eslestir', ['code' => $code, 'site_url' => 'https://baska.com/'])
+            ->assertStatus(422)->assertJsonPath('message', 'Bu kod www.klinik.com sitesi için. Kodu o sitenin WordPress paneline yapıştırın.');
+
+        $secret = $this->postJson('/wp-baglanti/eslestir', ['code' => $code, 'site_url' => 'https://klinik.com/', 'plugin_version' => '0.1.0'])
+            ->assertOk()->json('secret');
+        $connection = $project->wpConnection()->first();
+        $this->assertSame($secret, $connection->secret);
+        $this->assertTrue($connection->isConnected());
+        $this->assertNull($connection->code_hash);
+
+        $this->postJson('/wp-baglanti/eslestir', ['code' => $code, 'site_url' => 'https://klinik.com/'])->assertStatus(422);
+    }
+
+    public function test_expired_codes_do_not_pair(): void
+    {
+        $project = Project::factory()->create(['base_url' => 'https://klinik.com']);
+        $code = $this->codeOf(Connector::newCode($project));
+        $this->travel(Connector::CODE_MINUTES + 1)->minutes();
+
+        $this->assertArrayHasKey('error', Connector::pair($code, 'https://klinik.com/', null));
+    }
+
+    public function test_app_and_plugin_sign_the_same_way(): void
+    {
+        require_once base_path('wordpress-plugin/screamingrabbit-connector/includes/class-sr-signature.php');
+        $now = time();
+        $signature = Connector::sign('gizli', 'GET', '/screamingrabbit/v1/inventory', (string) $now, 'abcdefghijklmnop1234', '');
+
+        $this->assertSame(SR_Signature::sign('gizli', 'get', '/screamingrabbit/v1/inventory', $now, 'abcdefghijklmnop1234', ''), $signature);
+        $this->assertNull(SR_Signature::problem('gizli', 'GET', '/screamingrabbit/v1/inventory', (string) $now, 'abcdefghijklmnop1234', '', $signature, $now + 60));
+        $this->assertSame('bad_signature', SR_Signature::problem('başka', 'GET', '/screamingrabbit/v1/inventory', (string) $now, 'abcdefghijklmnop1234', '', $signature, $now));
+        $this->assertSame('stale', SR_Signature::problem('gizli', 'GET', '/screamingrabbit/v1/inventory', (string) $now, 'abcdefghijklmnop1234', '', $signature, $now + 600));
+    }
+
+    public function test_sync_stores_the_inventory_or_the_reason_it_failed(): void
+    {
+        $project = Project::factory()->create(['base_url' => 'https://klinik.com']);
+        $connection = WpConnection::create(['project_id' => $project->id, 'secret' => 'gizli', 'site_url' => 'https://klinik.com/', 'connected_at' => now()]);
+        Http::fake(['klinik.com/*' => Http::sequence()
+            ->push(['plugin_version' => '0.1.0', 'core' => ['version' => '6.8.1', 'update' => null], 'plugins' => []])
+            ->push(['code' => 'sr_unauthorized', 'message' => 'bad_signature'], 401)]);
+
+        $this->assertSame(1, Connector::runDue());
+        $this->assertSame('6.8.1', $connection->fresh()->inventory['core']['version']);
+        Http::assertSent(function (Request $request) {
+            $route = '/screamingrabbit/v1/inventory';
+
+            return $request['rest_route'] === $route && hash_equals(
+                Connector::sign('gizli', 'GET', $route, $request->header('X-SR-Timestamp')[0], $request->header('X-SR-Nonce')[0], ''),
+                $request->header('X-SR-Signature')[0],
+            );
+        });
+
+        $this->assertSame(0, Connector::runDue(), 'synced within the day');
+        $this->assertFalse(Connector::sync($connection->fresh()));
+        $this->assertStringContainsString('Eklenti isteği reddetti (bad_signature)', $connection->fresh()->sync_error);
+        $this->assertSame('6.8.1', $connection->fresh()->inventory['core']['version'], 'the last good inventory is kept');
+    }
+
+    public function test_page_shows_the_inventory_and_makes_codes(): void
+    {
+        $admin = User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']);
+        $project = Project::factory()->create(['base_url' => 'https://klinik.com', 'platform' => 'wordpress']);
+        WpConnection::create(['project_id' => $project->id, 'secret' => 'gizli', 'site_url' => 'https://klinik.com/', 'connected_at' => now(), 'synced_at' => now(),
+            'inventory' => ['core' => ['version' => '6.8.1', 'update' => '6.9'], 'environment' => ['php' => '8.2.1'], 'settings' => ['blog_public' => true, 'admins' => 2],
+                'plugins' => [['name' => 'Yoast SEO', 'version' => '25.0', 'active' => true, 'update' => '25.1', 'auto_update' => false]], 'themes' => [], 'content' => ['post' => ['publish' => 12, 'draft' => 3, 'future' => 0, 'private' => 0]]]]);
+
+        $this->actingAs($admin)->get(ProjectResource::getUrl('wordpress', ['record' => $project]))
+            ->assertOk()->assertSee('6.9 güncellemesi var')->assertSee('Yoast SEO')->assertSee('25.1 var');
+
+        Livewire::actingAs($admin)->test(ProjectWordPress::class, ['record' => $project->id])
+            ->callAction('code')->assertSet('code', fn (string $code) => str_starts_with($code, 'SR1.'));
+        $this->assertNotNull($project->wpConnection()->first()->code_hash);
+    }
+
+    public function test_plugin_zip_downloads_for_members(): void
+    {
+        $this->get('/wp-baglanti/eklenti.zip')->assertForbidden();
+
+        $response = $this->actingAs(User::factory()->create())->get('/wp-baglanti/eklenti.zip')->assertOk();
+        $zip = new \ZipArchive;
+        $zip->open($response->baseResponse->getFile()->getPathname());
+        $this->assertNotFalse($zip->locateName('screamingrabbit-connector/screamingrabbit-connector.php'));
+        $this->assertNotFalse($zip->locateName('screamingrabbit-connector/includes/class-sr-api.php'));
+    }
+}

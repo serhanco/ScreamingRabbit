@@ -12,6 +12,7 @@ use App\Monitoring\Notifier;
 use App\Monitoring\PageWatcher;
 use App\Performance\PageSpeed;
 use App\Reports\MonthlyReports;
+use App\WordPress\Connector;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
@@ -45,6 +46,9 @@ Schedule::call(fn () => RedirectChecker::runDue())->name('redirect-checks')->eve
 Schedule::call(fn () => PageSpeed::runDue())->name('pagespeed')->everyFiveMinutes()->withoutOverlapping(10);
 
 // Projects that asked for daily/weekly/monthly crawls get them started overnight.
+// Inventory from the WordPress Connector plugin, refreshed daily per site (docs/07 §3).
+Schedule::call(fn () => Connector::runDue())->name('wordpress-sync')->hourly()->withoutOverlapping(10);
+
 Schedule::call(fn () => CrawlScheduler::runDue())->name('crawl-schedule')->everyTenMinutes()->withoutOverlapping(10);
 
 Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')->everyFiveMinutes();
