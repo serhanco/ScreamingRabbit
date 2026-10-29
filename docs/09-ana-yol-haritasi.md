@@ -17,7 +17,7 @@ Fazların sonunda ScreamingRabbit:
 | Faz | Ad | Müşteriye satılabilir çıktı | Durum |
 |---|---|---|---|
 | 0 | Araştırma, mimari, kurulum | — | ✓ |
-| 1 | Temel teknik denetim (MVP) | Teknik SEO denetim raporu | ✓ (liste modu ve 50.000 URL testi kaldı) |
+| 1 | Temel teknik denetim (MVP) | Teknik SEO denetim raporu | ✓ (50.000 URL testi kaldı) |
 | 2 | Hızlı kazançlar: WordPress dış kontroller + uptime izleyici + AI arama temelleri | WordPress güvenlik/SEO kontrolü, 7/24 erişilebilirlik takibi, "AI botları sitenizi okuyabiliyor mu?" kontrolü | ✓ |
 | 3 | GSC ve iş listesi | Trafiğe göre öncelikli aksiyon planı, kannibalizasyon/zombi sayfa analizi | ✓ |
 | 4 | Otomasyon, değişiklik takibi, raporlama | Aylık otomatik rapor, "neyi düzelttik, ne bozuldu" | ✓ |
@@ -39,7 +39,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Spider modu, robots.txt'ye uyma, sitemap okuma (robots, `sitemap.xml`, `sitemap_index.xml`, `wp-sitemap.xml`)
 - ✓ URL normalleştirme, Cloudflare `/cdn-cgi/` atlama, WordPress izi tespiti
 - ✓ Kısa parçalar halinde arka planda tarama, muhafazakâr hız varsayılanları (2 eşzamanlı, 300 ms, 5.000 URL)
-- ○ Liste modu (URL listesi yapıştır/yükle) ve yalnızca sitemap modu
+- ✓ Liste modu (URL listesi yapıştır) ve yalnızca sitemap modu: proje ayarlarında "Tarama türü"; linkler takip edilmez
 - ✓ Include/exclude (regex), user-agent seçimi (Googlebot, Bingbot, Chrome, özel)
 - ✓ Durdur, takılan taramayı otomatik sürdürme, eski taramaları otomatik silme (proje başına son 10), canlı ilerleme çubuğu ve aşama bilgisi
 - ○ 50.000 URL hedefi için performans testi

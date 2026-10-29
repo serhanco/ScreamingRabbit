@@ -17,6 +17,12 @@ use Filament\Schemas\Schema;
 
 class ProjectForm
 {
+    public const MODES = [
+        'spider' => 'Tüm site (linkleri takip et)',
+        'sitemap' => 'Yalnızca site haritasındaki adresler',
+        'list' => 'Yalnızca yapıştırdığım adresler (liste)',
+    ];
+
     public static function configure(Schema $schema): Schema
     {
         $defaults = config('screamingrabbit.crawl_defaults');
@@ -72,6 +78,22 @@ class ProjectForm
                     ->columns(2)
                     ->collapsible()
                     ->schema([
+                        Select::make('crawl_settings.mode')
+                            ->label('Tarama türü')
+                            ->options(self::MODES)
+                            ->placeholder(self::MODES['spider'])
+                            ->live()
+                            ->columnSpanFull()
+                            ->helperText('Site haritası ve liste türünde linkler takip edilmez; yalnızca verilen adresler (ve ana sayfa) kontrol edilir.'),
+                        Textarea::make('crawl_settings.list_urls')
+                            ->label('Kontrol edilecek adresler')
+                            ->rows(6)
+                            ->maxLength(500_000)
+                            ->columnSpanFull()
+                            ->placeholder("https://ornek.com/hizmetler/\n/blog/yazi-1/")
+                            ->helperText('Her satıra bir adres. Başka sitelerin adresleri atlanır; "En fazla URL" sınırı geçerlidir.')
+                            ->visible(fn (callable $get): bool => $get('crawl_settings.mode') === 'list')
+                            ->required(fn (callable $get): bool => $get('crawl_settings.mode') === 'list'),
                         TextInput::make('crawl_settings.max_urls')
                             ->label('En fazla URL')
                             ->numeric()

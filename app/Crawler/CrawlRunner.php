@@ -43,6 +43,9 @@ class CrawlRunner
 
     private int $pageCount = 0;
 
+    /** True while the start page, sitemap and list URLs are queued; afterwards only spider crawls add pages. */
+    private bool $seeding = false;
+
     /** @var array{user: ?string, password: ?string, headers: array<string, string>}|null */
     private ?array $access = null;
 
@@ -131,13 +134,15 @@ class CrawlRunner
         $this->crawl->robots_txt = $robotsBody;
         $robots = new RobotsTxt((string) $robotsBody, 'screamingrabbit');
 
+        $this->seeding = true;
+        $mode = self::mode($this->settings);
         $this->addPage($start, 0);
         $this->crawl->bot_access = BotAccess::fromRobots($robotsBody, $start);
         $this->crawl->llms_txt = LlmsTxt::analyze($this->fetchText($origin.'/llms.txt'))
             + ['full' => LlmsTxt::analyze($this->fetchText($origin.'/llms-full.txt'))['status'] !== 'missing'];
         // The pages llms.txt points AI systems to are crawled too, so a broken one shows up.
         $llmsUrls = [];
-        foreach ($this->crawl->llms_txt['urls'] as $url) {
+        foreach ($mode === 'spider' ? $this->crawl->llms_txt['urls'] : [] as $url) {
             $resolved = UrlNormalizer::resolve($url, $start);
             if ($resolved && UrlNormalizer::isInternal($resolved, $start)) {
                 $llmsUrls[] = $resolved;
@@ -146,7 +151,14 @@ class CrawlRunner
         }
         $this->crawl->llms_txt = ['urls' => $llmsUrls] + $this->crawl->llms_txt;
 
-        $candidates = $robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml'];
+        // List mode: only the pasted addresses (plus the start page, which the site-wide checks read).
+        if ($mode === 'list') {
+            foreach (self::listUrls($this->settings, $start) as $url) {
+                $this->addPage($url, 1);
+            }
+        }
+
+        $candidates = $mode === 'list' ? [] : ($robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml']);
         $limit = (int) $this->settings['max_urls'];
 
         foreach ($candidates as $sitemap) {
@@ -164,7 +176,38 @@ class CrawlRunner
             break;
         }
 
+        $this->seeding = false;
         $this->crawl->save();
+    }
+
+    /**
+     * spider follows links from the start page and the sitemap; sitemap crawls only the sitemap's URLs; list crawls
+     * only the addresses pasted in the project settings. The last two do not follow links.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function mode(array $settings): string
+    {
+        return in_array($settings['mode'] ?? null, ['sitemap', 'list'], true) ? $settings['mode'] : 'spider';
+    }
+
+    /**
+     * The pasted addresses that belong to the site, one per line; other sites' addresses are left out.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return array<int, string>
+     */
+    public static function listUrls(array $settings, string $start): array
+    {
+        $urls = [];
+        foreach (preg_split('/\R/', (string) ($settings['list_urls'] ?? '')) as $line) {
+            $url = UrlNormalizer::resolve(trim($line), $start);
+            if (trim($line) !== '' && $url !== null && UrlNormalizer::isInternal($url, $start) && ! UrlNormalizer::isAsset($url)) {
+                $urls[] = $url;
+            }
+        }
+
+        return array_values(array_unique($urls));
     }
 
     /**
@@ -489,6 +532,11 @@ class CrawlRunner
 
     private function addPage(string $url, int $depth, bool $inSitemap = false): void
     {
+        // Sitemap and list crawls check only the URLs they were given.
+        if (! $this->seeding && self::mode($this->settings) !== 'spider') {
+            return;
+        }
+
         // The start URL is always crawled; the project's include/exclude rules apply to everything found from it.
         if ($depth > 0 && ! $this->filter()->allows($url)) {
             return;
