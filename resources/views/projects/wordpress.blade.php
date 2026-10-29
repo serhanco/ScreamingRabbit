@@ -30,7 +30,12 @@
         <x-filament::section heading="Bağlantı">
             <dl class="grid grid-cols-2 gap-2 text-sm">
                 <dt class="font-medium">Site</dt><dd class="break-all">{{ $connection->site_url }}</dd>
-                <dt class="font-medium">Eklenti sürümü</dt><dd>{{ $connection->plugin_version ?? '—' }}</dd>
+                <dt class="font-medium">Eklenti sürümü</dt><dd>{{ $connection->plugin_version ?? '—' }}
+                    @php $latest = \App\WordPress\Connector::pluginVersion(); @endphp
+                    @if ($connection->plugin_version && version_compare($connection->plugin_version, $latest, '<'))
+                        <span class="text-warning-600">→ {{ $latest }} var. {{ version_compare($connection->plugin_version, '0.3.0', '<') ? 'Bu seferlik ZIP\'i indirip yeniden yükleyin; sonraki sürümler WordPress\'in Güncellemeler ekranına gelir.' : 'WordPress panelinde Güncellemeler ekranından güncelleyin.' }}</span>
+                    @endif
+                </dd>
                 <dt class="font-medium">Bağlandı</dt><dd>{{ $connection->connected_at?->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m.Y H:i') }}</dd>
                 <dt class="font-medium">Son güncelleme</dt><dd>{{ $connection->synced_at?->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m.Y H:i') ?? 'Henüz yok (en geç bir saat içinde)' }}</dd>
             </dl>
