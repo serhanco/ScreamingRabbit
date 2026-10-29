@@ -69,6 +69,11 @@ class Project extends Model
         });
     }
 
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
+
     public function monitors(): HasMany
     {
         return $this->hasMany(Monitor::class);

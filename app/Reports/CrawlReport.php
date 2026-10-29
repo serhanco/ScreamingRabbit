@@ -240,19 +240,25 @@ class CrawlReport
         ];
     }
 
-    public function html(bool $forPdf = false): string
+    public function html(bool $forPdf = false, ?string $pdfUrl = null): string
     {
-        return view('reports.crawl', ['report' => $this->data(), 'forPdf' => $forPdf])->render();
+        return view('reports.crawl', ['report' => $this->data(), 'forPdf' => $forPdf, 'pdfUrl' => $pdfUrl])->render();
     }
 
     public function pdf(): string
+    {
+        return self::renderPdf($this->html(true));
+    }
+
+    /** Turns report HTML (rendered with $forPdf) into a PDF; archived monthly reports use it on their stored HTML. */
+    public static function renderPdf(string $html): string
     {
         $options = new Options;
         $options->set('isRemoteEnabled', false);
         $options->set('defaultFont', 'DejaVu Sans');
 
         $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($this->html(true), 'UTF-8');
+        $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->setPaper('A4');
         $dompdf->render();
 
