@@ -25,6 +25,7 @@ class CrawlPage extends Model
             'modified_at' => 'date',
             'schema_problems' => 'array',
             'hreflang' => 'array',
+            'pagination' => 'array',
             'custom' => 'array',
             'schema_mismatch' => 'array',
             'fetched_at' => 'datetime',

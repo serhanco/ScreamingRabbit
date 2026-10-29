@@ -70,7 +70,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Eklenti/tema envanteri (HTML izlerinden) ve güncellik
 - ✓ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
 - ✓ "Arama motorlarını engelle" açık, çift site haritası, iç arama indekslenebilir, `?replytocom`, varsayılan içerik, "Kategorilenmemiş"
-- ○ Sayfalama canonical'ı, staging sızıntısı, SEOPress/The SEO Framework tespiti
+- ◐ Sayfalama canonical'ı ✓ (Faz 5); staging sızıntısı, SEOPress/The SEO Framework tespiti
 - ✓ Raporda "WordPress" bölümü: sürüm, eklenti/tema, güvenlik kontrol listesi
 
 **AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok
@@ -166,7 +166,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 **İndekslenebilirlik ve uluslararası**
 - ✓ hreflang: karşılıklı (dönüş) etiket, ISO dil/bölge kodu, kendini listeleme, x-default, hatalı/noindex/başka canonical hedef; site içindeki dil sürümleri de taranır
 - ✓ Canonical zincirleri, HTTP header canonical (HTML yoksa kullanılır), çelişen canonical (birden fazla etiket veya HTML ↔ başlık)
-- ○ Sayfalama (rel next/prev bilgilendirme)
+- ✓ Sayfalama: rel next/prev sayfaları taranır; 2. ve sonraki sayfaların ilk sayfaya canonical vermesi, hatalı sonraki/önceki sayfa ve yalnızca etiketle bildirilip normal linki olmayan sayfalama bulgu olur
 
 **Linkleme ve mimari**
 - ✓ Anchor text analizi: metinsiz linkler ve "buraya tıklayın", "devamı" türü anlamsız metinler sayfa bazında bulgu olur (görsel alt metni ve aria-label link metni sayılır)

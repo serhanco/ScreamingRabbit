@@ -32,7 +32,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -52,6 +52,7 @@ class HtmlParser
         $canonical = null;
         $canonicals = [];
         $hreflang = [];
+        $pagination = ['next' => null, 'prev' => null];
         foreach ($xpath->query('//link[@href]') as $link) {
             $rel = preg_split('/\s+/', strtolower($link->getAttribute('rel')));
             if (in_array('canonical', $rel, true)) {
@@ -62,6 +63,9 @@ class HtmlParser
                 if ($url !== null && count($hreflang) < 100) {
                     $hreflang[] = ['lang' => trim($link->getAttribute('hreflang')), 'url' => $url];
                 }
+            } elseif (in_array('next', $rel, true) || in_array('prev', $rel, true) || in_array('previous', $rel, true)) {
+                $key = in_array('next', $rel, true) ? 'next' : 'prev';
+                $pagination[$key] ??= UrlNormalizer::resolve($link->getAttribute('href'), $pageUrl);
             }
         }
 
@@ -222,6 +226,7 @@ class HtmlParser
             'h2_count' => count(array_keys($levels, 2, true)),
             'heading_skip' => $headingSkip,
             'hreflang' => $hreflang,
+            'pagination' => $pagination,
             'h1' => $h1,
             'word_count' => $wordCount,
             'content_hash' => md5(trim($bodyText)),
