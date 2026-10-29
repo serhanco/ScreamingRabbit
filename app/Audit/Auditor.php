@@ -829,6 +829,16 @@ class Auditor
         } elseif ($llms === 'invalid') {
             $this->emit('llms_txt_invalid', $home);
         }
+
+        $urls = $this->crawl->llms_txt['urls'] ?? [];
+        if ($urls !== []) {
+            $broken = $this->crawl->pages()->whereIn('url_hash', array_map(UrlNormalizer::hash(...), $urls))
+                ->where('state', 'done')->where(fn ($query) => $query->whereNull('status_code')->orWhere('status_code', '>=', 300))
+                ->orderBy('id')->get(['url', 'status_code']);
+            if ($broken->isNotEmpty()) {
+                $this->emit('llms_txt_broken_links', $home, $broken->count().' link: '.$broken->take(3)->map(fn ($page) => ($page->status_code ? 'HTTP '.$page->status_code : 'yanıt yok').' '.$page->url)->implode(', '));
+            }
+        }
     }
 
     private function auditPageSpeed(): void
