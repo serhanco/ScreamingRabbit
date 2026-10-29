@@ -147,6 +147,29 @@ class Connector
             ->pluck('name')->values()->all();
     }
 
+    /** Version in the header of the plugin copy in this repository, the one the app hands out. */
+    public static function pluginVersion(): string
+    {
+        $header = (string) file_get_contents(base_path('wordpress-plugin/screamingrabbit-connector/screamingrabbit-connector.php'), length: 2048);
+
+        return preg_match('/^\s*\*\s*Version:\s*(\S+)/m', $header, $match) === 1 ? $match[1] : '0.0.0';
+    }
+
+    /**
+     * Whether a plugin update download is from a paired site: the token is the plugin's HMAC of the version and its
+     * host, made with that site's secret (SR_Updater::package_url()).
+     */
+    public static function packageAllowed(string $version, string $host, string $token): bool
+    {
+        if ($version !== self::pluginVersion() || $host === '' || $token === '') {
+            return false;
+        }
+
+        return WpConnection::query()->whereNotNull('connected_at')->whereNotNull('site_url')->get()
+            ->filter(fn (WpConnection $connection) => self::sameSite('https://'.$host, (string) $connection->site_url) && filled($connection->secret))
+            ->contains(fn (WpConnection $connection) => hash_equals(hash_hmac('sha256', "package\n{$version}\n{$host}", (string) $connection->secret), $token));
+    }
+
     /** Same algorithm as the plugin's SR_Signature::sign(). */
     public static function sign(string $secret, string $method, string $route, string $timestamp, string $nonce, string $body): string
     {
