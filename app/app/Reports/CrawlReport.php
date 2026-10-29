@@ -7,11 +7,15 @@ use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
 use App\Models\Crawl;
 use App\Models\CrawlIssue;
+use App\Models\Incident;
+use App\Models\Monitor;
 use App\Models\ProjectScore;
 use App\Models\Task;
 use App\Tasks\ImpactMeter;
+use Carbon\CarbonImmutable;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -94,8 +98,80 @@ class CrawlReport
             'ai' => $this->aiVisibility($groups->pluck('rule')->all()),
             'wordpress' => $this->wordPress($groups->pluck('rule')->all()),
             'tasks' => $this->tasks(),
+            'gsc' => $this->searchConsole(),
+            'uptime' => $this->uptime(),
             'brand' => config('screamingrabbit.brand'),
         ];
+    }
+
+    /**
+     * Google search performance: the last 28 days against the 28 before, plus the pages and queries that bring the
+     * most clicks. Null when the project has no Search Console data.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function searchConsole(): ?array
+    {
+        $projectId = $this->crawl->project_id;
+        $latest = DB::table('gsc_page_days')->where('project_id', $projectId)->max('day');
+        if (! $latest) {
+            return null;
+        }
+        $end = CarbonImmutable::parse($latest);
+        $window = fn (CarbonImmutable $to) => DB::table('gsc_page_days')->where('project_id', $projectId)
+            ->whereBetween('day', [$to->subDays(27)->toDateString(), $to->toDateString()])
+            ->selectRaw('COALESCE(SUM(clicks), 0) as clicks, COALESCE(SUM(impressions), 0) as impressions, SUM(position * impressions) / NULLIF(SUM(impressions), 0) as position')
+            ->first();
+        $now = $window($end);
+        $before = $window($end->subDays(28));
+        $change = fn ($a, $b) => $b > 0 ? (int) round(($a - $b) / $b * 100) : null;
+
+        return [
+            'from' => $end->subDays(27)->format('d.m.Y'),
+            'to' => $end->format('d.m.Y'),
+            'clicks' => (int) $now->clicks,
+            'impressions' => (int) $now->impressions,
+            'ctr' => $now->impressions > 0 ? round($now->clicks / $now->impressions * 100, 1) : null,
+            'position' => $now->position !== null ? round((float) $now->position, 1) : null,
+            'clicks_change' => $change((int) $now->clicks, (int) $before->clicks),
+            'impressions_change' => $change((int) $now->impressions, (int) $before->impressions),
+            'pages' => DB::table('gsc_page_days')->where('project_id', $projectId)
+                ->whereBetween('day', [$end->subDays(27)->toDateString(), $end->toDateString()])
+                ->groupBy('page_hash')->selectRaw('MIN(page) as page, SUM(clicks) as clicks, SUM(impressions) as impressions')
+                ->orderByDesc('clicks')->limit(10)->get()->all(),
+            'queries' => DB::table('gsc_queries')->where('project_id', $projectId)
+                ->groupBy('query')->selectRaw('query, SUM(clicks) as clicks, SUM(impressions) as impressions, MIN(position) as position')
+                ->orderByDesc('clicks')->limit(10)->get()->all(),
+        ];
+    }
+
+    /**
+     * Availability over the last 30 days from the project's uptime monitors. Null when nothing is monitored.
+     *
+     * @return array<int, array{url: string, uptime: ?float, incidents: int, downtime: string, avg_ms: ?int}>|null
+     */
+    private function uptime(): ?array
+    {
+        $monitors = Monitor::query()->where('project_id', $this->crawl->project_id)->get();
+        if ($monitors->isEmpty()) {
+            return null;
+        }
+        $since = now()->subDays(30);
+
+        return $monitors->map(function (Monitor $monitor) use ($since) {
+            $daily = DB::table('monitor_daily')->where('monitor_id', $monitor->id)->where('day', '>=', $since->toDateString())
+                ->selectRaw('SUM(checks) as checks, SUM(up_checks) as up, AVG(avg_ms) as ms')->first();
+            $incidents = Incident::query()->where('monitor_id', $monitor->id)->where('started_at', '>=', $since)->get();
+            $minutes = (int) $incidents->sum(fn (Incident $incident) => $incident->started_at->diffInMinutes($incident->ended_at ?? now()));
+
+            return [
+                'url' => $monitor->url,
+                'uptime' => $daily && $daily->checks > 0 ? round($daily->up / $daily->checks * 100, 2) : null,
+                'incidents' => $incidents->count(),
+                'downtime' => $minutes >= 60 ? intdiv($minutes, 60).' sa '.($minutes % 60).' dk' : $minutes.' dk',
+                'avg_ms' => $daily && $daily->ms !== null ? (int) round((float) $daily->ms) : null,
+            ];
+        })->all();
     }
 
     /**
