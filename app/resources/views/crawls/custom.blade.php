@@ -1,4 +1,4 @@
-@php($labels = ['contains' => 'geçen sayfa', 'not_contains' => 'geçmeyen sayfa', 'regex' => 'değer bulunan sayfa', 'xpath' => 'değer bulunan sayfa'])
+@php($labels = ['contains' => 'geçen sayfa', 'not_contains' => 'geçmeyen sayfa', 'regex' => 'değer bulunan sayfa', 'xpath' => 'değer bulunan sayfa', 'css' => 'değer bulunan sayfa'])
 <div class="space-y-4 text-sm">
     @foreach (\App\Crawler\CustomExtraction::summary($getRecord()) as $rule)
         <div>
