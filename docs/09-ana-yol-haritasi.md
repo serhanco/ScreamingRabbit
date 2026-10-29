@@ -219,7 +219,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ İçerik yayınlandı/güncellendi → ilgili URL'yi öncelikli yeniden kontrol
 - ○ Onaylı değişiklikler: SEO title/meta, noindex, 301 yönlendirme, görsel alt metni
 - ○ Değişiklik günlüğü, çakışma koruması, tek tıkla geri alma
-- ○ Eklentinin kendi güncelleme kontrolü
+- ✓ Eklentinin kendi güncelleme kontrolü: yeni sürüm WordPress'in Güncellemeler ekranına gelir (uygulamadan 12 saatte bir sorulur, paket bağlantısı sitenin anahtarıyla imzalı; yalnızca eşleşmiş siteler indirir)
 - ○ AI önerilerinin uygulayıcısı: Faz 7'de üretilen ve panelde onaylanan title/meta, alt metin, şema, SSS/kısa cevap bloğu, iç link önerilerini siteye yazar (LLM anahtarı eklentide değil, uygulamada durur)
 
 ## 8. Faz 7 · AI ve ileri analiz

@@ -31,6 +31,25 @@ class WordPressController extends Controller
     {
         abort_unless(auth()->user()?->canWrite() ?? false, 403);
 
+        return $this->zip();
+    }
+
+    /** Newest plugin version, asked by installed plugins twice a day for WordPress's update screen. */
+    public function version(): JsonResponse
+    {
+        return response()->json(['version' => Connector::pluginVersion()]);
+    }
+
+    /** The plugin ZIP for WordPress's own updater, only for paired sites (signed link, see Connector::packageAllowed()). */
+    public function package(Request $request): BinaryFileResponse
+    {
+        abort_unless(Connector::packageAllowed((string) $request->query('v'), strtolower((string) $request->query('s')), (string) $request->query('t')), 403);
+
+        return $this->zip();
+    }
+
+    private function zip(): BinaryFileResponse
+    {
         $dir = base_path('wordpress-plugin/screamingrabbit-connector');
         $zipPath = tempnam(sys_get_temp_dir(), 'sr-plugin');
         $zip = new ZipArchive;

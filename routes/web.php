@@ -35,3 +35,6 @@ Route::post('/wp-baglanti/eslestir', [WordPressController::class, 'pair'])
     ->withoutMiddleware(ValidateCsrfToken::class)
     ->name('wordpress.pair');
 Route::get('/wp-baglanti/eklenti.zip', [WordPressController::class, 'plugin'])->name('wordpress.plugin');
+// Installed plugins look for new versions here and download them with a link signed by their own secret.
+Route::get('/wp-baglanti/surum', [WordPressController::class, 'version'])->middleware('throttle:60,1')->name('wordpress.version');
+Route::get('/wp-baglanti/paket.zip', [WordPressController::class, 'package'])->middleware('throttle:20,1')->name('wordpress.package');
