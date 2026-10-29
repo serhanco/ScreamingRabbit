@@ -54,6 +54,9 @@ class Auditor
     /** Oldest PHP branch still receiving security fixes (php.net/supported-versions). */
     private const MIN_PHP = '8.2';
 
+    /** Site Health checks that already have their own finding from the inventory. */
+    private const HEALTH_TESTS_COVERED = ['wordpress_version', 'plugin_version', 'theme_version', 'php_version', 'debug_enabled'];
+
     /** @var array<int, array<int, int>> AI readiness score => page ids */
     private array $aiScores = [];
 
@@ -1095,6 +1098,24 @@ class Auditor
         $php = $inv['environment']['php'] ?? null;
         if (is_string($php) && version_compare($php, self::MIN_PHP, '<')) {
             $this->emit('wp_php_outdated', $home, 'PHP '.$php);
+        }
+        $integrity = $inv['integrity'] ?? null;
+        if (is_array($integrity) && ($integrity['modified_count'] ?? 0) + ($integrity['missing_count'] ?? 0) > 0) {
+            $this->emit('wp_core_files_modified', $home, collect([
+                ($integrity['modified_count'] ?? 0) > 0 ? $integrity['modified_count'].' değişmiş: '.implode(', ', $integrity['modified'] ?? []) : null,
+                ($integrity['missing_count'] ?? 0) > 0 ? $integrity['missing_count'].' eksik: '.implode(', ', $integrity['missing'] ?? []) : null,
+            ])->filter()->implode('; '));
+        }
+        $critical = collect($inv['site_health'] ?? [])->where('status', 'critical')->whereNotIn('test', self::HEALTH_TESTS_COVERED)->pluck('label');
+        if ($critical->isNotEmpty()) {
+            $this->emit('wp_site_health_critical', $home, $critical->implode('; '));
+        }
+        $hidden = collect($inv['seo']['noindex_types'] ?? [])
+            ->mapWithKeys(fn (string $type) => [$type => (int) ($inv['content'][$type]['publish'] ?? 0)])
+            ->filter()
+            ->map(fn (int $count, string $type) => "{$type} ({$count} yayında)");
+        if ($hidden->isNotEmpty()) {
+            $this->emit('wp_post_type_noindex', $home, ($inv['seo']['plugin'] ?? 'SEO eklentisi').': '.$hidden->implode(', '));
         }
 
         return true;

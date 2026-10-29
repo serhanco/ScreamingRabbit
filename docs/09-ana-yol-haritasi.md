@@ -211,9 +211,9 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Tam envanter: çekirdek, eklentiler, temalar, aktif/pasif, güncelleme durumu (günde bir ve "Şimdi yenile" ile)
 - ✓ Envanterden bulgular (eklenti bağlıysa dış tahminin yerine geçer): çekirdek/eklenti/tema güncellemesi, pasif eklentiler, arama motorlarını engelle, düz kalıcı bağlantı, WP_DEBUG, panelden dosya düzenleme, 3'ten fazla yönetici, desteği bitmiş PHP
 - ○ Açık veritabanı eşleştirmesi (Wordfence Intelligence feed, günlük)
-- ◐ Ortam ve kritik ayarlar (`blog_public`, `WP_DEBUG`, dosya düzenleyici, otomatik güncelleme, yönetici sayısı) ✓; Site Sağlığı sonuçları ○
-- ◐ Taslak/zamanlanmış içerik sayıları ✓; Yoast/Rank Math alanları, çekirdek dosya bütünlüğü ○
-- ○ Önbellek eklentisi tespiti, gereksiz baş etiketleri
+- ✓ Ortam ve kritik ayarlar (`blog_public`, `WP_DEBUG`, dosya düzenleyici, otomatik güncelleme, yönetici sayısı) ✓; Site Sağlığı sonuçları ✓ (dış istek atmayan kontroller; kritik olanlar bulgu, envanterle çakışanlar hariç)
+- ✓ Taslak/zamanlanmış içerik sayıları ✓; Yoast/Rank Math içerik türü noindex ve site haritası ayarı ✓ (yayında içeriği olan tür toptan noindex ise bulgu); çekirdek dosya bütünlüğü ✓ (wordpress.org sağlama toplamları, günde en fazla iki kez; değişen/eksik dosya bulgu)
+- ◐ Önbellek eklentisi tespiti ✓ (WordPress sayfasında); gereksiz baş etiketleri ○
 
 **WP-3 · Olaylar ve onaylı yazma**
 - ○ İçerik yayınlandı/güncellendi → ilgili URL'yi öncelikli yeniden kontrol

@@ -3,7 +3,7 @@
 /**
  * Plugin Name:       ScreamingRabbit Connector
  * Description:       Connects this site to ScreamingRabbit for SEO and security monitoring. Read-only: it reports versions, plugins, themes and settings, and changes nothing.
- * Version:           0.1.0
+ * Version:           0.2.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Serhan Demirel
@@ -13,7 +13,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('SR_CONNECTOR_VERSION', '0.1.0');
+define('SR_CONNECTOR_VERSION', '0.2.0');
 
 require_once __DIR__.'/includes/class-sr-signature.php';
 require_once __DIR__.'/includes/class-sr-settings.php';
@@ -30,4 +30,5 @@ register_uninstall_hook(__FILE__, 'sr_connector_uninstall');
 function sr_connector_uninstall()
 {
     delete_option('sr_connector');
+    delete_transient('sr_core_integrity');
 }
