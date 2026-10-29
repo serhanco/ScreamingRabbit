@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Audit\RuleCatalog;
+use App\Crawler\CustomExtraction;
 use App\Models\Crawl;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,10 +25,17 @@ class CrawlCsv
 
     public function pages(): StreamedResponse
     {
-        return $this->stream('urller', array_values(self::PAGE_COLUMNS), function ($out) {
-            $this->crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use ($out) {
+        $custom = array_column(CustomExtraction::valid($this->crawl->settings['custom'] ?? []), 'name');
+
+        return $this->stream('urller', array_merge(array_values(self::PAGE_COLUMNS), $custom), function ($out) use ($custom) {
+            $this->crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use ($out, $custom) {
                 foreach ($pages as $page) {
-                    fputcsv($out, array_map(fn ($col) => $this->cell($page->{$col}), array_keys(self::PAGE_COLUMNS)), ';');
+                    $row = array_map(fn ($col) => $this->cell($page->{$col}), array_keys(self::PAGE_COLUMNS));
+                    foreach ($custom as $name) {
+                        $value = $page->custom[$name] ?? null;
+                        $row[] = $this->cell($value === true ? 'Yok' : ($value === false ? 'Var' : $value));
+                    }
+                    fputcsv($out, $row, ';');
                 }
             });
         });
