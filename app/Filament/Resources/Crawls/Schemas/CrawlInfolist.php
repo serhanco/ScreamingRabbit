@@ -6,6 +6,7 @@ use App\Audit\HealthScore;
 use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
 use App\Crawler\CrawlComparison;
+use App\Crawler\CustomExtraction;
 use App\Filament\Resources\Crawls\CrawlColors;
 use App\Models\Crawl;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -88,6 +89,13 @@ class CrawlInfolist
                     ->visible(fn (Crawl $record): bool => filled($record->pagespeed))
                     ->schema([
                         ViewEntry::make('pagespeed')->hiddenLabel()->view('crawls.pagespeed'),
+                    ]),
+                Section::make('Özel arama sonuçları')
+                    ->description('Proje ayarlarındaki özel aramaların bu taramadaki sonuçları. Sayfa bazında değerler CSV\'de.')
+                    ->collapsible()
+                    ->visible(fn (Crawl $record): bool => $record->status === 'completed' && CustomExtraction::valid($record->settings['custom'] ?? []) !== [])
+                    ->schema([
+                        ViewEntry::make('custom')->hiddenLabel()->view('crawls.custom'),
                     ]),
                 Section::make('Yapısal veri envanteri')
                     ->description('Sitede kullanılan şema türleri ve Google zengin sonuç kurallarına uygunluğu.')
