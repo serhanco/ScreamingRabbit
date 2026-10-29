@@ -13,6 +13,7 @@ return array(
     'AnourValar\\EloquentSerialize\\Grammars\\QueryBuilderGrammar' => $vendorDir . '/anourvalar/eloquent-serialize/src/Grammars/QueryBuilderGrammar.php',
     'AnourValar\\EloquentSerialize\\Package' => $vendorDir . '/anourvalar/eloquent-serialize/src/Package.php',
     'AnourValar\\EloquentSerialize\\Service' => $vendorDir . '/anourvalar/eloquent-serialize/src/Service.php',
+    'App\\Audit\\AiReadiness' => $baseDir . '/app/Audit/AiReadiness.php',
     'App\\Audit\\Auditor' => $baseDir . '/app/Audit/Auditor.php',
     'App\\Audit\\HealthScore' => $baseDir . '/app/Audit/HealthScore.php',
     'App\\Audit\\Hreflang' => $baseDir . '/app/Audit/Hreflang.php',

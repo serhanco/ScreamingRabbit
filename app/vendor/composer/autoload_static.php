@@ -731,6 +731,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'AnourValar\\EloquentSerialize\\Grammars\\QueryBuilderGrammar' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Grammars/QueryBuilderGrammar.php',
         'AnourValar\\EloquentSerialize\\Package' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Package.php',
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
+        'App\\Audit\\AiReadiness' => __DIR__ . '/../..' . '/app/Audit/AiReadiness.php',
         'App\\Audit\\Auditor' => __DIR__ . '/../..' . '/app/Audit/Auditor.php',
         'App\\Audit\\HealthScore' => __DIR__ . '/../..' . '/app/Audit/HealthScore.php',
         'App\\Audit\\Hreflang' => __DIR__ . '/../..' . '/app/Audit/Hreflang.php',

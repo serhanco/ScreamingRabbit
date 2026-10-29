@@ -273,6 +273,17 @@ class CrawlReport
             $lines[] = ['label' => 'Yapısal veri (JSON-LD) olan sayfalar', 'value' => "%{$share} ({$withSchema} / {$total})", 'state' => $share >= 80 ? 'ok' : ($share > 0 ? 'warn' : 'bad')];
             $jsOnly = (clone $pages)->where('js_shell', true)->count();
             $lines[] = ['label' => 'JavaScript olmadan okunabilen sayfalar', 'value' => ($total - $jsOnly)." / {$total}", 'state' => $jsOnly === 0 ? 'ok' : 'bad'];
+            $average = (clone $pages)->whereNotNull('ai_score')->avg('ai_score');
+            if ($average !== null) {
+                $average = (int) round($average);
+                $lines[] = ['label' => 'AI hazırlık skoru (sayfa ortalaması)', 'value' => "{$average} / 100", 'state' => $average >= 80 ? 'ok' : ($average >= 50 ? 'warn' : 'bad')];
+            }
+            $articles = (clone $pages)->where(fn ($q) => $q->where('is_article', true)->orWhere('wp_type', 'post'));
+            $articleCount = (clone $articles)->count();
+            if ($articleCount > 0) {
+                $complete = (clone $articles)->where('has_author', true)->where(fn ($q) => $q->whereNotNull('published_at')->orWhereNotNull('modified_at'))->count();
+                $lines[] = ['label' => 'Yazarı ve tarihi görünen yazılar', 'value' => "{$complete} / {$articleCount}", 'state' => $complete === $articleCount ? 'ok' : ($complete > 0 ? 'warn' : 'bad')];
+            }
             $broken = (clone $pages)->where('schema_errors', '>', 0)->count();
             if ($broken > 0) {
                 $lines[] = ['label' => 'Bozuk JSON-LD olan sayfalar', 'value' => (string) $broken, 'state' => 'bad'];

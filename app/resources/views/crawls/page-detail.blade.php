@@ -7,6 +7,10 @@
         <dt class="font-medium">H1 ({{ $p->h1_count }})</dt><dd>{{ $p->h1 ?: '—' }}</dd>
         <dt class="font-medium">Canonical</dt><dd class="break-all">{{ $p->canonical ?: '—' }}</dd>
         <dt class="font-medium">Derinlik / Gelen link / Link puanı</dt><dd>{{ $p->depth }} / {{ $p->inlinks }} / {{ $p->link_score ?? '—' }}</dd>
+        @if ($p->ai_score !== null)
+            <dt class="font-medium">AI hazırlık ({{ $p->ai_score }}/100)</dt>
+            <dd>@foreach (\App\Audit\AiReadiness::signals($p) as $signal => $met)<div @class(['opacity-60' => ! $met])>{{ $met ? '✓' : '✗' }} {{ \App\Audit\AiReadiness::SIGNALS[$signal][0] }}</div>@endforeach</dd>
+        @endif
         <dt class="font-medium">Kelime / Yanıt</dt><dd>{{ $p->word_count ?? '—' }} / {{ $p->response_ms ? $p->response_ms.' ms' : '—' }}</dd>
     </dl>
 
