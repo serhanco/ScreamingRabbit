@@ -14,6 +14,10 @@
         @if ($p->readability !== null)
             <dt class="font-medium">Okunabilirlik (Ateşman)</dt><dd>{{ $p->readability }}/100 · {{ \App\Audit\Readability::label($p->readability) }}</dd>
         @endif
+        @if (! empty($p->aeo))
+            <dt class="font-medium">Alıntılanabilirlik</dt>
+            <dd>Soru başlığı {{ $p->aeo['questions'] }} (kısa cevaplı {{ $p->aeo['answered'] }}) · Liste {{ $p->aeo['lists'] }} · Tablo {{ $p->aeo['tables'] }} · SSS {{ $p->aeo['faq'] ? 'var' : 'yok' }} · Dış kaynak {{ $p->aeo['sources'] }} · Rakamlı ifade {{ $p->aeo['numbers'] }}</dd>
+        @endif
         <dt class="font-medium">Kelime / Yanıt</dt><dd>{{ $p->word_count ?? '—' }} / {{ $p->response_ms ? $p->response_ms.' ms' : '—' }}</dd>
     </dl>
 

@@ -259,6 +259,10 @@ class Auditor
             $this->emit('long_paragraphs', $page, $page->long_paragraphs.' paragraf '.HtmlParser::LONG_PARAGRAPH_WORDS.' kelimeden uzun');
         }
 
+        if (! empty($page->aeo)) {
+            $this->auditAnswerSignals($page);
+        }
+
         if ($page->readability !== null && $page->readability < Readability::HARD) {
             $this->emit('readability_hard', $page, $page->readability.' / 100 ('.Readability::label($page->readability).')');
         }
@@ -578,6 +582,24 @@ class Auditor
     }
 
     /**
+     * Content shaped so answer engines can lift it: a question heading answered right below, lists or tables in long
+     * texts, and articles that cite outside sources.
+     */
+    private function auditAnswerSignals(CrawlPage $page): void
+    {
+        $aeo = $page->aeo;
+        if (($aeo['questions'] ?? 0) > 0 && ($aeo['answered'] ?? 0) === 0) {
+            $this->emit('question_answer_missing', $page, $aeo['questions'].' soru başlığı');
+        }
+        if ((int) $page->word_count >= self::LIST_WORDS && ($aeo['lists'] ?? 0) + ($aeo['tables'] ?? 0) === 0) {
+            $this->emit('no_lists_tables', $page, $page->word_count.' kelime');
+        }
+        if (($page->is_article || $page->wp_type === 'post') && (int) $page->word_count >= self::SOURCE_WORDS && ($aeo['sources'] ?? 0) === 0) {
+            $this->emit('external_sources_missing', $page);
+        }
+    }
+
+    /**
      * Author pages should describe the person with Person (or ProfilePage) schema so Google can tie articles to a
      * real, credible author (E-E-A-T).
      */
@@ -805,6 +827,12 @@ class Auditor
     }
 
     /** Trust pages, found by a title fragment or one of the URL fragments. */
+    /** Texts at least this long should break information into lists or tables. */
+    private const LIST_WORDS = 800;
+
+    /** Articles at least this long should link to at least one outside source. */
+    private const SOURCE_WORDS = 500;
+
     private const TRUST_PAGES = [
         'hakkımızda' => ['Hakkımızda', ['hakkimizda', 'hakkinda', 'about', 'kurumsal', 'biz-kimiz']],
         'iletişim' => ['İletişim', ['iletisim', 'contact', 'bize-ulasin']],
