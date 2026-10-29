@@ -152,7 +152,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **Tarama yetenekleri**
-- ○ Özel HTTP başlıkları ve çerezler, basic auth ve form girişiyle staging tarama
+- ◐ Staging tarama: basic auth ve en fazla 5 özel HTTP başlığı (çerez dahil) proje ayarlarında, şifreli saklanır ve yalnızca projenin alan adına gönderilir ✓; form girişi ○
 - ◐ robots.txt test aracı ✓ ("robots.txt testi" menüsü: siteden getir veya elle düzenle, adres listesini seçilen botlarla dene, karar veren kuralı gör); tarama sırasında özel robots.txt ile simülasyon ○
 - ○ JS render (sayfa bazlı, opsiyonel; render öncesi/sonrası farkı) **[VPS]**
 - ○ JS yönlendirmelerini yakalama **[VPS]**
