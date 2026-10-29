@@ -197,7 +197,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Kaynak ve veri sinyalleri: dış kaynak linkleri, istatistik/rakam içeren cümleler, alıntılar
 - ✓ Tazelik: 1 yıldan eski ama son 28 günde tıklama alan yazılar (GSC bağlıysa) — eski tarihli ama trafiği olan sayfalar (GSC ile), "son güncelleme" eksikliği
 - ○ AI botlarının gerçekten aldığı içerik: AI bot user-agent'larıyla örnek sayfa çekip içerik farkı (cloaking/engel tespiti)
-- ○ Sayfa başına "AI hazırlık skoru" ve site geneli özet, raporda ayrı bölüm
+- ✓ Sayfa başına "AI hazırlık skoru" (0-100: JS'siz okunur metin, şema ve zorunlu alanlar, soru başlıkları/SSS, H2 düzeni, kısa paragraflar, içerik derinliği, yazılarda tarih ve yazar); sayfa listesinde sütun, sayfa detayında madde madde, müşteri raporunun AI görünürlüğü bölümünde site ortalaması
 
 **Araçlar**
 - ○ XML ve görsel sitemap üretme

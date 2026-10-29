@@ -48,6 +48,9 @@ class PagesRelationManager extends RelationManager
                 TextColumn::make('word_count')->label('Kelime')->numeric()->sortable()->toggleable(),
                 TextColumn::make('depth')->label('Derinlik')->sortable()->toggleable(),
                 TextColumn::make('inlinks')->label('İç link')->numeric()->sortable()->toggleable(),
+                TextColumn::make('ai_score')->label('AI hazırlık')->numeric()->placeholder('—')->sortable()->toggleable()
+                    ->color(fn (?int $state): string => $state === null ? 'gray' : ($state >= 80 ? 'success' : ($state >= 50 ? 'warning' : 'danger')))
+                    ->tooltip('AI aramalarında (Google AI özetleri, ChatGPT, Perplexity) okunup alıntılanmaya ne kadar hazır (0-100)'),
                 TextColumn::make('link_score')->label('Link puanı')->numeric()->placeholder('—')->sortable()->toggleable()
                     ->tooltip('Sitenin iç link yapısına göre sayfanın önemi (1-100, PageRank benzeri)'),
                 TextColumn::make('response_ms')->label('Süre (ms)')->numeric()->sortable()->toggleable(isToggledHiddenByDefault: true),
