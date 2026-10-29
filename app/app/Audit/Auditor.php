@@ -45,6 +45,15 @@ class Auditor
 
     private const STALE_DAYS = 365;
 
+    /** Connector inventory older than this is not used for findings. */
+    private const CONNECTOR_MAX_AGE_DAYS = 7;
+
+    /** More administrator accounts than this widen the attack surface. */
+    private const MAX_ADMINS = 3;
+
+    /** Oldest PHP branch still receiving security fixes (php.net/supported-versions). */
+    private const MIN_PHP = '8.2';
+
     /** @var array<int, array<int, int>> AI readiness score => page ids */
     private array $aiScores = [];
 
@@ -970,6 +979,9 @@ class Auditor
             $this->emitFor('wp_replytocom', $page->id);
         }
 
+        // Exact data from the Connector plugin, when the site is paired, replaces the guesses made from outside.
+        $connector = $this->auditConnector($home);
+
         $checks = $this->crawl->wp_checks ?? [];
         $probes = $checks['probes'] ?? [];
         if ($probes === []) {
@@ -982,7 +994,7 @@ class Auditor
         $latest = $value('core_latest');
         if ($version) {
             $this->emit('wp_version_exposed', $home, 'Sürüm '.$version);
-            if ($latest && version_compare($version, $latest, '<')) {
+            if (! $connector && $latest && version_compare($version, $latest, '<')) {
                 $this->emit('wp_core_outdated', $home, "Sitede {$version}, güncel {$latest}");
             }
         }
@@ -1000,7 +1012,7 @@ class Auditor
                 $outdated[] = "{$slug} {$seen} → {$current}";
             }
         }
-        if ($outdated !== []) {
+        if (! $connector && $outdated !== []) {
             $this->emit('wp_plugin_outdated', $home, implode(', ', $outdated));
         }
 
@@ -1034,6 +1046,63 @@ class Auditor
         if ($found('wp_sitemap') && $found('sitemap_index')) {
             $this->emit('wp_double_sitemap', $home, '/wp-sitemap.xml + /sitemap_index.xml');
         }
+    }
+
+    /**
+     * Findings from the inventory the Connector plugin reported (docs/07 §3), if it is at most a week old.
+     * Returns whether there was one, so the outside guesses for the same facts are skipped.
+     */
+    private function auditConnector(CrawlPage $home): bool
+    {
+        $connection = $this->crawl->project->wpConnection;
+        $inv = $connection?->inventory;
+        if (! is_array($inv) || $connection->synced_at === null || $connection->synced_at->lt(now()->subDays(self::CONNECTOR_MAX_AGE_DAYS))) {
+            return false;
+        }
+
+        $settings = $inv['settings'] ?? [];
+        if (! empty($inv['core']['update'])) {
+            $this->emit('wp_core_outdated', $home, 'Sitede '.($inv['core']['version'] ?? '?').', güncel '.$inv['core']['update'].' (eklentiden)');
+        }
+        $plugins = collect($inv['plugins'] ?? []);
+        $outdated = $plugins->whereNotNull('update')->map(fn (array $plugin) => "{$plugin['name']} {$plugin['version']} → {$plugin['update']}");
+        if ($outdated->isNotEmpty()) {
+            $this->emit('wp_plugin_outdated', $home, $outdated->count().' eklenti: '.$outdated->implode(', '));
+        }
+        $themes = collect($inv['themes'] ?? [])->whereNotNull('update')->map(fn (array $theme) => "{$theme['name']} {$theme['version']} → {$theme['update']}");
+        if ($themes->isNotEmpty()) {
+            $this->emit('wp_theme_outdated', $home, $themes->implode(', '));
+        }
+        $inactive = $plugins->where('active', false)->pluck('name');
+        if ($inactive->isNotEmpty()) {
+            $this->emit('wp_inactive_plugins', $home, $inactive->count().' pasif eklenti: '.$inactive->implode(', '));
+        }
+        if (($settings['blog_public'] ?? true) === false && ! $this->emitted('wp_search_engines_discouraged')) {
+            $this->emit('wp_search_engines_discouraged', $home, 'Ayarlar → Okuma (eklentiden)');
+        }
+        if (array_key_exists('permalink', $settings) && $settings['permalink'] === '') {
+            $this->emit('wp_plain_permalinks', $home);
+        }
+        if ($settings['wp_debug'] ?? false) {
+            $this->emit('wp_debug_enabled', $home, ($settings['wp_debug_display'] ?? false) ? 'WP_DEBUG açık, hatalar ziyaretçilere görünüyor' : 'WP_DEBUG açık');
+        }
+        if (array_key_exists('file_edit_disabled', $settings) && ! $settings['file_edit_disabled']) {
+            $this->emit('wp_file_edit_enabled', $home);
+        }
+        if (($settings['admins'] ?? 0) > self::MAX_ADMINS) {
+            $this->emit('wp_many_admins', $home, $settings['admins'].' yönetici');
+        }
+        $php = $inv['environment']['php'] ?? null;
+        if (is_string($php) && version_compare($php, self::MIN_PHP, '<')) {
+            $this->emit('wp_php_outdated', $home, 'PHP '.$php);
+        }
+
+        return true;
+    }
+
+    private function emitted(string $rule): bool
+    {
+        return collect($this->buffer)->contains('rule', $rule) || $this->crawl->issues()->where('rule', $rule)->exists();
     }
 
     private function storeAiScores(): void
