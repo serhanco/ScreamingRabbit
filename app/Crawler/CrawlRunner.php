@@ -234,6 +234,7 @@ class CrawlRunner
                 'question_headings' => $parsed['question_headings'],
                 'long_paragraphs' => $parsed['long_paragraphs'],
                 'readability' => $parsed['readability'],
+                'aeo' => $parsed['aeo'],
                 'is_article' => $parsed['is_article'],
                 'published_at' => $parsed['published_at'],
                 'modified_at' => $parsed['modified_at'],
