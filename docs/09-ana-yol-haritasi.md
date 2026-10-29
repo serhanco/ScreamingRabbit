@@ -207,11 +207,11 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 ## 7. Faz 6 · WordPress bağlantı eklentisi ([07 §3](07-wordpress-modulu.md))
 
 **WP-2 · Salt okunur**
-- ○ Eşleştirme ekranı (bağlantı kodu), HMAC imzalı istekler
-- ○ Tam envanter: çekirdek, eklentiler, temalar, aktif/pasif, güncelleme durumu
+- ✓ Eşleştirme ekranı (proje → WordPress sayfasında tek kullanımlık, 30 dk geçerli bağlantı kodu; eklenti ZIP'i aynı sayfadan iner), HMAC imzalı istekler (zaman damgası ±5 dk, tek kullanımlık nonce, dakikada 60 istek)
+- ✓ Tam envanter: çekirdek, eklentiler, temalar, aktif/pasif, güncelleme durumu (günde bir ve "Şimdi yenile" ile)
 - ○ Açık veritabanı eşleştirmesi (Wordfence Intelligence feed, günlük)
-- ○ Ortam ve Site Sağlığı, kritik ayarlar (`blog_public`, `WP_DEBUG`, dosya düzenleyici, otomatik güncelleme)
-- ○ Yoast/Rank Math alanları, taslak/zamanlanmış içerik, çekirdek dosya bütünlüğü
+- ◐ Ortam ve kritik ayarlar (`blog_public`, `WP_DEBUG`, dosya düzenleyici, otomatik güncelleme, yönetici sayısı) ✓; Site Sağlığı sonuçları ○
+- ◐ Taslak/zamanlanmış içerik sayıları ✓; Yoast/Rank Math alanları, çekirdek dosya bütünlüğü ○
 - ○ Önbellek eklentisi tespiti, gereksiz baş etiketleri
 
 **WP-3 · Olaylar ve onaylı yazma**

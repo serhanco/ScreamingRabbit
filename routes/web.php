@@ -3,6 +3,8 @@
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MonthlyReportController;
 use App\Http\Controllers\SharedReportController;
+use App\Http\Controllers\WordPressController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 // Public pages: a short home page with a sign-in button, plus the privacy policy and terms that Google's OAuth consent screen links to.
@@ -25,3 +27,11 @@ Route::middleware('throttle:20,1')->group(function () {
     Route::get('/davet/{token}', [InvitationController::class, 'show'])->name('invitation.show');
     Route::post('/davet/{token}', [InvitationController::class, 'accept'])->name('invitation.accept');
 });
+
+// The WordPress Connector plugin pairs itself with the one-time code from the project's WordPress page. The code is
+// the access control, so this call has no session and no CSRF token.
+Route::post('/wp-baglanti/eslestir', [WordPressController::class, 'pair'])
+    ->middleware('throttle:10,1')
+    ->withoutMiddleware(ValidateCsrfToken::class)
+    ->name('wordpress.pair');
+Route::get('/wp-baglanti/eklenti.zip', [WordPressController::class, 'plugin'])->name('wordpress.plugin');

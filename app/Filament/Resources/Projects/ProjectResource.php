@@ -8,6 +8,7 @@ use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ProjectInsights;
 use App\Filament\Resources\Projects\Pages\ProjectSegments;
+use App\Filament\Resources\Projects\Pages\ProjectWordPress;
 use App\Filament\Resources\Projects\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
@@ -83,6 +84,7 @@ class ProjectResource extends Resource
             'edit' => EditProject::route('/{record}/edit'),
             'insights' => ProjectInsights::route('/{record}/firsatlar'),
             'segments' => ProjectSegments::route('/{record}/segmentler'),
+            'wordpress' => ProjectWordPress::route('/{record}/wordpress'),
         ];
     }
 }
