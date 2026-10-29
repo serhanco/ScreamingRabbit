@@ -236,6 +236,10 @@ class Auditor
             $this->emit('long_paragraphs', $page, $page->long_paragraphs.' paragraf '.HtmlParser::LONG_PARAGRAPH_WORDS.' kelimeden uzun');
         }
 
+        if ($page->readability !== null && $page->readability < Readability::HARD) {
+            $this->emit('readability_hard', $page, $page->readability.' / 100 ('.Readability::label($page->readability).')');
+        }
+
         if ($page->heading_skip !== null) {
             $this->emit('headings_non_sequential', $page, $page->heading_skip);
         }

@@ -161,7 +161,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Yakın kopya: ana metnin (menü, header, footer hariç) SimHash parmak izi, en fazla 3 bit fark (~%95 benzer); binlerce sayfada bant eşleştirme ile hızlı. Birebir kopyalar ayrıca raporlanır
 - ✓ Kaynak kodda metin/regex arama, custom extraction (XPath, regex): proje ayarlarında en fazla 5 kural (geçiyor/geçmiyor, regex veya XPath ile değer çıkarma); sonuçlar tarama sayfasında özet ve CSV'de sütun olarak. CSS seçici ○
 - ✓ H2 ve başlık hiyerarşisi: atlanan başlık seviyesi (H2 → H4), uzun sayfada H2 yok
-- ○ Türkçe uyarlanmış okunabilirlik
+- ✓ Türkçe okunabilirlik: Ateşman formülü (paragraf ve liste metni, en az 100 kelime, yalnızca Türkçe sayfalar); 50 altı "zor" bulgusu, puan sayfa listesinde, sayfa detayında ve CSV'de
 
 **İndekslenebilirlik ve uluslararası**
 - ✓ hreflang: karşılıklı (dönüş) etiket, ISO dil/bölge kodu, kendini listeleme, x-default, hatalı/noindex/başka canonical hedef; site içindeki dil sürümleri de taranır

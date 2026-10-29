@@ -17,7 +17,7 @@ class CrawlCsv
         'url' => 'URL', 'status_code' => 'Durum kodu', 'state' => 'Durum', 'depth' => 'Derinlik', 'in_sitemap' => 'Sitemap',
         'title' => 'Title', 'meta_description' => 'Meta description', 'h1' => 'H1', 'h1_count' => 'H1 sayısı',
         'canonical' => 'Canonical', 'schema_types' => 'Şema türleri', 'meta_robots' => 'Meta robots', 'x_robots' => 'X-Robots-Tag', 'word_count' => 'Kelime',
-        'inlinks' => 'Gelen link', 'link_score' => 'Link puanı', 'ai_score' => 'AI hazırlık', 'response_ms' => 'Yanıt (ms)', 'size_bytes' => 'Boyut (bayt)', 'content_type' => 'İçerik türü',
+        'inlinks' => 'Gelen link', 'link_score' => 'Link puanı', 'ai_score' => 'AI hazırlık', 'readability' => 'Okunabilirlik', 'response_ms' => 'Yanıt (ms)', 'size_bytes' => 'Boyut (bayt)', 'content_type' => 'İçerik türü',
         'redirect_to' => 'Yönlendirme hedefi', 'error' => 'Hata',
     ];
 
