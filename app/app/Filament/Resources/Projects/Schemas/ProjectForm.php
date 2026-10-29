@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\Projects\Schemas;
 
 use App\Crawler\CrawlScheduler;
+use App\Crawler\CustomExtraction;
 use App\Crawler\UrlFilter;
 use App\Google\GoogleClient;
 use App\Models\Project;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -111,6 +113,31 @@ class ProjectForm
                             ->placeholder("/etiket/\n\\?replytocom=")
                             ->helperText('Her satıra bir kalıp (regex). Eşleşen URL\'ler atlanır.')
                             ->rule(fn (): \Closure => self::regexRule()),
+                    ]),
+                Section::make('Özel arama ve veri çıkarma')
+                    ->description('Her sayfanın kaynak kodunda aranır. Örnekler: Google Analytics kodu olmayan sayfalar ("G-ABC123" geçmeyen), eski telefon numarası geçen sayfalar, yazar adı (XPath: //*[@class="author"]). Sonuçlar tarama sayfasında ve CSV\'de görünür; sonraki taramadan itibaren geçerli.')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Repeater::make('crawl_settings.custom')
+                            ->hiddenLabel()
+                            ->maxItems(CustomExtraction::MAX_RULES)
+                            ->columns(3)
+                            ->defaultItems(0)
+                            ->addActionLabel('Arama ekle')
+                            ->schema([
+                                TextInput::make('name')->label('Ad')->required()->maxLength(40)->distinct(),
+                                Select::make('type')->label('Tür')->options(CustomExtraction::TYPES)->required()->default('contains')->live(),
+                                TextInput::make('value')->label('Aranan / ifade')->required()->maxLength(300)
+                                    ->rule(fn (callable $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                        if ($get('type') === 'regex' && @preg_match(CustomExtraction::pattern((string) $value), '') === false) {
+                                            $fail('Geçersiz regex.');
+                                        }
+                                        if ($get('type') === 'xpath' && ! CustomExtraction::isValidXpath((string) $value)) {
+                                            $fail('Geçersiz XPath.');
+                                        }
+                                    }),
+                            ]),
                     ]),
             ]);
     }

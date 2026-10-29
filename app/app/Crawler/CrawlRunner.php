@@ -264,6 +264,9 @@ class CrawlRunner
                 'generic_anchor_texts' => $parsed['generic_anchors'] === [] ? null : mb_substr(implode(' | ', $parsed['generic_anchors']), 0, 250),
             ];
 
+            if ($rules = CustomExtraction::valid($this->settings['custom'] ?? [])) {
+                $update['custom'] = CustomExtraction::apply($rules, $body);
+            }
             $update['hreflang'] = $parsed['hreflang'] === [] ? null : $parsed['hreflang'];
             // Language versions are crawled like links so their return tags can be checked.
             foreach ($parsed['hreflang'] as $alternate) {

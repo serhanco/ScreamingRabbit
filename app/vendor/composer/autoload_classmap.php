@@ -28,6 +28,7 @@ return array(
     'App\\Crawler\\CrawlMaintenance' => $baseDir . '/app/Crawler/CrawlMaintenance.php',
     'App\\Crawler\\CrawlRunner' => $baseDir . '/app/Crawler/CrawlRunner.php',
     'App\\Crawler\\CrawlScheduler' => $baseDir . '/app/Crawler/CrawlScheduler.php',
+    'App\\Crawler\\CustomExtraction' => $baseDir . '/app/Crawler/CustomExtraction.php',
     'App\\Crawler\\HtmlParser' => $baseDir . '/app/Crawler/HtmlParser.php',
     'App\\Crawler\\LinkScore' => $baseDir . '/app/Crawler/LinkScore.php',
     'App\\Crawler\\LlmsTxt' => $baseDir . '/app/Crawler/LlmsTxt.php',
