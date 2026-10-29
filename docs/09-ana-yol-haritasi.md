@@ -190,7 +190,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Güvenlik başlıkları (ana sayfada HSTS ve max-age, CSP, X-Content-Type-Options, X-Frame-Options veya CSP frame-ancestors, Referrer-Policy; Mozilla Observatory ölçütü)
 
 **AI arama görünürlüğü: GEO (generative engine) ve AEO (answer engine) denetimi** — GEO-1'in üzerine
-- ◐ Varlık (entity) sinyalleri: ana sayfa kurum şemasında `sameAs` yok ✓; tutarlı marka adı/NAP ○ — Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
+- ◐ Varlık (entity) sinyalleri: ana sayfa kurum şemasında `sameAs` yok ✓; şemadaki kurum adı/telefonun sayfalar arasında tutarlılığı ve telefonun sayfada görünmesi ✓; adres karşılaştırması ○ — Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
 - ◐ E-E-A-T sinyalleri: yazılarda tarih ve yazar eksikliği ✓, hakkımızda/iletişim/gizlilik-KVKK sayfası yokluğu ✓; yazar sayfası ve Person şeması ○ — yazar kutusu ve yazar sayfası, Person şeması, yayın/güncelleme tarihi (görünür + `datePublished`/`dateModified`), hakkımızda/iletişim/politika sayfaları
 - ○ Alıntılanabilirlik (AEO): soru biçimli başlıklar, başlığın hemen altında kısa doğrudan cevap paragrafı, liste/tablo kullanımı, SSS bölümü, tanım cümleleri
 - ◐ Bölümleme ve okunabilirlik: başlık sırası ✓, 150 kelimeyi aşan paragraflar ✓, soru biçimli başlıklar sayılıyor (AI hazırlık skoruna girecek) — başlık hiyerarşisi, paragraf uzunluğu, anlamlı alt başlıklarla "parçalanabilir" içerik (LLM'lerin pasaj seçimi için)

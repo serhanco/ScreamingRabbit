@@ -30,6 +30,9 @@ class Auditor
     /** @var array<int, array{url: string, next?: string, prev?: string, next_linked?: bool, prev_linked?: bool}> page id => its rel next/prev links */
     private array $pagination = [];
 
+    /** @var array<string, array<string, int>> 'name'|'phone' => value as written => pages carrying it */
+    private array $nap = [];
+
     /** @var array<int, array{0: string, 1: string}> page id => [url hash, last update date] of articles older than a year */
     private array $staleArticles = [];
 
@@ -59,6 +62,7 @@ class Auditor
         $this->seoPlugins = [];
         $this->hreflang = [];
         $this->pagination = [];
+        $this->nap = ['name' => [], 'phone' => []];
         $this->staleArticles = [];
         $this->aiScores = [];
 
@@ -170,6 +174,14 @@ class Auditor
         }
         if ($page->canonical_conflict) {
             $this->emit('canonical_conflict', $page);
+        }
+
+        if ($page->status_code === 200 && ! empty($page->entity)) {
+            foreach (['name', 'phone'] as $key) {
+                if (filled($page->entity[$key] ?? null)) {
+                    $this->nap[$key][$page->entity[$key]] = ($this->nap[$key][$page->entity[$key]] ?? 0) + 1;
+                }
+            }
         }
 
         if ($page->status_code === 200 && ! empty($page->pagination)) {
@@ -535,6 +547,25 @@ class Auditor
      * Google no longer reads rel next/prev, so every page of a series must be reachable through a normal link,
      * and the declared next/previous pages should answer 200.
      */
+    /**
+     * The organisation's name and phone in structured data should read the same on every page (consistent NAP);
+     * differing values blur the entity for Google and AI assistants. Names are compared ignoring case and spacing.
+     */
+    private function auditNap(CrawlPage $home): void
+    {
+        $variants = [];
+        $names = collect($this->nap['name'])->groupBy(fn ($count, $name) => mb_strtolower(preg_replace('/\s+/u', ' ', trim($name))), true);
+        if ($names->count() > 1) {
+            $variants[] = 'Ad: '.$names->map(fn ($group) => '"'.$group->keys()->first().'" ('.$group->sum().' sayfa)')->implode(', ');
+        }
+        if (count($this->nap['phone']) > 1) {
+            $variants[] = 'Telefon: '.collect($this->nap['phone'])->map(fn ($count, $phone) => "…{$phone} ({$count} sayfa)")->implode(', ');
+        }
+        if ($variants !== []) {
+            $this->emit('nap_inconsistent', $home, mb_substr(implode(' · ', $variants), 0, 250));
+        }
+    }
+
     private function auditPagination(): void
     {
         if ($this->pagination === []) {
@@ -686,6 +717,8 @@ class Auditor
         if (! collect($types)->contains(fn ($type) => preg_match(self::ENTITY_TYPES, $type))) {
             $this->emit('home_missing_organization_schema', $home, $types === [] ? 'Şema yok' : 'Bulunan: '.implode(', ', $types));
         }
+
+        $this->auditNap($home);
 
         if ($home->same_as === 0 && collect($types)->contains(fn ($type) => preg_match(self::ENTITY_TYPES, $type))) {
             $this->emit('entity_same_as_missing', $home);

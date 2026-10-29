@@ -260,6 +260,7 @@ class CrawlRunner
                 'schema_problems' => $parsed['schema_problems'] === [] ? null : array_slice($parsed['schema_problems'], 0, 20),
                 'schema_duplicates' => $parsed['schema_duplicates'] === [] ? null : implode(',', $parsed['schema_duplicates']),
                 'schema_mismatch' => $parsed['schema_mismatch'] === [] ? null : $parsed['schema_mismatch'],
+                'entity' => $parsed['entity'],
                 'uncrawlable_links' => $parsed['uncrawlable_links'],
                 'empty_anchors' => $parsed['empty_anchors'],
                 'generic_anchors' => $parsed['generic_anchor_count'],
