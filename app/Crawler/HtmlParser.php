@@ -6,11 +6,21 @@ use App\Audit\SchemaRules;
 use App\Audit\SimHash;
 use DOMDocument;
 use DOMXPath;
+use Illuminate\Support\Carbon;
 
 class HtmlParser
 {
     /** Below this many words in the raw HTML, a JavaScript app shell has no readable content without rendering. */
     private const JS_SHELL_WORDS = 50;
+
+    /** Longer paragraphs are hard to lift as a self-contained answer passage. */
+    public const LONG_PARAGRAPH_WORDS = 150;
+
+    private const QUESTION_START = '/^(nasıl|nedir|neden|niçin|niye|ne zaman|nerede|hangi|kim|kaç|ne kadar|ne |nelerdir|how|what|why|when|where|which|who|can|does|is|are|should)\b/u';
+
+    private const ARTICLE_TYPES = ['Article', 'BlogPosting', 'NewsArticle', 'TechArticle', 'ScholarlyArticle', 'Report', 'MedicalWebPage'];
+
+    private const ENTITY_TYPES = ['Organization', 'Corporation', 'LocalBusiness', 'Person', 'MedicalOrganization', 'MedicalBusiness', 'Dentist', 'Physician', 'MedicalClinic', 'ProfessionalService', 'Store', 'OnlineStore', 'Restaurant', 'LegalService', 'Attorney', 'EducationalOrganization'];
 
     /** Link texts that say nothing about the target page (Google: "write good anchor text", Lighthouse "link-text" audit). */
     public const GENERIC_ANCHORS = [
@@ -22,7 +32,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -142,6 +152,22 @@ class HtmlParser
 
         [$schemaTypes, $schemaErrors, $schemaProblems, $schemaDuplicates] = self::jsonLd($xpath);
         [$wpType, $wpCategory] = self::wordPressContent($xpath, $bodyClass);
+        $authority = self::authority($xpath, $bodyClass);
+
+        // Answer-engine signals: headings phrased as questions, and paragraphs too long to quote as a passage.
+        $questionHeadings = 0;
+        foreach ($xpath->query('//h2|//h3') as $node) {
+            $heading = mb_strtolower(self::text($node->textContent) ?? '');
+            if (str_ends_with($heading, '?') || preg_match(self::QUESTION_START, $heading)) {
+                $questionHeadings++;
+            }
+        }
+        $longParagraphs = 0;
+        foreach ($xpath->query('//p') as $node) {
+            if (preg_match_all('/[\p{L}\p{N}]+/u', $node->textContent) > self::LONG_PARAGRAPH_WORDS) {
+                $longParagraphs++;
+            }
+        }
 
         $seoPlugins = [];
         foreach (['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math', 'aioseo' => 'All in One SEO'] as $key => $needle) {
@@ -212,6 +238,9 @@ class HtmlParser
             'schema_duplicates' => $schemaDuplicates,
             'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
             'wordpress_hint' => $wordpress,
+            'question_headings' => $questionHeadings,
+            'long_paragraphs' => $longParagraphs,
+            ...$authority,
             'wp_type' => $wordpress ? $wpType : null,
             'wp_category' => $wordpress ? $wpCategory : null,
         ];
@@ -302,6 +331,75 @@ class HtmlParser
      *
      * @return array{0: ?string, 1: ?string}
      */
+    /**
+     * E-E-A-T and entity signals: is this an article, when was it published and updated, is an author shown,
+     * and how many sameAs profiles does the site's Organization/Person entity link to.
+     *
+     * @return array{is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     */
+    private static function authority(DOMXPath $xpath, string $bodyClass): array
+    {
+        $isArticle = str_contains($bodyClass, ' single-post ');
+        $published = $modified = null;
+        $hasAuthor = false;
+        $sameAs = 0;
+
+        $walk = function ($node, bool $topLevel) use (&$walk, &$isArticle, &$published, &$modified, &$hasAuthor, &$sameAs): void {
+            if (! is_array($node)) {
+                return;
+            }
+            if (array_is_list($node)) {
+                foreach ($node as $item) {
+                    $walk($item, $topLevel);
+                }
+
+                return;
+            }
+            $types = array_map(fn ($type) => is_string($type) ? preg_replace('#^https?://schema\.org/#', '', $type) : '', (array) ($node['@type'] ?? []));
+            if (array_intersect($types, self::ARTICLE_TYPES) !== []) {
+                $isArticle = true;
+                $published ??= is_string($node['datePublished'] ?? null) ? $node['datePublished'] : null;
+                $modified ??= is_string($node['dateModified'] ?? null) ? $node['dateModified'] : null;
+                $hasAuthor = $hasAuthor || ! empty($node['author']);
+            }
+            if ($topLevel && array_intersect($types, self::ENTITY_TYPES) !== []) {
+                $sameAs = max($sameAs, count(array_filter((array) ($node['sameAs'] ?? []), 'is_string')));
+            }
+            if (isset($node['@graph'])) {
+                $walk($node['@graph'], true);
+            }
+            foreach (['mainEntity', 'mainEntityOfPage'] as $key) {
+                if (isset($node[$key]) && is_array($node[$key])) {
+                    $walk($node[$key], false);
+                }
+            }
+        };
+        foreach ($xpath->query('//script[@type]') as $script) {
+            if (strtolower(trim($script->getAttribute('type'))) === 'application/ld+json') {
+                $walk(json_decode(trim($script->textContent), true), true);
+            }
+        }
+
+        $meta = function (string $property) use ($xpath): ?string {
+            foreach ($xpath->query('//meta[@property or @name]') as $node) {
+                if (strtolower($node->getAttribute('property') ?: $node->getAttribute('name')) === $property) {
+                    return trim($node->getAttribute('content')) ?: null;
+                }
+            }
+
+            return null;
+        };
+        $isArticle = $isArticle || $meta('og:type') === 'article';
+        $published ??= $meta('article:published_time') ?? $xpath->query('//time[@datetime]')->item(0)?->getAttribute('datetime');
+        $modified ??= $meta('article:modified_time') ?? $meta('og:updated_time');
+        $hasAuthor = $hasAuthor || $meta('author') !== null || $meta('article:author') !== null
+            || $xpath->query('//a[contains(concat(" ", normalize-space(@rel), " "), " author ")] | //*[contains(concat(" ", normalize-space(@class), " "), " author ") or contains(@class, "byline") or contains(@class, "author-name") or contains(@class, "entry-author")]')->length > 0;
+
+        $date = fn (?string $value) => $value === null ? null : rescue(fn () => Carbon::parse($value)->toDateString(), null, false);
+
+        return ['is_article' => $isArticle, 'published_at' => $date($published), 'modified_at' => $date($modified), 'has_author' => $hasAuthor, 'same_as' => $sameAs];
+    }
+
     private static function wordPressContent(DOMXPath $xpath, string $bodyClass): array
     {
         $body = preg_split('/\s+/', trim($bodyClass), -1, PREG_SPLIT_NO_EMPTY);
