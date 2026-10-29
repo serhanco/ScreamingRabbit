@@ -573,6 +573,15 @@ class Auditor
             if ($refused->isNotEmpty()) {
                 $this->emit('bot_fetch_refused', $home, $refused->implode(', '));
             }
+
+            // A bot that gets far less text than the crawler did is shown a challenge page or different content.
+            if ($home->word_count >= self::BOT_CONTENT_MIN_WORDS) {
+                $thin = collect($rows)->filter(fn ($row) => ($row['words'] ?? null) !== null && $row['words'] < $home->word_count * self::BOT_CONTENT_SHARE)
+                    ->map(fn ($row) => $row['name'].' ('.$row['words'].' kelime)');
+                if ($thin->isNotEmpty()) {
+                    $this->emit('bot_content_differs', $home, "Normal ziyaretçi {$home->word_count} kelime görüyor; ".$thin->implode(', '));
+                }
+            }
         }
     }
 
@@ -581,6 +590,11 @@ class Auditor
      * link is broken, so they are not reported.
      */
     private const EXTERNAL_BLOCKED = [401, 403, 429, 999];
+
+    /** Bot content checks need a home page with at least this much text, and flag bots that get under half of it. */
+    private const BOT_CONTENT_MIN_WORDS = 100;
+
+    private const BOT_CONTENT_SHARE = 0.5;
 
     private const ENTITY_TYPES = '/^(Organization|Corporation|LocalBusiness|Person|OnlineBusiness|OnlineStore|Store|Restaurant|ProfessionalService|MedicalOrganization|MedicalBusiness|Dentist|Physician|EducationalOrganization|NewsMediaOrganization|NGO|LegalService|Attorney|HealthAndBeautyBusiness|HomeAndConstructionBusiness|AutomotiveBusiness|FinancialService|RealEstateAgent|TravelAgency|LodgingBusiness|Hotel|SportsActivityLocation|EntertainmentBusiness|FoodEstablishment)$/';
 
