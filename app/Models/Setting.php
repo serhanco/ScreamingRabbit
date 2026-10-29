@@ -14,7 +14,8 @@ class Setting extends Model
 {
     use LogsActivity;
 
-    public const SECRETS = ['smtp_password', 'telegram_bot_token', 'google_client_secret', 'pagespeed_api_key'];
+    public const SECRETS = ['smtp_password', 'telegram_bot_token', 'google_client_secret', 'pagespeed_api_key',
+        'ai_key_anthropic', 'ai_key_openai', 'ai_key_gemini', 'ai_key_mistral', 'ai_key_compatible'];
 
     protected $primaryKey = 'key';
 
