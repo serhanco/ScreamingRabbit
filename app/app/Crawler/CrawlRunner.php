@@ -258,6 +258,7 @@ class CrawlRunner
                 'images_missing_size' => $parsed['images_missing_size'],
                 'js_shell' => $parsed['js_shell'],
                 'mixed_content' => $parsed['mixed_content'],
+                'insecure_forms' => $parsed['insecure_forms'],
                 'meta_refresh' => $parsed['meta_refresh'] ? mb_substr($parsed['meta_refresh'], 0, 250) : null,
                 'page_type' => $parsed['page_type'],
                 'wp_type' => $parsed['wp_type'],
