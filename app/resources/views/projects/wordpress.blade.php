@@ -126,9 +126,9 @@
             @endif
 
             @if ($changes->isNotEmpty() || ! ($inv['settings']['writes_enabled'] ?? false))
-                <x-filament::section heading="Onaylı değişiklikler" description="SEO başlığı, meta açıklama ve noindex; yalnızca onaylanan değişiklik siteye yazılır, her biri geri alınabilir.">
+                <x-filament::section heading="Onaylı değişiklikler" description="SEO başlığı, meta açıklama, noindex, görsel alt metni ve 301 yönlendirme; yalnızca onaylanan değişiklik siteye yazılır, her biri geri alınabilir.">
                     @unless ($inv['settings']['writes_enabled'] ?? false)
-                        <p class="text-sm opacity-70 mb-3">Sitede değişiklik izni kapalı. Açmak için WordPress panelinde Ayarlar → ScreamingRabbit → "Değişiklik izni" kutusunu işaretleyin (eklenti 0.5.0 ve üstü). Kapalıyken öneri kaydedilebilir ama uygulanamaz.</p>
+                        <p class="text-sm opacity-70 mb-3">Sitede değişiklik izni kapalı. Açmak için WordPress panelinde Ayarlar → ScreamingRabbit → "Değişiklik izni" kutusunu işaretleyin (eklenti 0.5.0 ve üstü; alt metin ve yönlendirme için 0.6.0). Kapalıyken öneri kaydedilebilir ama uygulanamaz.</p>
                     @endunless
                     @if ($changes->isNotEmpty())
                         <div class="overflow-x-auto">

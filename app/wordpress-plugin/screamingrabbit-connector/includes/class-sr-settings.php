@@ -58,10 +58,25 @@ class SR_Settings
 					<input type="hidden" name="action" value="sr_writes">
 					<label><input type="checkbox" name="sr_writes" value="1" <?php checked(self::writes_enabled()); ?>>
 						ScreamingRabbit, panelde onaylanan değişiklikleri uygulayabilir</label>
-					<p class="description">Yalnızca sayfaların SEO başlığı, meta açıklaması ve noindex ayarı (Yoast SEO veya Rank Math alanlarına).
+					<p class="description">Yalnızca sayfaların SEO başlığı, meta açıklaması ve noindex ayarı (Yoast SEO veya Rank Math alanlarına),
+						medya kütüphanesindeki görsellerin alt metni ve 301 yönlendirmeler (aşağıda listelenir).
 						Her değişiklik panelde ayrıca onaylanır, geri alınabilir ve son 200 değişiklik bu sitede kayıtlı tutulur. Kapalıyken eklenti hiçbir şey değiştirmez.</p>
 					<?php submit_button('Kaydet', 'secondary'); ?>
 				</form>
+
+				<?php $redirects = SR_Changes::redirects(); ?>
+				<?php if ($redirects !== []) { ?>
+					<h2>ScreamingRabbit yönlendirmeleri (<?php echo (int) count($redirects); ?>)</h2>
+					<table class="widefat striped" style="max-width: 900px">
+						<thead><tr><th>Eski adres</th><th>Yeni adres (301)</th></tr></thead>
+						<tbody>
+						<?php foreach ($redirects as $from => $to) { ?>
+							<tr><td><code><?php echo esc_html($from === '' ? '/' : $from); ?></code></td><td><?php echo esc_html($to); ?></td></tr>
+						<?php } ?>
+						</tbody>
+					</table>
+					<p class="description">Yönlendirmeyi kaldırmak için ScreamingRabbit panelinde geri alın.</p>
+				<?php } ?>
 			<?php } else { ?>
 				<p>ScreamingRabbit panelinde projenin <em>WordPress</em> sayfasından aldığın bağlantı kodunu yapıştır.</p>
 				<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
