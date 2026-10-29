@@ -176,7 +176,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **Yapısal veri**
 - ◐ JSON-LD ve Microdata türleri ✓, site geneli "Yapısal veri envanteri" tablosu (tür, sayfa sayısı, eksik alanlı sayfalar) ✓; RDFa ○
-- ○ Schema.org sözlüğüne göre doğrulama: bilinmeyen tür/özellik, yanlış değer tipi, eksik zorunlu alan
+- ✓ Schema.org sözlüğüne göre doğrulama (resmi sürüm 29.3): bilinmeyen tür/özellik, türüne ait olmayan özellik, metin beklenen yerde nesne; eksik zorunlu alanlar Google kurallarıyla ayrıca
 - ✓ Google zengin sonuç gereksinimleri: Article (+ BlogPosting, NewsArticle), Product (+ Offer, Review, AggregateRating), BreadcrumbList/ListItem, FAQPage/Question/Answer, Recipe, Event, LocalBusiness (+ Dentist, MedicalClinic vb. alt türler), Organization, VideoObject, JobPosting; zorunlu eksik (orta) ve önerilen eksik (düşük, yalnızca ana şemalarda) ayrı bulgu. HowTo Google'da kaldırıldığı için yok
 - ◐ Şema ↔ sayfa tutarlılığı: makale başlığı / ürün adı sayfanın title veya H1'ine benziyor mu ✓, teklif fiyatı sayfada yazıyor mu (1.500,00 ve 1,500.00 biçimleri) ✓, sayfa içi kırık `@id` bağlantıları ✓; tarih karşılaştırması ○
 - ✓ Yinelenen ana şemalar (örn. hem Yoast hem tema Organization basıyor); çelişen değerler ○

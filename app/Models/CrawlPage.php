@@ -28,6 +28,7 @@ class CrawlPage extends Model
             'hreflang' => 'array',
             'pagination' => 'array',
             'entity' => 'array',
+            'schema_vocabulary' => 'array',
             'aeo' => 'array',
             'custom' => 'array',
             'schema_mismatch' => 'array',
