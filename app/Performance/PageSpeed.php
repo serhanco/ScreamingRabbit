@@ -51,7 +51,9 @@ class PageSpeed
         $urls = array_merge($urls, (clone $pages)->orderByDesc('link_score')->limit(self::SAMPLE_SIZE * 2)->pluck('url')->all());
         $urls = array_slice(array_values(array_unique($urls)), 0, self::SAMPLE_SIZE);
 
-        $crawl->update(['pagespeed' => array_map(fn (string $url) => ['url' => $url, 'state' => 'pending'], $urls)]);
+        // The page type (home, post, product…) lets results be read per template: one slow template slows every page built on it.
+        $types = (clone $pages)->whereIn('url_hash', array_map('sha1', $urls))->pluck('wp_type', 'url');
+        $crawl->update(['pagespeed' => array_map(fn (string $url) => ['url' => $url, 'type' => $url === $home ? 'home' : ($types[$url] ?? null), 'state' => 'pending'], $urls)]);
     }
 
     /**
