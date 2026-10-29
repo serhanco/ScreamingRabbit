@@ -2,6 +2,7 @@
 
 use App\Crawler\CrawlMaintenance;
 use App\Crawler\CrawlScheduler;
+use App\Crawler\RedirectChecker;
 use App\Google\GscDrop;
 use App\Google\GscSync;
 use App\Models\ActivityLog;
@@ -36,6 +37,9 @@ Schedule::call(fn () => PageWatcher::runDue())->name('page-watch')->everyFiveMin
 
 // Search Console numbers: one short window per project each run, so the 16-month backfill spreads over many runs.
 Schedule::call(fn () => GscSync::runAll())->name('gsc-sync')->everyTenMinutes()->withoutOverlapping(10);
+
+// Site migration checks: a few old URLs each minute until the list is done.
+Schedule::call(fn () => RedirectChecker::runDue())->name('redirect-checks')->everyMinute()->withoutOverlapping(5);
 
 // PageSpeed Insights: one sample page per finished crawl each run (a call takes 10-30 seconds).
 Schedule::call(fn () => PageSpeed::runDue())->name('pagespeed')->everyFiveMinutes()->withoutOverlapping(10);
