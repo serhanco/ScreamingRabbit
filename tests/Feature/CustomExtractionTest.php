@@ -33,6 +33,8 @@ class CustomExtractionTest extends TestCase
         $this->assertSame(['GA kodu' => true, 'Eski telefon' => 0, 'Fiyat' => null, 'Yazar' => null], CustomExtraction::apply(self::RULES, '<html><body>boş</body></html>'));
         $this->assertFalse(CustomExtraction::isValidXpath('//*['));
         $this->assertTrue(CustomExtraction::isValidXpath('string(//title)'));
+        $this->assertSame(['Fiyat' => '1.500 TL'], CustomExtraction::apply([['name' => 'Fiyat', 'type' => 'css', 'value' => 'div.price > span']], '<html><body><div class="price big"><span> 1.500 TL </span></div></body></html>'));
+        $this->assertNull(CustomExtraction::cssToXpath('div[['));
     }
 
     public function test_results_are_stored_during_the_crawl_and_summarised(): void

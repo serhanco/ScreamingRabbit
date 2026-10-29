@@ -75,7 +75,8 @@ class CrawlRunner
             $this->seed();
         }
 
-        $this->robots = new RobotsTxt((string) $this->crawl->robots_txt, 'screamingrabbit');
+        // A robots.txt typed in the project settings replaces the live one for this crawl, to try a change before publishing it.
+        $this->robots = new RobotsTxt((string) (filled($this->settings['robots_override'] ?? null) ? $this->settings['robots_override'] : $this->crawl->robots_txt), 'screamingrabbit');
         $this->pageCount = $this->crawl->pages()->count();
 
         while (microtime(true) < $deadline) {
