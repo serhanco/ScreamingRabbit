@@ -32,6 +32,9 @@ class Auditor
 
     private const STALE_DAYS = 365;
 
+    /** @var array<int, array<int, int>> AI readiness score => page ids */
+    private array $aiScores = [];
+
     /** @var array<string, int> SEO plugin key => a page id that shows it */
     private array $seoPlugins = [];
 
@@ -53,6 +56,7 @@ class Auditor
         $this->seoPlugins = [];
         $this->hreflang = [];
         $this->staleArticles = [];
+        $this->aiScores = [];
 
         $crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use (&$groups, &$redirects, $platform) {
             foreach ($pages as $page) {
@@ -79,6 +83,7 @@ class Auditor
             $this->auditWordPress();
         }
         $this->flush();
+        $this->storeAiScores();
 
         $crawl->update(['health_score' => HealthScore::compute($crawl)]);
         ProjectScore::record($crawl);
@@ -200,6 +205,10 @@ class Auditor
                 $this->emit('meta_description_too_short', $page, "{$length} karakter");
             }
             $groups['meta_description'][md5(mb_strtolower($description))][] = $page->id;
+        }
+
+        if ($page->isHtmlOk()) {
+            $this->aiScores[AiReadiness::score($page)][] = $page->id;
         }
 
         if ($page->is_article || $page->wp_type === 'post') {
@@ -761,6 +770,16 @@ class Auditor
         }
         if ($found('wp_sitemap') && $found('sitemap_index')) {
             $this->emit('wp_double_sitemap', $home, '/wp-sitemap.xml + /sitemap_index.xml');
+        }
+    }
+
+    private function storeAiScores(): void
+    {
+        $this->crawl->pages()->whereNotNull('ai_score')->update(['ai_score' => null]);
+        foreach ($this->aiScores as $score => $ids) {
+            foreach (array_chunk($ids, 1000) as $chunk) {
+                DB::table('crawl_pages')->whereIn('id', $chunk)->update(['ai_score' => $score]);
+            }
         }
     }
 
