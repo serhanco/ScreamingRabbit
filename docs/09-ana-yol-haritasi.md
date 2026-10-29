@@ -70,7 +70,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Eklenti/tema envanteri (HTML izlerinden) ve güncellik
 - ✓ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
 - ✓ "Arama motorlarını engelle" açık, çift site haritası, iç arama indekslenebilir, `?replytocom`, varsayılan içerik, "Kategorilenmemiş"
-- ◐ Sayfalama canonical'ı ✓ (Faz 5), SEOPress/The SEO Framework tespiti ✓; staging sızıntısı ○
+- ✓ Sayfalama canonical'ı (Faz 5), SEOPress/The SEO Framework tespiti, staging sızıntısı (test alt alan adlarına veya barındırma firmasının test adresine link/canonical)
 - ✓ Raporda "WordPress" bölümü: sürüm, eklenti/tema, güvenlik kontrol listesi
 
 **AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok
