@@ -24,6 +24,10 @@ class Connector
 
     private const PER_RUN = 3;
 
+    /** Page cache plugins by their folder name. */
+    private const CACHE_PLUGINS = ['litespeed-cache', 'wp-rocket', 'w3-total-cache', 'wp-super-cache', 'wp-fastest-cache', 'sg-cachepress', 'breeze',
+        'cache-enabler', 'wp-optimize', 'hummingbird-performance', 'comet-cache', 'swift-performance-lite', 'nitropack', 'flying-press', 'wp-cloudflare-page-cache'];
+
     /**
      * A new pairing code for the project, as the single string the plugin's settings page takes:
      * "SR1." + base64url JSON {"u": this app's address, "c": the code}. Any earlier code stops working.
@@ -130,6 +134,19 @@ class Connector
     }
 
     /** Same algorithm as the plugin's SR_Signature::sign(). */
+    /**
+     * Names of the active page cache plugins in an inventory.
+     *
+     * @param  array<string, mixed>  $inventory
+     * @return array<int, string>
+     */
+    public static function cachePlugins(array $inventory): array
+    {
+        return collect($inventory['plugins'] ?? [])
+            ->filter(fn (array $plugin) => ($plugin['active'] ?? false) && in_array(strtok((string) ($plugin['file'] ?? ''), '/'), self::CACHE_PLUGINS, true))
+            ->pluck('name')->values()->all();
+    }
+
     public static function sign(string $secret, string $method, string $route, string $timestamp, string $nonce, string $body): string
     {
         return hash_hmac('sha256', implode("\n", [strtoupper($method), $route, $timestamp, $nonce, hash('sha256', $body)]), $secret);
