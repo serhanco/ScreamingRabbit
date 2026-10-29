@@ -45,9 +45,12 @@ return array(
     'b6ec61354e97f32c0ae683041c78392a' => $vendorDir . '/scrivo/highlight.php/HighlightUtilities/functions.php',
     '2ad94ea6f6f6013119e9abcf4e302a08' => $vendorDir . '/filament/forms/src/helpers.php',
     '6d4419a22bfb72a20b561583f68f48b3' => $vendorDir . '/filament/notifications/src/Testing/helpers.php',
+    '8e92226780215d0ec758aa7b73e0ede9' => $vendorDir . '/open-telemetry/context/fiber/initialize_fiber_handler.php',
     '0174385c3be07e86008907d06ee66531' => $vendorDir . '/sabberworm/php-css-parser/src/Rule/Rule.php',
     '98aea6e41b9cb79b379b10f37ba1f0b7' => $vendorDir . '/sabberworm/php-css-parser/src/RuleSet/RuleContainer.php',
+    'c7b4a5d8b94d270f0f9a84f81e1dd63d' => $vendorDir . '/open-telemetry/api/Trace/functions.php',
     '801c31d8ed748cfa537fa45402288c95' => $vendorDir . '/psy/psysh/src/functions.php',
+    '4b3d45d99f6e4eb65ea80c00519736e4' => $vendorDir . '/anthropic-ai/sdk/src/Version.php',
     '89e9938b64b06cc502d7ceca69a380fe' => $vendorDir . '/filament/filament/src/global_helpers.php',
     'ebb446bb6d02e998480945fbbb73dc64' => $vendorDir . '/filament/filament/src/helpers.php',
 );

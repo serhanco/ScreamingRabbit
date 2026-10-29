@@ -19,6 +19,15 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'anthropic-ai/sdk' => array(
+            'pretty_version' => 'v1.3.0',
+            'version' => '1.3.0.0',
+            'reference' => '3f558cd8a929695c6d0798ed53c9d986884dec7f',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../anthropic-ai/sdk',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'blade-ui-kit/blade-heroicons' => array(
             'pretty_version' => '2.7.0',
             'version' => '2.7.0.0',
@@ -769,6 +778,24 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'open-telemetry/api' => array(
+            'pretty_version' => '1.10.1',
+            'version' => '1.10.1.0',
+            'reference' => 'b2bc26bf8bd6b2b6447b3626b2a1b5733873aa0b',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../open-telemetry/api',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'open-telemetry/context' => array(
+            'pretty_version' => '1.5.0',
+            'version' => '1.5.0.0',
+            'reference' => '3c414b246e0dabb7d6145404e6a5e4536ca18d07',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../open-telemetry/context',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'openspout/openspout' => array(
             'pretty_version' => 'v4.32.0',
             'version' => '4.32.0.0',
@@ -784,6 +811,27 @@
             'reference' => 'd5b01a39b3415c2cd581d3bd3a3575c1ebbd8e77',
             'type' => 'library',
             'install_path' => __DIR__ . '/../paragonie/constant_time_encoding',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'php-http/async-client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '*',
+            ),
+        ),
+        'php-http/client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '*',
+            ),
+        ),
+        'php-http/discovery' => array(
+            'pretty_version' => '1.20.0',
+            'version' => '1.20.0.0',
+            'reference' => '82fe4c73ef3363caed49ff8dd1539ba06044910d',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/../php-http/discovery',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -871,7 +919,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.0',
+                0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/http-factory' => array(
@@ -886,7 +935,8 @@
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '1.1',
+                0 => '*',
+                1 => '1.1',
             ),
         ),
         'psr/http-message' => array(
@@ -901,7 +951,8 @@
         'psr/http-message-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '2.0',
+                0 => '*',
+                1 => '2.0',
             ),
         ),
         'psr/log' => array(
@@ -1026,6 +1077,15 @@
             'reference' => 'b8b0ca32d3a82bc5c533e68ffab96c5d4ec1b9ba',
             'type' => 'library',
             'install_path' => __DIR__ . '/../spatie/shiki-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'standard-webhooks/standard-webhooks' => array(
+            'pretty_version' => 'v1.0.2',
+            'version' => '1.0.2.0',
+            'reference' => 'a1773d7ffc577d730e2bf4d4bd740a82a42aa904',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../standard-webhooks/standard-webhooks',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
