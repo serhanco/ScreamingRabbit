@@ -159,6 +159,7 @@ class HtmlParser
         [$schemaTypes, $schemaErrors, $schemaProblems, $schemaDuplicates] = self::jsonLd($xpath);
         [$wpType, $wpCategory] = self::wordPressContent($xpath, $bodyClass);
         $authority = self::authority($xpath, $bodyClass);
+        $pageDates = self::pageDates($xpath);
         $ldBlocks = [];
         foreach ($xpath->query('//script[@type]') as $script) {
             if (strtolower(trim($script->getAttribute('type'))) === 'application/ld+json' && is_array($block = json_decode(trim($script->textContent), true))) {
@@ -204,7 +205,7 @@ class HtmlParser
             $texts[] = $node->nodeValue;
         }
         $bodyText = preg_replace('/\s+/u', ' ', implode(' ', $texts));
-        $schemaMismatch = self::schemaConsistency($ldBlocks, $title, $h1[0] ?? null, $bodyText);
+        $schemaMismatch = self::schemaConsistency($ldBlocks, $title, $h1[0] ?? null, $bodyText, $pageDates);
         $entity = self::entity($ldBlocks);
         $schemaVocabulary = SchemaVocabulary::problems($ldBlocks);
         $wordCount = (int) preg_match_all('/[\p{L}\p{N}]+/u', $bodyText);
@@ -457,13 +458,13 @@ class HtmlParser
 
     /**
      * Structured data that disagrees with the visible page: an article headline or product name unlike the page's
-     * title and H1, an offer price that appears nowhere on the page, or an @id reference to a node that is not there.
+     * title and H1, an offer price that appears nowhere on the page, article dates that disagree with the page, or an @id reference to a node that is not there.
      * Google's structured data guidelines require the markup to describe content visible to users.
      *
      * @param  array<int, array<mixed>>  $blocks  decoded JSON-LD blocks
      * @return array<int, string>
      */
-    private static function schemaConsistency(array $blocks, ?string $title, ?string $h1, string $bodyText): array
+    private static function schemaConsistency(array $blocks, ?string $title, ?string $h1, string $bodyText, array $pageDates = []): array
     {
         $headings = array_filter([$title, $h1]);
         $problems = [];
@@ -472,7 +473,7 @@ class HtmlParser
         $prices = self::visibleNumbers($bodyText);
         $digits = preg_replace('/\D/', '', $bodyText);
 
-        $walk = function ($node) use (&$walk, &$problems, &$defined, &$referenced, $headings, $prices, $digits): void {
+        $walk = function ($node) use (&$walk, &$problems, &$defined, &$referenced, $headings, $prices, $digits, $pageDates): void {
             if (! is_array($node)) {
                 return;
             }
@@ -505,6 +506,9 @@ class HtmlParser
                     }
                 }
             }
+            if (array_intersect($types, self::ARTICLE_TYPES) !== []) {
+                array_push($problems, ...self::dateProblems($node, $pageDates));
+            }
             $phone = self::phone($node['telephone'] ?? null);
             if ($phone !== null && ! str_contains($digits, $phone)) {
                 $problems[] = 'Şemadaki telefon ('.$node['telephone'].') sayfada görünmüyor';
@@ -525,6 +529,57 @@ class HtmlParser
         }
 
         return array_slice(array_values(array_unique($problems)), 0, 5);
+    }
+
+    /**
+     * Publication dates the page states outside the JSON-LD: the article:published_time / article:modified_time meta
+     * tags and the first <time datetime> in the body (the date most themes print under the headline).
+     *
+     * @return array{published: ?Carbon, modified: ?Carbon}
+     */
+    private static function pageDates(DOMXPath $xpath): array
+    {
+        $meta = fn (string $property) => $xpath->query('//meta[@property="'.$property.'" or @name="'.$property.'"]/@content')->item(0)?->nodeValue;
+        $parse = fn (?string $value) => blank($value) ? null : rescue(fn () => Carbon::parse(trim($value)), null, false);
+
+        return [
+            'published' => $parse($meta('article:published_time')) ?? $parse($xpath->query('//body//time[@datetime]/@datetime')->item(0)?->nodeValue),
+            'modified' => $parse($meta('article:modified_time')),
+        ];
+    }
+
+    /**
+     * An article's datePublished / dateModified that contradict the dates on the page, run backwards or lie in the
+     * future. Google uses these dates in results, so a wrong one can show readers an outdated or impossible date.
+     * A day of slack absorbs time zone differences.
+     *
+     * @param  array<string, mixed>  $node
+     * @param  array{published?: ?Carbon, modified?: ?Carbon}  $pageDates
+     * @return array<int, string>
+     */
+    private static function dateProblems(array $node, array $pageDates): array
+    {
+        $parse = fn ($value) => is_string($value) && $value !== '' ? rescue(fn () => Carbon::parse($value), null, false) : null;
+        $published = $parse($node['datePublished'] ?? null);
+        $modified = $parse($node['dateModified'] ?? null);
+        $apart = fn (Carbon $a, Carbon $b) => abs($a->getTimestamp() - $b->getTimestamp()) > 86400;
+        $day = fn (Carbon $date) => $date->format('d.m.Y');
+        $problems = [];
+
+        if ($published && ($page = $pageDates['published'] ?? null) && $apart($published, $page)) {
+            $problems[] = 'Şemadaki yayın tarihi ('.$day($published).') sayfadakinden ('.$day($page).') farklı';
+        }
+        if ($modified && ($page = $pageDates['modified'] ?? null) && $apart($modified, $page)) {
+            $problems[] = 'Şemadaki güncelleme tarihi ('.$day($modified).') sayfadakinden ('.$day($page).') farklı';
+        }
+        if ($published && $modified && $modified->getTimestamp() < $published->getTimestamp() - 86400) {
+            $problems[] = 'Şemada güncelleme tarihi ('.$day($modified).') yayın tarihinden ('.$day($published).') önce';
+        }
+        if ($published && $published->getTimestamp() > now()->getTimestamp() + 86400) {
+            $problems[] = 'Şemadaki yayın tarihi ('.$day($published).') ileri bir tarih';
+        }
+
+        return $problems;
     }
 
     /**
