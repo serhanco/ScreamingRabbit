@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Read-only REST endpoints under /screamingrabbit/v1. Every request must carry a valid signature made with the
+ * REST endpoints under /screamingrabbit/v1 (reads, and the narrow change list in SR_Changes). Every request must carry a valid signature made with the
  * secret agreed at pairing; a nonce is accepted once, so a captured request cannot be replayed.
  */
 defined('ABSPATH') || exit;
@@ -30,6 +30,24 @@ class SR_Api
             [
                 'methods' => 'GET',
                 'callback' => [__CLASS__, 'inventory'],
+                'permission_callback' => [__CLASS__, 'authorize'],
+            ]
+        );
+        register_rest_route(
+            self::NAMESPACE_V1,
+            '/meta',
+            [
+                'methods' => 'POST',
+                'callback' => ['SR_Changes', 'meta'],
+                'permission_callback' => [__CLASS__, 'authorize'],
+            ]
+        );
+        register_rest_route(
+            self::NAMESPACE_V1,
+            '/change',
+            [
+                'methods' => 'POST',
+                'callback' => ['SR_Changes', 'apply'],
                 'permission_callback' => [__CLASS__, 'authorize'],
             ]
         );

@@ -125,6 +125,41 @@
                 </x-filament::section>
             @endif
 
+            @if ($changes->isNotEmpty() || ! ($inv['settings']['writes_enabled'] ?? false))
+                <x-filament::section heading="Onaylı değişiklikler" description="SEO başlığı, meta açıklama ve noindex; yalnızca onaylanan değişiklik siteye yazılır, her biri geri alınabilir.">
+                    @unless ($inv['settings']['writes_enabled'] ?? false)
+                        <p class="text-sm opacity-70 mb-3">Sitede değişiklik izni kapalı. Açmak için WordPress panelinde Ayarlar → ScreamingRabbit → "Değişiklik izni" kutusunu işaretleyin (eklenti 0.5.0 ve üstü). Kapalıyken öneri kaydedilebilir ama uygulanamaz.</p>
+                    @endunless
+                    @if ($changes->isNotEmpty())
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <tr class="text-left opacity-70"><th>Sayfa</th><th>Alan</th><th>Önce → sonra</th><th>Durum</th><th></th></tr>
+                                @foreach ($changes as $c)
+                                    <tr class="align-top">
+                                        <td class="pe-3 break-all">{{ $c->url }}</td>
+                                        <td class="pe-3">{{ \App\Models\WpChange::FIELDS[$c->field] ?? $c->field }}@if ($c->reverts_id) <span class="opacity-70">(geri alma)</span>@endif</td>
+                                        <td class="pe-3"><span class="opacity-70">{{ $c->show($c->before) }}</span> → {{ $c->show($c->after) }}</td>
+                                        <td class="pe-3">
+                                            <span @class(['text-success-600' => $c->status === 'applied', 'text-danger-600' => in_array($c->status, ['conflict', 'failed']), 'text-warning-600' => $c->status === 'proposed'])>{{ \App\Models\WpChange::STATUSES[$c->status] ?? $c->status }}</span>
+                                            <div class="text-xs opacity-70">{{ $c->proposer?->name }}@if ($c->approver) · onay: {{ $c->approver->name }}@endif · {{ ($c->applied_at ?? $c->created_at)->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m H:i') }}</div>
+                                            @if ($c->error)<div class="text-xs text-danger-600">{{ $c->error }}</div>@endif
+                                        </td>
+                                        <td class="whitespace-nowrap">
+                                            @if ($canManage && $c->status === 'proposed')
+                                                {{ ($this->applyChangeAction)(['change' => $c->id]) }}
+                                                {{ ($this->rejectChangeAction)(['change' => $c->id]) }}
+                                            @elseif ($canManage && $c->status === 'applied' && ! $c->reverts_id)
+                                                {{ ($this->revertChangeAction)(['change' => $c->id]) }}
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </table>
+                        </div>
+                    @endif
+                </x-filament::section>
+            @endif
+
             @php $events = \App\Models\WpEvent::where('project_id', $connection->project_id)->latest('received_at')->limit(20)->get(); @endphp
             @if ($events->isNotEmpty())
                 <x-filament::section heading="Son içerik değişiklikleri" description="Eklentinin bildirdiği yayınlama, güncelleme ve kaldırmalar; adres bir dakika sonra kontrol edilir, sorun varsa uyarı gelir.">
