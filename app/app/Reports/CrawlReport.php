@@ -29,7 +29,8 @@ class CrawlReport
     private const WP_CHECKS = ['wp_core_outdated', 'wp_plugin_outdated', 'wp_user_enumeration', 'wp_xmlrpc_enabled', 'wp_default_files',
         'wp_debug_log_public', 'wp_directory_listing', 'wp_config_backup_exposed', 'wp_login_http', 'wp_search_indexable', 'wp_double_sitemap'];
 
-    public function __construct(private Crawl $crawl) {}
+    /** @param  string|null  $summary  the approved summary of a monthly report, shown at the top */
+    public function __construct(private Crawl $crawl, private ?string $summary = null) {}
 
     /**
      * @return array<string, mixed>
@@ -100,6 +101,7 @@ class CrawlReport
             'tasks' => $this->tasks(),
             'gsc' => $this->searchConsole(),
             'uptime' => $this->uptime(),
+            'summary' => $this->summary,
             'brand' => config('screamingrabbit.brand'),
             'branding' => ReportBranding::current(),
         ];

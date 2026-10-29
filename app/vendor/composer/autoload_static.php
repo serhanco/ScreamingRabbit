@@ -4121,6 +4121,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Ai\\Drivers\\AnthropicDriver' => __DIR__ . '/../..' . '/app/Ai/Drivers/AnthropicDriver.php',
         'App\\Ai\\Drivers\\GeminiDriver' => __DIR__ . '/../..' . '/app/Ai/Drivers/GeminiDriver.php',
         'App\\Ai\\Drivers\\OpenAiCompatibleDriver' => __DIR__ . '/../..' . '/app/Ai/Drivers/OpenAiCompatibleDriver.php',
+        'App\\Ai\\ReportSummary' => __DIR__ . '/../..' . '/app/Ai/ReportSummary.php',
         'App\\Ai\\TitleMeta' => __DIR__ . '/../..' . '/app/Ai/TitleMeta.php',
         'App\\Audit\\AiReadiness' => __DIR__ . '/../..' . '/app/Audit/AiReadiness.php',
         'App\\Audit\\Auditor' => __DIR__ . '/../..' . '/app/Audit/Auditor.php',
