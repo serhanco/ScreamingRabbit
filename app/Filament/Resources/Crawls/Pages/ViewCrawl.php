@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Crawls\Pages;
 
 use App\Crawler\CrawlRunner;
 use App\Exports\CrawlCsv;
+use App\Exports\CrawlSitemap;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
 use App\Reports\CrawlReport;
@@ -98,6 +99,11 @@ class ViewCrawl extends ViewRecord
                 Action::make('csvIssues')
                     ->label('Sorunlar (CSV)')
                     ->action(fn (Crawl $record) => (new CrawlCsv($record))->issues()),
+                Action::make('sitemap')
+                    ->label('Site haritası (XML)')
+                    ->tooltip('İndekslenebilir sayfalar ve görselleriyle; WordPress dışı siteler için veya kontrol amacıyla')
+                    ->visible(fn (Crawl $record): bool => $record->status === 'completed')
+                    ->action(fn (Crawl $record) => (new CrawlSitemap($record))->download()),
             ])
                 ->label('Dışa aktar')
                 ->icon(Heroicon::OutlinedTableCells)
