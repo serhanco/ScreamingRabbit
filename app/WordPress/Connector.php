@@ -212,6 +212,24 @@ class Connector
             ->contains(fn (WpConnection $connection) => hash_equals(hash_hmac('sha256', "package\n{$version}\n{$host}", (string) $connection->secret), $token));
     }
 
+    /**
+     * Signed POST with a JSON body to a plugin route.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public static function post(WpConnection $connection, string $route, array $payload): Response
+    {
+        $timestamp = (string) time();
+        $nonce = Str::random(32);
+        $body = (string) json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return Http::timeout(self::TIMEOUT_SECONDS)->acceptJson()->withHeaders([
+            'X-SR-Timestamp' => $timestamp,
+            'X-SR-Nonce' => $nonce,
+            'X-SR-Signature' => self::sign((string) $connection->secret, 'POST', $route, $timestamp, $nonce, $body),
+        ])->withBody($body, 'application/json')->post(self::base($connection).'/?rest_route='.rawurlencode($route));
+    }
+
     /** Same algorithm as the plugin's SR_Signature::sign(). */
     public static function sign(string $secret, string $method, string $route, string $timestamp, string $nonce, string $body): string
     {

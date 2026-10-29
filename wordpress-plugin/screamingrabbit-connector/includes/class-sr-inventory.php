@@ -57,6 +57,7 @@ class SR_Inventory
                 'auto_update_core' => self::core_auto_updates(),
                 'users_can_register' => (bool) get_option('users_can_register'),
                 'admins' => $admins,
+                'writes_enabled' => SR_Settings::writes_enabled(),
             ],
             'plugins' => self::plugins(),
             'themes' => self::themes(),

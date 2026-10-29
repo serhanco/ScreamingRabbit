@@ -16,6 +16,14 @@ class SR_Settings
         return isset($option['secret']) ? (string) $option['secret'] : '';
     }
 
+    /** Whether an administrator allowed ScreamingRabbit to apply approved changes (off by default). */
+    public static function writes_enabled()
+    {
+        $option = get_option(self::OPTION, []);
+
+        return self::secret() !== '' && ! empty($option['writes']);
+    }
+
     public static function register()
     {
         add_options_page('ScreamingRabbit', 'ScreamingRabbit', 'manage_options', 'screamingrabbit', [__CLASS__, 'page']);
@@ -43,6 +51,17 @@ class SR_Settings
 					<input type="hidden" name="action" value="sr_disconnect">
 					<?php submit_button('Bağlantıyı kes', 'delete'); ?>
 				</form>
+
+				<h2>Değişiklik izni</h2>
+				<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+					<?php wp_nonce_field('sr_writes'); ?>
+					<input type="hidden" name="action" value="sr_writes">
+					<label><input type="checkbox" name="sr_writes" value="1" <?php checked(self::writes_enabled()); ?>>
+						ScreamingRabbit, panelde onaylanan değişiklikleri uygulayabilir</label>
+					<p class="description">Yalnızca sayfaların SEO başlığı, meta açıklaması ve noindex ayarı (Yoast SEO veya Rank Math alanlarına).
+						Her değişiklik panelde ayrıca onaylanır, geri alınabilir ve son 200 değişiklik bu sitede kayıtlı tutulur. Kapalıyken eklenti hiçbir şey değiştirmez.</p>
+					<?php submit_button('Kaydet', 'secondary'); ?>
+				</form>
 			<?php } else { ?>
 				<p>ScreamingRabbit panelinde projenin <em>WordPress</em> sayfasından aldığın bağlantı kodunu yapıştır.</p>
 				<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
@@ -59,8 +78,8 @@ class SR_Settings
 				kalıcı bağlantılar, hata ayıklama, dosya düzenleyici, otomatik güncelleme, yönetici <em>sayısı</em>); içerik türlerine göre
 				yazı sayıları; SEO eklentisinin içerik türü noindex ve site haritası ayarı; WordPress Site Sağlığı uyarıları; çekirdek
 				dosyalarının wordpress.org sürümüyle aynı olup olmadığı (değişen dosyaların <em>yolu</em>); bir içerik yayınlandığında, güncellendiğinde veya yayından kaldırıldığında yalnızca o sayfanın
-				adresi ve türü (hemen yeniden kontrol edilmesi için). Kullanıcı adı, e-posta, yorum, sipariş gibi kişisel veriler toplanmaz. Siteye hiçbir değişiklik yapmaz,
-				ziyaretçi sayfalarına kod eklemez.</p>
+				adresi ve türü (hemen yeniden kontrol edilmesi için). Kullanıcı adı, e-posta, yorum, sipariş gibi kişisel veriler toplanmaz. Değişiklik izni kapalıyken siteye hiçbir
+				değişiklik yapmaz; ziyaretçi sayfalarına kod eklemez.</p>
 		</div>
 		<?php
     }
@@ -113,6 +132,21 @@ class SR_Settings
             false
         );
         self::back('Bağlantı kuruldu.');
+    }
+
+    public static function writes()
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Yetkiniz yok.');
+        }
+        check_admin_referer('sr_writes');
+        $option = get_option(self::OPTION, []);
+        if (! is_array($option) || empty($option['secret'])) {
+            self::back('Önce bağlantı kurun.');
+        }
+        $option['writes'] = ! empty($_POST['sr_writes']);
+        update_option(self::OPTION, $option, false);
+        self::back($option['writes'] ? 'Değişiklik izni açıldı.' : 'Değişiklik izni kapatıldı.');
     }
 
     public static function disconnect()

@@ -139,7 +139,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Ana yönetici (ilk yönetici, Serhan) her şeyi görür; diğer yöneticiler yalnızca kendi ekledikleri ve atandıkları projeleri görür. Ekip sayfası ve ortak ayarlar (Google anahtarı, SMTP, bot) yalnızca ana yöneticide
 - ✓ Her yönetici kendi Google hesabını bağlar (token kullanıcı başına, şifreli); site listesini yalnızca bağlayan görür; proje, mülkünü seçen yöneticinin bağlantısıyla okunur; günlük istek/URL denetimi bağlantı başına sayılır. Davetli üyeler Google bağlamaz, proje sahibinin bağlantısıyla gelen veriyi görür
 - ✓ E-postayla davet (yeni kullanıcıya hesap açma + proje, mevcut kullanıcıya proje daveti; 7 gün geçerli, e-posta gitmezse bağlantı panelde gösterilir). Proje sayfasındaki "Ekip ve yetkiler" listesinden proje sahibi davet eder, yetkileri değiştirir, üyeyi çıkarır. Proje bazında yetkiler: tarama, iş listesi, rapor paylaşma, izleme, proje ayarları; görüntüleme herkese açık
-- ✓ İşlem günlüğü ("İşlem günlüğü" menüsü, 1 yıl saklanır): üyelerin proje, müşteri, ekip, ortak ayar, iş, rapor, izleme, kritik sayfa ve tarama değişiklikleri; gizli değerler yazılmaz; arka plan işleri kaydedilmez. Onaylı WP değişiklikleri ○ (Faz 6)
+- ✓ İşlem günlüğü ("İşlem günlüğü" menüsü, 1 yıl saklanır): üyelerin proje, müşteri, ekip, ortak ayar, iş, rapor, izleme, kritik sayfa ve tarama değişiklikleri; gizli değerler yazılmaz; arka plan işleri kaydedilmez. Onaylı WP değişiklikleri ✓
 
 **Raporlama**
 - ✓ Markalı müşteri raporu: "Rapor görünümü" sayfasında logo (PNG/JPG/SVG, rapora gömülü), firma adı, vurgu rengi, iletişim satırı ve giriş metni; web, PDF ve aylık raporlarda geçerli. "Bir Serhan Demirel ürünü" satırı her zaman kalır
@@ -217,8 +217,8 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **WP-3 · Olaylar ve onaylı yazma**
 - ✓ İçerik yayınlandı/güncellendi/kaldırıldı → eklenti adresi imzalı olarak bildirir, uygulama bir dakika sonra kontrol eder: hata, yönlendirme, noindex, başka canonical; kaldırılan sayfaya hâlâ iç link varsa uyarı ("İçerik" uyarı türü), WordPress sayfasında son 20 değişiklik
-- ○ Onaylı değişiklikler: SEO title/meta, noindex, 301 yönlendirme, görsel alt metni
-- ○ Değişiklik günlüğü, çakışma koruması, tek tıkla geri alma
+- ◐ Onaylı değişiklikler: SEO title/meta ve noindex ✓ (Yoast SEO / Rank Math alanlarına; sitede "Değişiklik izni" açıkken, panelde öner → onayla); 301 yönlendirme, görsel alt metni ○
+- ✓ Değişiklik günlüğü (panelde ve sitede son 200), çakışma koruması (beklenen eski değer tutmazsa reddedilir), tek tıkla geri alma
 - ✓ Eklentinin kendi güncelleme kontrolü: yeni sürüm WordPress'in Güncellemeler ekranına gelir (uygulamadan 12 saatte bir sorulur, paket bağlantısı sitenin anahtarıyla imzalı; yalnızca eşleşmiş siteler indirir)
 - ○ AI önerilerinin uygulayıcısı: Faz 7'de üretilen ve panelde onaylanan title/meta, alt metin, şema, SSS/kısa cevap bloğu, iç link önerilerini siteye yazar (LLM anahtarı eklentide değil, uygulamada durur)
 

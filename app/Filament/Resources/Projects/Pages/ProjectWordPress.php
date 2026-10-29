@@ -3,12 +3,18 @@
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\WpChange;
 use App\Models\WpConnection;
+use App\WordPress\Changes;
 use App\WordPress\Connector;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 
 /**
@@ -39,6 +45,28 @@ class ProjectWordPress extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('propose')
+                ->label('Değişiklik öner')
+                ->icon(Heroicon::OutlinedPencilSquare)
+                ->visible(fn (): bool => $this->canManage() && ($this->connection()?->isConnected() ?? false))
+                ->modalDescription('Sayfanın SEO başlığı, meta açıklaması veya noindex ayarı. Öneri önce kaydedilir; siteye ancak listeden onaylanınca yazılır.')
+                ->schema([
+                    TextInput::make('url')->label('Sayfa adresi')->url()->required()->maxLength(2048)->placeholder($this->record->base_url),
+                    Select::make('field')->label('Ne değişsin?')->options(WpChange::FIELDS)->required()->live(),
+                    Textarea::make('after')->label('Yeni değer')->rows(3)->maxLength(1000)
+                        ->helperText('Boş bırakılırsa SEO eklentisinin varsayılanı kullanılır. Yoast/Rank Math değişkenleri (%%title%% vb.) kullanılabilir.')
+                        ->visible(fn (Get $get): bool => in_array($get('field'), ['title', 'description'], true)),
+                    Select::make('robots')->label('Yeni değer')->options(WpChange::NOINDEX)->selectablePlaceholder(false)->default('')
+                        ->visible(fn (Get $get): bool => $get('field') === 'noindex'),
+                ])
+                ->action(function (array $data, Action $action): void {
+                    $result = Changes::propose($this->record, $data['url'], $data['field'], $data['field'] === 'noindex' ? ($data['robots'] ?? '') : ($data['after'] ?? ''), auth()->user());
+                    if (is_string($result)) {
+                        Notification::make()->title('Öneri kaydedilemedi')->body($result)->danger()->send();
+                        $action->halt();
+                    }
+                    Notification::make()->title('Öneri kaydedildi')->body('Aşağıdaki listeden onaylayınca siteye yazılır.')->success()->send();
+                }),
             Action::make('code')
                 ->label(fn (): string => $this->connection()?->isConnected() ? 'Yeniden bağla' : 'Bağlantı kodu al')
                 ->icon(Heroicon::OutlinedLink)
@@ -72,12 +100,71 @@ class ProjectWordPress extends Page
         ];
     }
 
+    public function applyChangeAction(): Action
+    {
+        return Action::make('applyChange')
+            ->label('Onayla ve uygula')
+            ->size('sm')
+            ->requiresConfirmation()
+            ->modalHeading('Değişiklik siteye yazılsın mı?')
+            ->modalDescription(fn (array $arguments): string => ($change = $this->change($arguments)) ? WpChange::FIELDS[$change->field].': "'.$change->show($change->before).'" → "'.$change->show($change->after).'"' : '')
+            ->visible(fn (): bool => $this->canManage())
+            ->action(function (array $arguments): void {
+                $change = $this->change($arguments);
+                if ($change === null) {
+                    return;
+                }
+                $change = Changes::apply($change, auth()->user());
+                Notification::make()->title($change->status === 'applied' ? 'Siteye yazıldı' : 'Uygulanamadı')->body($change->error)
+                    ->{$change->status === 'applied' ? 'success' : 'danger'}()->send();
+            });
+    }
+
+    public function rejectChangeAction(): Action
+    {
+        return Action::make('rejectChange')
+            ->label('Reddet')
+            ->size('sm')
+            ->color('gray')
+            ->visible(fn (): bool => $this->canManage())
+            ->action(fn (array $arguments) => $this->change($arguments)?->update(['status' => 'rejected']));
+    }
+
+    public function revertChangeAction(): Action
+    {
+        return Action::make('revertChange')
+            ->label('Geri al')
+            ->size('sm')
+            ->color('warning')
+            ->requiresConfirmation()
+            ->modalDescription('Sayfadaki değer önceki haline döner (o arada sitede değiştiyse çakışma olarak durur).')
+            ->visible(fn (): bool => $this->canManage())
+            ->action(function (array $arguments): void {
+                $change = $this->change($arguments);
+                if ($change === null || $change->status !== 'applied') {
+                    return;
+                }
+                $reverse = Changes::revert($change, auth()->user());
+                Notification::make()->title($reverse->status === 'applied' ? 'Geri alındı' : 'Geri alınamadı')->body($reverse->error)
+                    ->{$reverse->status === 'applied' ? 'success' : 'danger'}()->send();
+            });
+    }
+
+    /** @param  array<string, mixed>  $arguments */
+    private function change(array $arguments): ?WpChange
+    {
+        return WpChange::where('project_id', $this->record->id)->find($arguments['change'] ?? null);
+    }
+
     /**
      * @return array<string, mixed>
      */
     protected function getViewData(): array
     {
-        return ['connection' => $this->connection(), 'project' => $this->record, 'canManage' => $this->canManage()];
+        return [
+            'connection' => $this->connection(), 'project' => $this->record, 'canManage' => $this->canManage(),
+            'changes' => WpChange::where('project_id', $this->record->id)->with(['proposer', 'approver'])->latest('id')->limit(30)->get(),
+        ];
     }
 
     private function connection(): ?WpConnection
