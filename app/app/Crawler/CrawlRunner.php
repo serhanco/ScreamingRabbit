@@ -238,6 +238,8 @@ class CrawlRunner
                 'published_at' => $parsed['published_at'],
                 'modified_at' => $parsed['modified_at'],
                 'has_author' => $parsed['has_author'],
+                'author_url' => $parsed['author_url'] !== null ? UrlNormalizer::resolve($parsed['author_url'], $page->url) : null,
+                'person_schema' => $parsed['person_schema'],
                 'same_as' => $parsed['same_as'],
                 'heading_skip' => $parsed['heading_skip'],
                 'h1_count' => count($parsed['h1']),
