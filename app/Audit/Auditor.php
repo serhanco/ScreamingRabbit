@@ -3,6 +3,7 @@
 namespace App\Audit;
 
 use App\Crawler\HtmlParser;
+use App\Crawler\UrlNormalizer;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\ProjectScore;
@@ -29,6 +30,9 @@ class Auditor
 
     /** @var array<int, array{url: string, next?: string, prev?: string, next_linked?: bool, prev_linked?: bool}> page id => its rel next/prev links */
     private array $pagination = [];
+
+    /** @var array<string, int> url hash of an author page => articles linking to it */
+    private array $authorPages = [];
 
     /** @var array<string, array<string, int>> 'name'|'phone' => value as written => pages carrying it */
     private array $nap = [];
@@ -62,6 +66,7 @@ class Auditor
         $this->seoPlugins = [];
         $this->hreflang = [];
         $this->pagination = [];
+        $this->authorPages = [];
         $this->nap = ['name' => [], 'phone' => []];
         $this->staleArticles = [];
         $this->aiScores = [];
@@ -82,6 +87,7 @@ class Auditor
         $this->auditCanonicalTargets();
         $this->auditHreflang();
         $this->auditPagination();
+        $this->auditAuthorPages();
         $this->auditSeoPlugins($platform);
         $this->auditImages();
         $this->auditExternalLinks();
@@ -238,6 +244,11 @@ class Auditor
             }
             if (! $page->has_author) {
                 $this->emit('article_author_missing', $page);
+            } elseif ($page->author_url === null) {
+                $this->emit('author_page_missing', $page);
+            } elseif (UrlNormalizer::isInternal($page->author_url, $page->url)) {
+                $hash = sha1($page->author_url);
+                $this->authorPages[$hash] = ($this->authorPages[$hash] ?? 0) + 1;
             }
             $updated = $page->modified_at ?? $page->published_at;
             if ($updated !== null && $updated->lt(now()->subDays(self::STALE_DAYS))) {
@@ -563,6 +574,20 @@ class Auditor
         }
         if ($variants !== []) {
             $this->emit('nap_inconsistent', $home, mb_substr(implode(' · ', $variants), 0, 250));
+        }
+    }
+
+    /**
+     * Author pages should describe the person with Person (or ProfilePage) schema so Google can tie articles to a
+     * real, credible author (E-E-A-T).
+     */
+    private function auditAuthorPages(): void
+    {
+        foreach (array_chunk(array_keys($this->authorPages), 500) as $hashes) {
+            $pages = $this->crawl->pages()->whereIn('url_hash', $hashes)->where('state', 'done')->where('status_code', 200)->where('person_schema', false)->get();
+            foreach ($pages as $page) {
+                $this->emit('author_schema_missing', $page, $this->authorPages[$page->url_hash].' yazı bu yazar sayfasına bağlı');
+            }
         }
     }
 

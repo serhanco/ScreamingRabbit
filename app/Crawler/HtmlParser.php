@@ -33,7 +33,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string}, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string}, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -360,7 +360,7 @@ class HtmlParser
      * E-E-A-T and entity signals: is this an article, when was it published and updated, is an author shown,
      * and how many sameAs profiles does the site's Organization/Person entity link to.
      *
-     * @return array{is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     * @return array{is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
      */
     private static function authority(DOMXPath $xpath, string $bodyClass): array
     {
@@ -368,8 +368,11 @@ class HtmlParser
         $published = $modified = null;
         $hasAuthor = false;
         $sameAs = 0;
+        $hasPerson = false;
+        $authorRefs = [];
+        $persons = [];
 
-        $walk = function ($node, bool $topLevel) use (&$walk, &$isArticle, &$published, &$modified, &$hasAuthor, &$sameAs): void {
+        $walk = function ($node, bool $topLevel) use (&$walk, &$isArticle, &$published, &$modified, &$hasAuthor, &$sameAs, &$hasPerson, &$authorRefs, &$persons): void {
             if (! is_array($node)) {
                 return;
             }
@@ -386,6 +389,17 @@ class HtmlParser
                 $published ??= is_string($node['datePublished'] ?? null) ? $node['datePublished'] : null;
                 $modified ??= is_string($node['dateModified'] ?? null) ? $node['dateModified'] : null;
                 $hasAuthor = $hasAuthor || ! empty($node['author']);
+                foreach (is_array($node['author'] ?? null) ? (array_is_list($node['author']) ? $node['author'] : [$node['author']]) : [] as $author) {
+                    if (is_array($author)) {
+                        $authorRefs[] = $author;
+                    }
+                }
+            }
+            if (array_intersect($types, ['Person', 'ProfilePage']) !== []) {
+                $hasPerson = true;
+                if (is_string($node['@id'] ?? null)) {
+                    $persons[$node['@id']] = $node;
+                }
             }
             if ($topLevel && array_intersect($types, self::ENTITY_TYPES) !== []) {
                 $sameAs = max($sameAs, count(array_filter((array) ($node['sameAs'] ?? []), 'is_string')));
@@ -422,7 +436,17 @@ class HtmlParser
 
         $date = fn (?string $value) => $value === null ? null : rescue(fn () => Carbon::parse($value)->toDateString(), null, false);
 
-        return ['is_article' => $isArticle, 'published_at' => $date($published), 'modified_at' => $date($modified), 'has_author' => $hasAuthor, 'same_as' => $sameAs];
+        // The author's own page: a rel="author" link, the url of the article's author in the schema (directly or
+        // through its @id in the graph, as Yoast and Rank Math print it), or a WordPress /author/ archive link.
+        $authorUrl = $xpath->query('//a[contains(concat(" ", normalize-space(@rel), " "), " author ")]/@href')->item(0)?->nodeValue;
+        foreach ($authorRefs as $author) {
+            $authorUrl ??= is_string($author['url'] ?? null) ? $author['url'] : null;
+            $authorUrl ??= is_string($persons[$author['@id'] ?? '']['url'] ?? null) ? $persons[$author['@id']]['url'] : null;
+        }
+        $authorUrl ??= $xpath->query('//a[contains(@href, "/author/")]/@href')->item(0)?->nodeValue;
+
+        return ['is_article' => $isArticle, 'published_at' => $date($published), 'modified_at' => $date($modified), 'has_author' => $hasAuthor, 'same_as' => $sameAs,
+            'author_url' => $authorUrl, 'person_schema' => $hasPerson];
     }
 
     /**
