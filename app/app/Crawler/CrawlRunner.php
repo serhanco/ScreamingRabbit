@@ -276,6 +276,18 @@ class CrawlRunner
                 }
             }
 
+            // rel next/prev series: crawled like links, and whether a normal link also points there is kept for the audit.
+            $linked = array_column($parsed['links'], 'url');
+            $pagination = [];
+            foreach (array_filter($parsed['pagination']) as $key => $url) {
+                $pagination[$key] = $url;
+                $pagination["{$key}_linked"] = in_array($url, $linked, true);
+                if (UrlNormalizer::isInternal($url, $page->url) && ! UrlNormalizer::isAsset($url)) {
+                    $this->addPage($url, $page->depth + 1);
+                }
+            }
+            $update['pagination'] = $pagination === [] ? null : $pagination;
+
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
             $this->storeImages($page, $parsed['images']);
             $this->storeExternal($page, $parsed['links']);

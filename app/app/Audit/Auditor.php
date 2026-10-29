@@ -27,6 +27,9 @@ class Auditor
     /** @var array<int, array{url: string, entries: array<int, array{lang: string, url: string}>}> page id => its hreflang tags */
     private array $hreflang = [];
 
+    /** @var array<int, array{url: string, next?: string, prev?: string, next_linked?: bool, prev_linked?: bool}> page id => its rel next/prev links */
+    private array $pagination = [];
+
     /** @var array<int, array{0: string, 1: string}> page id => [url hash, last update date] of articles older than a year */
     private array $staleArticles = [];
 
@@ -55,6 +58,7 @@ class Auditor
         $this->canonicalTargets = [];
         $this->seoPlugins = [];
         $this->hreflang = [];
+        $this->pagination = [];
         $this->staleArticles = [];
         $this->aiScores = [];
 
@@ -73,6 +77,7 @@ class Auditor
         $this->auditNearDuplicates($groups['simhash']);
         $this->auditCanonicalTargets();
         $this->auditHreflang();
+        $this->auditPagination();
         $this->auditSeoPlugins($platform);
         $this->auditImages();
         $this->auditExternalLinks();
@@ -160,11 +165,15 @@ class Auditor
         } elseif ($page->canonical === null || $page->canonical === '') {
             $this->emit('canonical_missing', $page);
         } elseif ($page->canonical !== $page->url) {
-            $this->emit('canonical_other', $page, $page->canonical);
+            $this->emit(self::isPaginated($page) ? 'pagination_canonical' : 'canonical_other', $page, $page->canonical);
             $this->canonicalTargets[$page->id] = sha1($page->canonical);
         }
         if ($page->canonical_conflict) {
             $this->emit('canonical_conflict', $page);
+        }
+
+        if ($page->status_code === 200 && ! empty($page->pagination)) {
+            $this->pagination[$page->id] = ['url' => $page->url] + $page->pagination;
         }
 
         if ($page->status_code === 200 && ! empty($page->hreflang)) {
@@ -502,6 +511,67 @@ class Auditor
             }
             if ($noReturn !== []) {
                 $this->emitFor('hreflang_missing_return', $pageId, implode(', ', $noReturn));
+            }
+        }
+    }
+
+    /**
+     * Page 2, 3… of a series: has a rel="prev" link or a page number in the URL (/page/2/, ?page=2, ?paged=2).
+     */
+    private static function isPaginated(CrawlPage $page): bool
+    {
+        if (! empty($page->pagination['prev'])) {
+            return true;
+        }
+
+        return (bool) preg_match('#/page/([2-9]|\d{2,})/?(?:$|\?)|[?&](?:page|paged)=([2-9]|\d{2,})(?:&|$)#', $page->url);
+    }
+
+    /**
+     * Google no longer reads rel next/prev, so every page of a series must be reachable through a normal link,
+     * and the declared next/previous pages should answer 200.
+     */
+    private function auditPagination(): void
+    {
+        if ($this->pagination === []) {
+            return;
+        }
+
+        $hashes = [];
+        foreach ($this->pagination as $page) {
+            foreach (['next', 'prev'] as $key) {
+                if (isset($page[$key])) {
+                    $hashes[sha1($page[$key])] = true;
+                }
+            }
+        }
+        $targets = [];
+        foreach (array_chunk(array_keys($hashes), 500) as $chunk) {
+            foreach ($this->crawl->pages()->whereIn('url_hash', $chunk)->get(['url_hash', 'state', 'status_code']) as $target) {
+                $targets[$target->url_hash] = $target;
+            }
+        }
+
+        foreach ($this->pagination as $pageId => $page) {
+            $bad = [];
+            $unlinked = [];
+            foreach (['next' => 'sonraki', 'prev' => 'önceki'] as $key => $label) {
+                if (! isset($page[$key])) {
+                    continue;
+                }
+                $target = $targets[sha1($page[$key])] ?? null;
+                if ($target !== null && $target->state === 'done' && $target->status_code !== 200) {
+                    $bad[] = "{$label}: {$page[$key]} → HTTP ".($target->status_code ?? 'yanıt yok');
+                }
+                if (! ($page["{$key}_linked"] ?? true)) {
+                    $unlinked[] = "{$label}: {$page[$key]}";
+                }
+            }
+            if ($bad !== []) {
+                $this->emitFor('pagination_target_bad', $pageId, implode(', ', $bad));
+            }
+            if ($unlinked !== []) {
+                $this->emitFor('pagination_not_linked', $pageId, implode(', ', $unlinked));
             }
         }
     }
