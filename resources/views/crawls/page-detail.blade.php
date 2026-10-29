@@ -6,6 +6,7 @@
         <dt class="font-medium">Meta description</dt><dd>{{ $p->meta_description ?: '—' }}</dd>
         <dt class="font-medium">H1 ({{ $p->h1_count }})</dt><dd>{{ $p->h1 ?: '—' }}</dd>
         <dt class="font-medium">Canonical</dt><dd class="break-all">{{ $p->canonical ?: '—' }}</dd>
+        <dt class="font-medium">Derinlik / Gelen link / Link puanı</dt><dd>{{ $p->depth }} / {{ $p->inlinks }} / {{ $p->link_score ?? '—' }}</dd>
         <dt class="font-medium">Kelime / Yanıt</dt><dd>{{ $p->word_count ?? '—' }} / {{ $p->response_ms ? $p->response_ms.' ms' : '—' }}</dd>
     </dl>
 
