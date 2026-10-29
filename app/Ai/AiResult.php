@@ -10,5 +10,6 @@ final class AiResult
         public readonly string $model,
         public readonly float $cost,
         public readonly bool $cached,
+        public readonly ?int $requestId = null,
     ) {}
 }
