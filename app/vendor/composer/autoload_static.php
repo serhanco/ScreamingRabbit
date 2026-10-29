@@ -734,6 +734,8 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Audit\\Auditor' => __DIR__ . '/../..' . '/app/Audit/Auditor.php',
         'App\\Audit\\HealthScore' => __DIR__ . '/../..' . '/app/Audit/HealthScore.php',
         'App\\Audit\\RuleCatalog' => __DIR__ . '/../..' . '/app/Audit/RuleCatalog.php',
+        'App\\Audit\\SchemaInventory' => __DIR__ . '/../..' . '/app/Audit/SchemaInventory.php',
+        'App\\Audit\\SchemaRules' => __DIR__ . '/../..' . '/app/Audit/SchemaRules.php',
         'App\\Crawler\\BotAccess' => __DIR__ . '/../..' . '/app/Crawler/BotAccess.php',
         'App\\Crawler\\CrawlAlerts' => __DIR__ . '/../..' . '/app/Crawler/CrawlAlerts.php',
         'App\\Crawler\\CrawlComparison' => __DIR__ . '/../..' . '/app/Crawler/CrawlComparison.php',

@@ -16,6 +16,8 @@ return array(
     'App\\Audit\\Auditor' => $baseDir . '/app/Audit/Auditor.php',
     'App\\Audit\\HealthScore' => $baseDir . '/app/Audit/HealthScore.php',
     'App\\Audit\\RuleCatalog' => $baseDir . '/app/Audit/RuleCatalog.php',
+    'App\\Audit\\SchemaInventory' => $baseDir . '/app/Audit/SchemaInventory.php',
+    'App\\Audit\\SchemaRules' => $baseDir . '/app/Audit/SchemaRules.php',
     'App\\Crawler\\BotAccess' => $baseDir . '/app/Crawler/BotAccess.php',
     'App\\Crawler\\CrawlAlerts' => $baseDir . '/app/Crawler/CrawlAlerts.php',
     'App\\Crawler\\CrawlComparison' => $baseDir . '/app/Crawler/CrawlComparison.php',

@@ -2,6 +2,7 @@
 
 namespace App\Crawler;
 
+use App\Audit\SchemaRules;
 use DOMDocument;
 use DOMXPath;
 
@@ -11,7 +12,7 @@ class HtmlParser
     private const JS_SHELL_WORDS = 50;
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, js_shell: bool, wp_type: ?string, wp_category: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -84,7 +85,7 @@ class HtmlParser
             default => null,
         };
 
-        [$schemaTypes, $schemaErrors] = self::jsonLd($xpath);
+        [$schemaTypes, $schemaErrors, $schemaProblems, $schemaDuplicates] = self::jsonLd($xpath);
         [$wpType, $wpCategory] = self::wordPressContent($xpath, $bodyClass);
 
         $seoPlugins = [];
@@ -134,6 +135,8 @@ class HtmlParser
             'seo_plugin' => $seoPlugins === [] ? null : implode(',', $seoPlugins),
             'schema_types' => $schemaTypes,
             'schema_errors' => $schemaErrors,
+            'schema_problems' => $schemaProblems,
+            'schema_duplicates' => $schemaDuplicates,
             'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
             'wordpress_hint' => $wordpress,
             'wp_type' => $wordpress ? $wpType : null,
@@ -142,14 +145,18 @@ class HtmlParser
     }
 
     /**
-     * Schema.org types found in JSON-LD blocks (including @graph and nested items) and the number of blocks that are not valid JSON.
+     * Structured data on the page: schema.org types from JSON-LD (including @graph and nested items) and Microdata,
+     * the number of JSON-LD blocks that are not valid JSON, entities missing rich-result properties, and types printed
+     * more than once (usually two plugins doing the same job).
      *
-     * @return array{0: array<int, string>, 1: int}
+     * @return array{0: array<int, string>, 1: int, 2: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, 3: array<int, string>}
      */
     private static function jsonLd(DOMXPath $xpath): array
     {
         $types = [];
         $errors = 0;
+        $problems = [];
+        $topLevel = [];
 
         foreach ($xpath->query('//script[@type]') as $script) {
             if (strtolower(trim($script->getAttribute('type'))) !== 'application/ld+json') {
@@ -163,14 +170,56 @@ class HtmlParser
                 continue;
             }
 
-            array_walk_recursive($data, function ($value, $key) use (&$types) {
-                if ($key === '@type' && is_string($value)) {
-                    $types[] = preg_replace('#^https?://schema\.org/#', '', $value);
+            // Roots: the block itself, a list of nodes, or the nodes of its @graph.
+            $roots = array_is_list($data) ? $data : (isset($data['@graph']) && is_array($data['@graph']) ? $data['@graph'] : [$data]);
+            foreach ($roots as $root) {
+                if (is_array($root)) {
+                    foreach ((array) ($root['@type'] ?? []) as $type) {
+                        $topLevel[] = SchemaRules::ruleType(SchemaRules::shortType((string) $type));
+                    }
                 }
-            });
+            }
+
+            // Recommended properties are only asked of the page's main entities: a nested publisher or author node
+            // naturally carries just a name and a logo.
+            $walk = function (array $node, bool $top) use (&$walk, &$types, &$problems): void {
+                if (isset($node['@type'])) {
+                    foreach ((array) $node['@type'] as $type) {
+                        $types[] = SchemaRules::shortType((string) $type);
+                    }
+                    // A bare reference ({"@id": …} with a type) points at a node checked elsewhere.
+                    $problem = count(array_diff(array_keys($node), ['@type', '@id', '@context'])) > 0 ? SchemaRules::check($node) : null;
+                    if ($problem && ! $top) {
+                        $problem['recommended'] = [];
+                    }
+                    if ($problem && ($problem['required'] !== [] || $problem['recommended'] !== [])) {
+                        $problems[$problem['type'].'|'.implode(',', $problem['required']).'|'.implode(',', $problem['recommended'])] = $problem;
+                    }
+                }
+                foreach ($node as $key => $value) {
+                    if (is_array($value) && $key !== '@graph') {
+                        $walk($value, false);
+                    }
+                }
+            };
+            foreach ($roots as $root) {
+                if (is_array($root)) {
+                    $walk($root, true);
+                }
+            }
         }
 
-        return [array_values(array_unique($types)), $errors];
+        foreach ($xpath->query('//*[@itemscope][@itemtype]') as $item) {
+            foreach (preg_split('/\s+/', trim($item->getAttribute('itemtype'))) as $type) {
+                if (str_contains($type, 'schema.org/')) {
+                    $types[] = SchemaRules::shortType(rtrim($type, '/'));
+                }
+            }
+        }
+
+        $duplicates = array_keys(array_filter(array_count_values(array_filter($topLevel, fn (?string $type) => $type !== null && in_array($type, SchemaRules::SINGLE, true))), fn (int $n) => $n > 1));
+
+        return [array_values(array_unique($types)), $errors, array_values($problems), $duplicates];
     }
 
     /**
