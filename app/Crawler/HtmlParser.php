@@ -4,6 +4,7 @@ namespace App\Crawler;
 
 use App\Audit\Readability;
 use App\Audit\SchemaRules;
+use App\Audit\SchemaVocabulary;
 use App\Audit\SimHash;
 use DOMDocument;
 use DOMXPath;
@@ -33,7 +34,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string}, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -205,6 +206,7 @@ class HtmlParser
         $bodyText = preg_replace('/\s+/u', ' ', implode(' ', $texts));
         $schemaMismatch = self::schemaConsistency($ldBlocks, $title, $h1[0] ?? null, $bodyText);
         $entity = self::entity($ldBlocks);
+        $schemaVocabulary = SchemaVocabulary::problems($ldBlocks);
         $wordCount = (int) preg_match_all('/[\p{L}\p{N}]+/u', $bodyText);
 
         // The near-duplicate fingerprint uses the main text only, so a shared menu and footer don't make pages look alike.
@@ -262,6 +264,7 @@ class HtmlParser
             'schema_duplicates' => $schemaDuplicates,
             'schema_mismatch' => $schemaMismatch,
             'entity' => $entity,
+            'schema_vocabulary' => $schemaVocabulary,
             'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
             'wordpress_hint' => $wordpress,
             'question_headings' => $questionHeadings,

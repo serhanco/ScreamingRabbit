@@ -268,6 +268,7 @@ class CrawlRunner
                 'schema_duplicates' => $parsed['schema_duplicates'] === [] ? null : implode(',', $parsed['schema_duplicates']),
                 'schema_mismatch' => $parsed['schema_mismatch'] === [] ? null : $parsed['schema_mismatch'],
                 'entity' => $parsed['entity'],
+                'schema_vocabulary' => $parsed['schema_vocabulary'] === [] ? null : $parsed['schema_vocabulary'],
                 'uncrawlable_links' => $parsed['uncrawlable_links'],
                 'empty_anchors' => $parsed['empty_anchors'],
                 'generic_anchors' => $parsed['generic_anchor_count'],
