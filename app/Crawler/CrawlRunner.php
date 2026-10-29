@@ -142,7 +142,7 @@ class CrawlRunner
             + ['full' => LlmsTxt::analyze($this->fetchText($origin.'/llms-full.txt'))['status'] !== 'missing'];
         // The pages llms.txt points AI systems to are crawled too, so a broken one shows up.
         $llmsUrls = [];
-        foreach ($this->crawl->llms_txt['urls'] as $url) {
+        foreach ($mode === 'spider' ? $this->crawl->llms_txt['urls'] : [] as $url) {
             $resolved = UrlNormalizer::resolve($url, $start);
             if ($resolved && UrlNormalizer::isInternal($resolved, $start)) {
                 $llmsUrls[] = $resolved;
