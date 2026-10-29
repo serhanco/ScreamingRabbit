@@ -114,6 +114,26 @@ class ProjectForm
                             ->helperText('Her satıra bir kalıp (regex). Eşleşen URL\'ler atlanır.')
                             ->rule(fn (): \Closure => self::regexRule()),
                     ]),
+                Section::make('Şifreli site (staging) erişimi')
+                    ->description('Test/staging sitesi şifreyle korunuyorsa veya erişim için özel başlık gerekiyorsa buraya girin. Bilgiler şifreli saklanır ve yalnızca bu projenin alan adına gönderilir; dış sitelere hiç gönderilmez.')
+                    ->columns(2)
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        TextInput::make('crawl_auth.user')->label('Kullanıcı adı (HTTP basic auth)')->maxLength(120)->autocomplete(false),
+                        TextInput::make('crawl_auth.password')->label('Şifre')->password()->revealable()->maxLength(200)->autocomplete('new-password'),
+                        Repeater::make('crawl_auth.headers')
+                            ->label('Ek HTTP başlıkları (çerez dahil)')
+                            ->maxItems(5)
+                            ->columns(2)
+                            ->defaultItems(0)
+                            ->addActionLabel('Başlık ekle')
+                            ->columnSpanFull()
+                            ->schema([
+                                TextInput::make('name')->label('Ad')->required()->maxLength(60)->regex('/^[A-Za-z0-9-]+$/')->placeholder('Cookie'),
+                                TextInput::make('value')->label('Değer')->required()->maxLength(1000)->placeholder('staging_access=abc123'),
+                            ]),
+                    ]),
                 Section::make('Özel arama ve veri çıkarma')
                     ->description('Her sayfanın kaynak kodunda aranır. Örnekler: Google Analytics kodu olmayan sayfalar ("G-ABC123" geçmeyen), eski telefon numarası geçen sayfalar, yazar adı (XPath: //*[@class="author"]). Sonuçlar tarama sayfasında ve CSV\'de görünür; sonraki taramadan itibaren geçerli.')
                     ->collapsible()

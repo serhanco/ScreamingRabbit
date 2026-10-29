@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
-#[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings', 'gsc_property', 'crawl_schedule'])]
+#[Fillable(['client_id', 'name', 'base_url', 'platform', 'crawl_settings', 'crawl_auth', 'gsc_property', 'crawl_schedule'])]
 class Project extends Model
 {
     use HasFactory;
@@ -39,9 +39,35 @@ class Project extends Model
     {
         return [
             'crawl_settings' => 'array',
+            'crawl_auth' => 'encrypted:array',
             'gsc_synced_at' => 'datetime',
             'gsc_queries_synced_on' => 'date',
         ];
+    }
+
+    /** @return array<int, string> */
+    public function activityHidden(): array
+    {
+        return ['crawl_auth'];
+    }
+
+    /**
+     * Basic auth and extra headers for crawling a protected (staging) site; sent only to the project's own host.
+     *
+     * @return array{user: ?string, password: ?string, headers: array<string, string>}
+     */
+    public function crawlAccess(): array
+    {
+        $auth = $this->crawl_auth ?? [];
+        $headers = [];
+        foreach ($auth['headers'] ?? [] as $header) {
+            $name = trim((string) ($header['name'] ?? ''));
+            if (preg_match('/^[A-Za-z0-9-]+$/', $name) && ! in_array(strtolower($name), ['host', 'content-length', 'user-agent'], true)) {
+                $headers[$name] = trim((string) ($header['value'] ?? ''));
+            }
+        }
+
+        return ['user' => filled($auth['user'] ?? null) ? $auth['user'] : null, 'password' => $auth['password'] ?? null, 'headers' => $headers];
     }
 
     public function tasks(): HasMany

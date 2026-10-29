@@ -12,6 +12,7 @@ use App\Models\Project;
 use App\Performance\PageSpeed;
 use App\Tasks\TaskBuilder;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
@@ -41,6 +42,9 @@ class CrawlRunner
     private ?RobotsTxt $robots = null;
 
     private int $pageCount = 0;
+
+    /** @var array{user: ?string, password: ?string, headers: array<string, string>}|null */
+    private ?array $access = null;
 
     public function __construct(private Crawl $crawl)
     {
@@ -173,7 +177,7 @@ class CrawlRunner
 
         $started = microtime(true);
         $responses = Http::pool(function (Pool $pool) use ($toFetch) {
-            return $toFetch->map(fn (CrawlPage $page) => $pool->as((string) $page->id)
+            return $toFetch->map(fn (CrawlPage $page) => $this->withAccess($pool->as((string) $page->id), $page->url)
                 ->withUserAgent($this->settings['user_agent'])
                 ->timeout(self::TIMEOUT_SECONDS)
                 ->withoutRedirecting()
@@ -376,7 +380,7 @@ class CrawlRunner
      */
     private function fetchImages($images): void
     {
-        $responses = Http::pool(fn (Pool $pool) => $images->map(fn ($image) => $pool->as((string) $image->id)
+        $responses = Http::pool(fn (Pool $pool) => $images->map(fn ($image) => $this->withAccess($pool->as((string) $image->id), $image->url)
             ->withUserAgent($this->settings['user_agent'])
             ->timeout(self::TIMEOUT_SECONDS)
             ->head($image->url))->all());
@@ -604,11 +608,30 @@ class CrawlRunner
     private function fetchText(string $url): ?string
     {
         try {
-            $response = Http::withUserAgent($this->settings['user_agent'])->timeout(self::TIMEOUT_SECONDS)->get($url);
+            $response = $this->withAccess(Http::withUserAgent($this->settings['user_agent']), $url)->timeout(self::TIMEOUT_SECONDS)->get($url);
         } catch (\Throwable) {
             return null;
         }
 
         return $response->successful() ? $response->body() : null;
+    }
+
+    /**
+     * Adds the project's basic auth and extra headers, only for requests to the project's own host so the
+     * password never reaches another site (external links, CDNs).
+     */
+    private function withAccess(PendingRequest $request, string $url): PendingRequest
+    {
+        $this->access ??= $this->crawl->project->crawlAccess();
+        $own = preg_replace('/^www\./', '', (string) parse_url($this->crawl->project->base_url, PHP_URL_HOST));
+        if (preg_replace('/^www\./', '', (string) parse_url($url, PHP_URL_HOST)) !== $own) {
+            return $request;
+        }
+
+        if ($this->access['user'] !== null) {
+            $request->withBasicAuth($this->access['user'], (string) $this->access['password']);
+        }
+
+        return $this->access['headers'] === [] ? $request : $request->withHeaders($this->access['headers']);
     }
 }
