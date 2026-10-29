@@ -21,6 +21,7 @@ class CrawlPage extends Model
             'canonical_conflict' => 'boolean',
             'is_article' => 'boolean',
             'has_author' => 'boolean',
+            'person_schema' => 'boolean',
             'published_at' => 'date',
             'modified_at' => 'date',
             'schema_problems' => 'array',
