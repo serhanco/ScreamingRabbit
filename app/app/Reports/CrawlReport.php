@@ -101,6 +101,7 @@ class CrawlReport
             'gsc' => $this->searchConsole(),
             'uptime' => $this->uptime(),
             'brand' => config('screamingrabbit.brand'),
+            'branding' => ReportBranding::current(),
         ];
     }
 
