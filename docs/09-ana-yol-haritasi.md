@@ -202,7 +202,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 **Araçlar**
 - ✓ XML ve görsel sitemap üretme: tarama sayfasında "Dışa aktar → Site haritası (XML)"; yalnızca indekslenebilir sayfalar, lastmod ve çalışan görseller (en fazla 50.000 URL)
 - ○ Staging ↔ production URL eşleme ve karşılaştırma
-- ○ Site göçü denetimi: eski URL listesi → yeni sitede yönlendirme kontrolü
+- ✓ Site göçü denetimi: "Taşıma kontrolleri" sayfasına eski URL listesi (isteğe bağlı yanında beklenen yeni adres, Excel'den iki sütun) yapıştırılır; her adres yönlendirmeleriyle izlenir (dakikada 15 adres, en fazla 1.000): doğru, zincir, geçici, yanlış hedef, hata, döngü
 
 ## 7. Faz 6 · WordPress bağlantı eklentisi ([07 §3](07-wordpress-modulu.md))
 
