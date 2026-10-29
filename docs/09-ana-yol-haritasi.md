@@ -200,7 +200,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Sayfa başına "AI hazırlık skoru" (0-100: JS'siz okunur metin, şema ve zorunlu alanlar, soru başlıkları/SSS, H2 düzeni, kısa paragraflar, içerik derinliği, yazılarda tarih ve yazar); sayfa listesinde sütun, sayfa detayında madde madde, müşteri raporunun AI görünürlüğü bölümünde site ortalaması
 
 **Araçlar**
-- ○ XML ve görsel sitemap üretme
+- ✓ XML ve görsel sitemap üretme: tarama sayfasında "Dışa aktar → Site haritası (XML)"; yalnızca indekslenebilir sayfalar, lastmod ve çalışan görseller (en fazla 50.000 URL)
 - ○ Staging ↔ production URL eşleme ve karşılaştırma
 - ○ Site göçü denetimi: eski URL listesi → yeni sitede yönlendirme kontrolü
 
