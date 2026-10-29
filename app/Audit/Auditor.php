@@ -206,6 +206,19 @@ class Auditor
             $this->emit('schema_duplicate_type', $page, str_replace(',', ', ', $page->schema_duplicates).' birden fazla kez');
         }
 
+        if ($page->uncrawlable_links > 0) {
+            $this->emit('uncrawlable_links', $page, $page->uncrawlable_links.' link');
+        }
+        if ($page->empty_anchors > 0) {
+            $this->emit('anchor_text_empty', $page, $page->empty_anchors.' link');
+        }
+        if ($page->generic_anchors > 0) {
+            $this->emit('anchor_text_generic', $page, mb_substr($page->generic_anchors.' link: '.$page->generic_anchor_texts, 0, 250));
+        }
+        if ($page->depth === 0 && filled($page->security_headers)) {
+            $this->emit('security_headers_missing', $page, str_replace(',', ', ', $page->security_headers));
+        }
+
         if ($page->images_missing_alt > 0) {
             $this->emit('images_missing_alt', $page, $page->images_missing_alt.' görselde alt yok');
         }

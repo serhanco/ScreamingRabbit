@@ -169,9 +169,9 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Sayfalama (rel next/prev bilgilendirme)
 
 **Linkleme ve mimari**
-- ○ Anchor text analizi (tekil ve toplu, "buraya tıklayın" türü zayıf metinler)
+- ✓ Anchor text analizi: metinsiz linkler ve "buraya tıklayın", "devamı" türü anlamsız metinler sayfa bazında bulgu olur (görsel alt metni ve aria-label link metni sayılır)
 - ○ İç Link Score (PageRank benzeri)
-- ○ Taranamayan linkler (`onclick`, `javascript:`, `href`'siz)
+- ✓ Taranamayan linkler (`href="javascript:…"`, `onclick` ile açılan `href`'siz linkler; menü açma düğmeleri sayılmaz)
 - ○ Dizin bazlı derinlik ve dağılım
 
 **Yapısal veri**
@@ -187,7 +187,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ CWV trendi ve şablon bazlı sorunlar
 
 **Güvenlik**
-- ○ Güvenlik başlıkları (HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy)
+- ✓ Güvenlik başlıkları (ana sayfada HSTS ve max-age, CSP, X-Content-Type-Options, X-Frame-Options veya CSP frame-ancestors, Referrer-Policy; Mozilla Observatory ölçütü)
 
 **AI arama görünürlüğü: GEO (generative engine) ve AEO (answer engine) denetimi** — GEO-1'in üzerine
 - ○ Varlık (entity) sinyalleri: Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP

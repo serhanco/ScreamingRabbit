@@ -3,6 +3,7 @@
 namespace App\Crawler;
 
 use App\Audit\Auditor;
+use App\Audit\SecurityHeaders;
 use App\Jobs\CrawlBatch;
 use App\Models\Crawl;
 use App\Models\CrawlImage;
@@ -216,6 +217,7 @@ class CrawlRunner
             if ($page->depth === 0) {
                 $this->crawl->wp_checks = ['inventory' => WordPressProbe::inventory($body)];
                 $this->crawl->save();
+                $update['security_headers'] = implode(',', SecurityHeaders::problems($response->headers(), str_starts_with($page->url, 'https://'))) ?: null;
             }
             $update['size_bytes'] = strlen($body);
             $parsed = HtmlParser::parse($body, $page->url);
@@ -243,6 +245,10 @@ class CrawlRunner
                 'schema_errors' => $parsed['schema_errors'],
                 'schema_problems' => $parsed['schema_problems'] === [] ? null : array_slice($parsed['schema_problems'], 0, 20),
                 'schema_duplicates' => $parsed['schema_duplicates'] === [] ? null : implode(',', $parsed['schema_duplicates']),
+                'uncrawlable_links' => $parsed['uncrawlable_links'],
+                'empty_anchors' => $parsed['empty_anchors'],
+                'generic_anchors' => $parsed['generic_anchor_count'],
+                'generic_anchor_texts' => $parsed['generic_anchors'] === [] ? null : mb_substr(implode(' | ', $parsed['generic_anchors']), 0, 250),
             ];
 
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
