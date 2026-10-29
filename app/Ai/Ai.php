@@ -73,7 +73,7 @@ class Ai
             $key = hash('sha256', implode("\n", [$provider, $model, $maxTokens, $system, $prompt]));
             $cached = AiRequest::where('cache_key', $key)->where('status', 'ok')->where('created_at', '>=', now()->subDays(self::CACHE_DAYS))->latest('id')->first();
             if ($cached !== null) {
-                return new AiResult((string) $cached->response, $provider, $cached->model, 0.0, true);
+                return new AiResult((string) $cached->response, $provider, $cached->model, 0.0, true, $cached->id);
             }
             self::checkBudget();
 
@@ -90,12 +90,18 @@ class Ai
             }
 
             $cost = self::cost($provider, $tier, $answer['model'], $answer['input_tokens'], $answer['output_tokens']);
-            self::log($task, $provider, $answer['model'], $projectId, $key, 'ok', $answer, $cost);
+            $request = self::log($task, $provider, $answer['model'], $projectId, $key, 'ok', $answer, $cost);
 
-            return new AiResult($answer['text'], $provider, $answer['model'], $cost, false);
+            return new AiResult($answer['text'], $provider, $answer['model'], $cost, false, $request->id);
         }
 
         throw new AiException(implode(' ', array_unique($errors)), tryFallback: false);
+    }
+
+    /** An answer that turned out unusable is not served from the cache again (its cost stays counted). */
+    public static function discard(AiResult $result): void
+    {
+        AiRequest::whereKey($result->requestId)->update(['status' => 'unusable']);
     }
 
     public static function configured(string $provider): bool
@@ -150,9 +156,9 @@ class Ai
     }
 
     /** @param  array{text?: string, input_tokens?: int, output_tokens?: int}  $answer */
-    private static function log(string $task, string $provider, string $model, ?int $projectId, string $key, string $status, array $answer = [], float $cost = 0, ?string $error = null): void
+    private static function log(string $task, string $provider, string $model, ?int $projectId, string $key, string $status, array $answer = [], float $cost = 0, ?string $error = null): AiRequest
     {
-        AiRequest::create([
+        return AiRequest::create([
             'task' => $task, 'provider' => $provider, 'model' => mb_substr($model, 0, 100), 'project_id' => $projectId, 'user_id' => auth()->id(),
             'cache_key' => $key, 'input_tokens' => $answer['input_tokens'] ?? 0, 'output_tokens' => $answer['output_tokens'] ?? 0, 'cost_usd' => $cost,
             'status' => $status, 'error' => $error === null ? null : mb_substr($error, 0, 500), 'response' => $answer['text'] ?? null, 'created_at' => now(),

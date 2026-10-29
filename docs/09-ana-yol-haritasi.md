@@ -228,7 +228,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Ayarlar → AI sağlayıcıları: Anthropic (Claude), OpenAI, Google Gemini, Mistral ve OpenAI uyumlu uç noktalar (OpenRouter, yerel model); anahtarlar şifreli saklanır, istenince değiştirilir
 - ✓ Görev bazlı model seçimi (ör. toplu alt metin için ucuz model, rapor özeti için güçlü model), varsayılan ve yedek sağlayıcı
 - ✓ Bütçe ve kota: aylık harcama sınırı, proje başına kullanım, istek önbelleği (aynı sayfaya aynı soruyu tekrar sormaz); bilinen fiyatlarla maliyet hesabı, "Bağlantıyı dene" düğmesi
-- ○ Tüm AI çıktıları öneridir: panelde onay/ret, düzenleme, kim neyi onayladı kaydı
+- ✓ Tüm AI çıktıları öneridir: panelde onay/ret, düzenleme, kim neyi onayladı kaydı
 
 **AI kalite yorumu (AI-1)** — kontrollerin yalnızca varlığını değil kalitesini değerlendirir
 - ○ Title/meta: arama niyetine uygunluk, tıklanabilirlik, marka/anahtar kelime dengesi
@@ -239,7 +239,8 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Her bulguya "neden önemli + somut öneri" metni, müşteri raporuna da aktarılabilir
 
 **AI destekli aksiyonlar (AI-0 üzerinden, uygulamada çalışır)**
-- ○ Title/meta yeniden yazım önerisi (GSC sorgularıyla), toplu inceleme ekranı
+- ✓ Title/meta yeniden yazım önerisi (son tarama + GSC sorguları; WordPress sayfasında "AI ile başlık/meta öner", öneri listede düzenlenip onaylanır)
+- ○ Toplu inceleme ekranı (birden çok sayfa için öneri)
 - ○ Eksik alt metni önerisi (görsel + bağlam)
 - ○ İç link önerici (zayıf sayfalara, GSC fırsat sorgularıyla eşleşen kaynaklardan)
 - ○ WordPress'te onaylı uygulama (WP-4) ve GSC ile etki ölçümü

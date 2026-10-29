@@ -50,7 +50,7 @@ class Changes
     /**
      * @return WpChange|string the proposed change, or why it could not be proposed
      */
-    public static function propose(Project $project, string $url, string $field, ?string $after, User $user): WpChange|string
+    public static function propose(Project $project, string $url, string $field, ?string $after, User $user, ?string $source = null, ?string $note = null): WpChange|string
     {
         $connection = $project->wpConnection;
         if (! isset(WpChange::FIELDS[$field]) || $connection === null || ! $connection->isConnected()) {
@@ -76,6 +76,7 @@ class Changes
         return WpChange::create([
             'project_id' => $project->id, 'url' => $url, 'post_id' => $values['post_id'] ?? $values['attachment_id'] ?? null, 'field' => $field,
             'before' => $before, 'after' => $after, 'status' => 'proposed', 'proposed_by' => $user->id,
+            'source' => $source, 'note' => $note === null ? null : mb_substr($note, 0, 500),
         ]);
     }
 
