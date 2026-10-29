@@ -4234,6 +4234,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Http\\Middleware\\ApplyUserPalette' => __DIR__ . '/../..' . '/app/Http/Middleware/ApplyUserPalette.php',
         'App\\Http\\Middleware\\RunPendingMigrations' => __DIR__ . '/../..' . '/app/Http/Middleware/RunPendingMigrations.php',
         'App\\Jobs\\CrawlBatch' => __DIR__ . '/../..' . '/app/Jobs/CrawlBatch.php',
+        'App\\Jobs\\ProposeTitleMeta' => __DIR__ . '/../..' . '/app/Jobs/ProposeTitleMeta.php',
         'App\\Listeners\\DeliverMonitorAlert' => __DIR__ . '/../..' . '/app/Listeners/DeliverMonitorAlert.php',
         'App\\Models\\ActivityLog' => __DIR__ . '/../..' . '/app/Models/ActivityLog.php',
         'App\\Models\\AiRequest' => __DIR__ . '/../..' . '/app/Models/AiRequest.php',

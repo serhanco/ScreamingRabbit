@@ -3485,6 +3485,7 @@ return array(
     'App\\Http\\Middleware\\ApplyUserPalette' => $baseDir . '/app/Http/Middleware/ApplyUserPalette.php',
     'App\\Http\\Middleware\\RunPendingMigrations' => $baseDir . '/app/Http/Middleware/RunPendingMigrations.php',
     'App\\Jobs\\CrawlBatch' => $baseDir . '/app/Jobs/CrawlBatch.php',
+    'App\\Jobs\\ProposeTitleMeta' => $baseDir . '/app/Jobs/ProposeTitleMeta.php',
     'App\\Listeners\\DeliverMonitorAlert' => $baseDir . '/app/Listeners/DeliverMonitorAlert.php',
     'App\\Models\\ActivityLog' => $baseDir . '/app/Models/ActivityLog.php',
     'App\\Models\\AiRequest' => $baseDir . '/app/Models/AiRequest.php',
