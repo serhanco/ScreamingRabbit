@@ -566,6 +566,33 @@ class Auditor
      * and the declared next/previous pages should answer 200.
      */
     /**
+     * Yoast and Rank Math print a schema graph on every page (WebSite + the organisation or person behind the site);
+     * a missing WebSite node or an organisation without a logo means the plugin's schema settings are incomplete
+     * or another plugin strips its output.
+     *
+     * @param  array<int, string>  $types  schema types on the home page
+     */
+    private function auditSeoPluginGraph(CrawlPage $home, array $types): void
+    {
+        $plugins = array_intersect(explode(',', (string) $home->seo_plugin), ['yoast', 'rankmath']);
+        if ($plugins === [] || ! ($this->crawl->project->platform === 'wordpress' || $this->crawl->detected_platform === 'wordpress')) {
+            return;
+        }
+
+        $missing = [];
+        if (! in_array('WebSite', $types, true)) {
+            $missing[] = 'WebSite düğümü yok';
+        }
+        if (! empty($home->entity) && filled($home->entity['name'] ?? null) && ! ($home->entity['logo'] ?? true)) {
+            $missing[] = 'kurum logosu yok';
+        }
+        if ($missing !== []) {
+            $label = ['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math'][reset($plugins)];
+            $this->emit('wp_seo_schema_incomplete', $home, $label.': '.implode(', ', $missing));
+        }
+    }
+
+    /**
      * The organisation's name and phone in structured data should read the same on every page (consistent NAP);
      * differing values blur the entity for Google and AI assistants. Names are compared ignoring case and spacing.
      */
@@ -769,6 +796,7 @@ class Auditor
         }
 
         $this->auditNap($home);
+        $this->auditSeoPluginGraph($home, $types);
 
         if ($home->same_as === 0 && collect($types)->contains(fn ($type) => preg_match(self::ENTITY_TYPES, $type))) {
             $this->emit('entity_same_as_missing', $home);
