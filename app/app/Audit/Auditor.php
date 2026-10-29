@@ -5,6 +5,7 @@ namespace App\Audit;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\ProjectScore;
+use App\Performance\PageSpeed;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -66,6 +67,7 @@ class Auditor
         $this->auditExternalLinks();
         $this->auditBotAccess();
         $this->auditAiReadiness();
+        $this->auditPageSpeed();
         if ($platform) {
             $this->auditWordPress();
         }
@@ -555,6 +557,35 @@ class Auditor
             $this->emit('llms_txt_missing', $home);
         } elseif ($llms === 'invalid') {
             $this->emit('llms_txt_invalid', $home);
+        }
+    }
+
+    private function auditPageSpeed(): void
+    {
+        $results = collect($this->crawl->pagespeed ?? [])->where('state', 'done');
+        if ($results->isEmpty()) {
+            return;
+        }
+
+        $pageIds = $this->crawl->pages()->whereIn('url_hash', $results->map(fn (array $r) => sha1($r['url']))->all())->pluck('id', 'url_hash');
+        foreach ($results as $result) {
+            $pageId = $pageIds[sha1($result['url'])] ?? null;
+            if ($pageId === null) {
+                continue;
+            }
+
+            if ($result['field'] ?? null) {
+                $ratings = PageSpeed::ratings($result['field']);
+                $failing = array_filter($ratings, fn (string $rating) => $rating !== 'good');
+                if ($failing !== []) {
+                    $labels = collect($failing)->map(fn ($rating, $metric) => PageSpeed::label($metric, $result['field'][$metric]))->implode(', ');
+                    $this->emitFor(in_array('poor', $failing, true) ? 'cwv_poor' : 'cwv_needs_improvement', $pageId, $labels.' (gerçek kullanıcılar, mobil)');
+                }
+            }
+            if (($result['score'] ?? null) !== null && $result['score'] < PageSpeed::POOR_SCORE) {
+                $lab = collect($result['lab'] ?? [])->filter(fn ($value) => $value !== null)->map(fn ($value, $metric) => PageSpeed::label($metric, $value))->implode(', ');
+                $this->emitFor('pagespeed_low_score', $pageId, "Mobil puan {$result['score']}/100".($lab ? " · {$lab}" : ''));
+            }
         }
     }
 

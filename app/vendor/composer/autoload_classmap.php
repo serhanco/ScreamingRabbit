@@ -136,6 +136,7 @@ return array(
     'App\\Monitoring\\Notifier' => $baseDir . '/app/Monitoring/Notifier.php',
     'App\\Monitoring\\PageWatcher' => $baseDir . '/app/Monitoring/PageWatcher.php',
     'App\\Monitoring\\SslCertificate' => $baseDir . '/app/Monitoring/SslCertificate.php',
+    'App\\Performance\\PageSpeed' => $baseDir . '/app/Performance/PageSpeed.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
     'App\\Providers\\Filament\\AdminPanelProvider' => $baseDir . '/app/Providers/Filament/AdminPanelProvider.php',
     'App\\Reports\\CrawlReport' => $baseDir . '/app/Reports/CrawlReport.php',

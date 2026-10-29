@@ -82,6 +82,13 @@ class CrawlInfolist
                     ->schema([
                         ViewEntry::make('comparison')->hiddenLabel()->view('crawls.comparison'),
                     ]),
+                Section::make('Sayfa hızı (mobil)')
+                    ->description('Google PageSpeed Insights ile örnek sayfalar: ana sayfa ve her içerik türünün en güçlü sayfası. Ölçümler tarama bittikten sonra birkaç dakikada tamamlanır.')
+                    ->collapsible()
+                    ->visible(fn (Crawl $record): bool => filled($record->pagespeed))
+                    ->schema([
+                        ViewEntry::make('pagespeed')->hiddenLabel()->view('crawls.pagespeed'),
+                    ]),
                 Section::make('Yapısal veri envanteri')
                     ->description('Sitede kullanılan şema türleri ve Google zengin sonuç kurallarına uygunluğu.')
                     ->collapsible()

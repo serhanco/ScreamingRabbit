@@ -854,6 +854,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Monitoring\\Notifier' => __DIR__ . '/../..' . '/app/Monitoring/Notifier.php',
         'App\\Monitoring\\PageWatcher' => __DIR__ . '/../..' . '/app/Monitoring/PageWatcher.php',
         'App\\Monitoring\\SslCertificate' => __DIR__ . '/../..' . '/app/Monitoring/SslCertificate.php',
+        'App\\Performance\\PageSpeed' => __DIR__ . '/../..' . '/app/Performance/PageSpeed.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\Filament\\AdminPanelProvider' => __DIR__ . '/../..' . '/app/Providers/Filament/AdminPanelProvider.php',
         'App\\Reports\\CrawlReport' => __DIR__ . '/../..' . '/app/Reports/CrawlReport.php',

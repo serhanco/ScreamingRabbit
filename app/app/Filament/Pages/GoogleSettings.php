@@ -49,7 +49,7 @@ class GoogleSettings extends Page
 
     public function mount(): void
     {
-        $this->form->fill(['google_client_id' => Setting::get('google_client_id'), 'google_client_secret' => Setting::get('google_client_secret')]);
+        $this->form->fill(['google_client_id' => Setting::get('google_client_id'), 'google_client_secret' => Setting::get('google_client_secret'), 'pagespeed_api_key' => Setting::get('pagespeed_api_key')]);
     }
 
     public function form(Schema $schema): Schema
@@ -73,6 +73,12 @@ class GoogleSettings extends Page
                     ->schema([
                         TextInput::make('google_client_id')->label('İstemci kimliği (Client ID)'),
                         TextInput::make('google_client_secret')->label('İstemci gizli anahtarı (Client secret)')->password()->revealable(),
+                    ]),
+                Section::make('PageSpeed Insights')
+                    ->visible(fn (): bool => GoogleClient::canManageClient(auth()->user()))
+                    ->description('İsteğe bağlı. Anahtarsız da çalışır; hız ölçümleri "kota doldu" hatası verirse aynı Google Cloud projesinde PageSpeed Insights API\'yi etkinleştirip bir API anahtarı oluşturun ve buraya yapıştırın.')
+                    ->schema([
+                        TextInput::make('pagespeed_api_key')->label('API anahtarı')->password()->revealable(),
                     ]),
             ]);
     }
