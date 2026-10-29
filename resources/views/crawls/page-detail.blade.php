@@ -16,7 +16,7 @@
         @endif
         @if (! empty($p->aeo))
             <dt class="font-medium">Alıntılanabilirlik</dt>
-            <dd>Soru başlığı {{ $p->aeo['questions'] }} (kısa cevaplı {{ $p->aeo['answered'] }}) · Liste {{ $p->aeo['lists'] }} · Tablo {{ $p->aeo['tables'] }} · SSS {{ $p->aeo['faq'] ? 'var' : 'yok' }} · Dış kaynak {{ $p->aeo['sources'] }} · Rakamlı ifade {{ $p->aeo['numbers'] }}</dd>
+            <dd>Soru başlığı {{ $p->aeo['questions'] }} (kısa cevaplı {{ $p->aeo['answered'] }}) · Liste {{ $p->aeo['lists'] }} · Tablo {{ $p->aeo['tables'] }} · SSS {{ $p->aeo['faq'] ? 'var' : 'yok' }} · Dış kaynak {{ $p->aeo['sources'] }} · Rakamlı ifade {{ $p->aeo['numbers'] }} · Alıntı {{ $p->aeo['quotes'] ?? 0 }}</dd>
         @endif
         <dt class="font-medium">Kelime / Yanıt</dt><dd>{{ $p->word_count ?? '—' }} / {{ $p->response_ms ? $p->response_ms.' ms' : '—' }}</dd>
     </dl>
