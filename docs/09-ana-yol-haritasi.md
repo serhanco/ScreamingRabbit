@@ -225,9 +225,9 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 ## 8. Faz 7 · AI ve ileri analiz
 
 **AI katmanı: çoklu LLM bağlantısı (AI-0)**
-- ○ Ayarlar → AI sağlayıcıları: Anthropic (Claude), OpenAI, Google Gemini, Mistral ve OpenAI uyumlu uç noktalar (OpenRouter, yerel model); anahtarlar şifreli saklanır, istenince değiştirilir
-- ○ Görev bazlı model seçimi (ör. toplu alt metin için ucuz model, rapor özeti için güçlü model), varsayılan ve yedek sağlayıcı
-- ○ Bütçe ve kota: aylık harcama sınırı, proje başına kullanım, istek önbelleği (aynı sayfaya aynı soruyu tekrar sormaz)
+- ✓ Ayarlar → AI sağlayıcıları: Anthropic (Claude), OpenAI, Google Gemini, Mistral ve OpenAI uyumlu uç noktalar (OpenRouter, yerel model); anahtarlar şifreli saklanır, istenince değiştirilir
+- ✓ Görev bazlı model seçimi (ör. toplu alt metin için ucuz model, rapor özeti için güçlü model), varsayılan ve yedek sağlayıcı
+- ✓ Bütçe ve kota: aylık harcama sınırı, proje başına kullanım, istek önbelleği (aynı sayfaya aynı soruyu tekrar sormaz); bilinen fiyatlarla maliyet hesabı, "Bağlantıyı dene" düğmesi
 - ○ Tüm AI çıktıları öneridir: panelde onay/ret, düzenleme, kim neyi onayladı kaydı
 
 **AI kalite yorumu (AI-1)** — kontrollerin yalnızca varlığını değil kalitesini değerlendirir
