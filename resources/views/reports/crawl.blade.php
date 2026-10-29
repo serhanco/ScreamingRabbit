@@ -119,6 +119,54 @@
         @endforeach
     @endif
 
+    @php($fmt = fn ($n) => number_format((float) $n, 0, ',', '.'))
+    @php($delta = fn (?int $c) => $c === null ? '' : ' <span style="color:'.($c >= 0 ? '#15803d' : '#b91c1c').'">('.($c >= 0 ? '+' : '').$c.'%)</span>')
+    @if (! empty($report['gsc']))
+        @php($gsc = $report['gsc'])
+        <h2>Google arama performansı</h2>
+        <p style="margin:4px 0" class="muted">Search Console, {{ $gsc['from'] }} – {{ $gsc['to'] }} (önceki 28 güne göre değişim)</p>
+        <table class="grid">
+            <tr><th>Tıklama</th><th>Gösterim</th><th>Tıklama oranı</th><th>Ortalama sıra</th></tr>
+            <tr>
+                <td class="num">{{ $fmt($gsc['clicks']) }}{!! $delta($gsc['clicks_change']) !!}</td>
+                <td class="num">{{ $fmt($gsc['impressions']) }}{!! $delta($gsc['impressions_change']) !!}</td>
+                <td class="num">{{ $gsc['ctr'] !== null ? '%'.number_format($gsc['ctr'], 1, ',', '.') : '-' }}</td>
+                <td class="num">{{ $gsc['position'] !== null ? number_format($gsc['position'], 1, ',', '.') : '-' }}</td>
+            </tr>
+        </table>
+        @if ($gsc['pages'])
+            <h3 style="margin:12px 0 4px;font-size:14px">En çok tıklanan sayfalar</h3>
+            <table class="grid">
+                <tr><th>Sayfa</th><th style="width:70px">Tıklama</th><th style="width:80px">Gösterim</th></tr>
+                @foreach ($gsc['pages'] as $row)<tr><td style="word-break:break-all">{{ $row->page }}</td><td>{{ $fmt($row->clicks) }}</td><td>{{ $fmt($row->impressions) }}</td></tr>@endforeach
+            </table>
+        @endif
+        @if ($gsc['queries'])
+            <h3 style="margin:12px 0 4px;font-size:14px">En çok tıklama getiren aramalar</h3>
+            <table class="grid">
+                <tr><th>Arama</th><th style="width:70px">Tıklama</th><th style="width:80px">Gösterim</th></tr>
+                @foreach ($gsc['queries'] as $row)<tr><td>{{ $row->query }}</td><td>{{ $fmt($row->clicks) }}</td><td>{{ $fmt($row->impressions) }}</td></tr>@endforeach
+            </table>
+        @endif
+    @endif
+
+    @if (! empty($report['uptime']))
+        <h2>Erişilebilirlik (son 30 gün)</h2>
+        <p style="margin:4px 0">Site dakika dakika dışarıdan kontrol edilir; erişilemediği anlar kesinti olarak kaydedilir.</p>
+        <table class="grid">
+            <tr><th>Adres</th><th>Çalışma oranı</th><th>Kesinti</th><th>Toplam kesinti</th><th>Ort. yanıt</th></tr>
+            @foreach ($report['uptime'] as $row)
+                <tr>
+                    <td style="word-break:break-all">{{ $row['url'] }}</td>
+                    <td style="font-weight:bold;color:{{ $row['uptime'] === null ? '#6b7280' : ($row['uptime'] >= 99.9 ? '#15803d' : ($row['uptime'] >= 99 ? '#b45309' : '#b91c1c')) }}">{{ $row['uptime'] !== null ? '%'.number_format($row['uptime'], 2, ',', '.') : '-' }}</td>
+                    <td>{{ $row['incidents'] }}</td>
+                    <td>{{ $row['downtime'] }}</td>
+                    <td>{{ $row['avg_ms'] !== null ? number_format($row['avg_ms'] / 1000, 2, ',', '.').' sn' : '-' }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
+
     @php($stateStyle = ['ok' => 'color:#15803d', 'warn' => 'color:#b45309;font-weight:bold', 'bad' => 'color:#b91c1c;font-weight:bold'])
     @php($stateMark = ['ok' => '✓', 'warn' => '!', 'bad' => '✗'])
     @if (! empty($report['crawlability']))
