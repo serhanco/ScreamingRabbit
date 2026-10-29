@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Support\Str;
 
 class Report extends Model
 {
+    use LogsActivity;
+
     public const STATUSES = ['draft' => 'Onay bekliyor', 'approved' => 'Onaylandı', 'sent' => 'Müşteriye gönderildi'];
 
     /** Stands in the stored web HTML for the PDF link, which depends on the address the report is served from. */
@@ -55,5 +58,16 @@ class Report extends Model
         $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower(Str::ascii($this->project->name))) ?: 'rapor';
 
         return 'seo-raporu-'.trim($slug, '-').'-'.$this->period.'.pdf';
+    }
+
+    public function activityLabel(): string
+    {
+        return 'Müşteri raporu: '.($this->project?->name ?? '').' '.$this->period;
+    }
+
+    /** @return array<int, string> */
+    public function activityOnly(): array
+    {
+        return ['status', 'sent_to'];
     }
 }

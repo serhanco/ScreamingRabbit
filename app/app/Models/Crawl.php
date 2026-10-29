@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Crawl extends Model
 {
+    use LogsActivity;
+
     public const STATUSES = [
         'pending' => 'Sırada',
         'running' => 'Taranıyor',
@@ -72,12 +76,23 @@ class Crawl extends Model
             $this->status === 'pending' => 'Sırada, birazdan başlayacak',
             $queued > 0 => 'Sayfalar taranıyor',
             $this->images()->where('state', 'queued')->exists() => 'Görseller kontrol ediliyor',
-            \Illuminate\Support\Facades\DB::table('crawl_external_links')->where('crawl_id', $this->id)->where('state', 'queued')->exists() => 'Dış linkler kontrol ediliyor',
+            DB::table('crawl_external_links')->where('crawl_id', $this->id)->where('state', 'queued')->exists() => 'Dış linkler kontrol ediliyor',
             collect($this->bot_access ?? [])->contains(fn ($bot) => $bot['fetch'] === 'pending') => 'Bot erişimi test ediliyor',
             collect($this->wp_checks['probes'] ?? [])->contains(fn ($probe) => $probe['state'] === 'pending') => 'WordPress kontrolleri yapılıyor',
             default => 'Sonuçlar hesaplanıyor',
         };
 
         return ['done' => $done, 'total' => $total, 'percent' => $total > 0 ? (int) floor($done / $total * 100) : 0, 'phase' => $phase];
+    }
+
+    public function activityLabel(): string
+    {
+        return 'Tarama #'.$this->id.' ('.($this->project?->name ?? '').')';
+    }
+
+    /** @return array<int, string> */
+    public function activityOnly(): array
+    {
+        return ['status'];
     }
 }

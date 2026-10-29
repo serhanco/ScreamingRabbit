@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Setting extends Model
 {
+    use LogsActivity;
+
     public const SECRETS = ['smtp_password', 'telegram_bot_token', 'google_client_secret'];
 
     protected $primaryKey = 'key';
@@ -34,10 +37,20 @@ class Setting extends Model
     public static function put(string $key, mixed $value): void
     {
         $value = $value === null || $value === '' ? null : (string) $value;
+        // Saving a settings form writes every field; only real changes are stored (and logged). Secrets are compared
+        // decrypted, because each encryption of the same value looks different.
+        if (static::query()->whereKey($key)->exists() && static::get($key) === $value) {
+            return;
+        }
         if ($value !== null && in_array($key, self::SECRETS, true)) {
             $value = Crypt::encryptString($value);
         }
 
         static::query()->updateOrCreate(['key' => $key], ['value' => $value]);
+    }
+
+    public function activityLabel(): string
+    {
+        return 'Ortak ayar: '.$this->key;
     }
 }

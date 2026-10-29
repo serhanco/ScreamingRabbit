@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Google\GscInsights;
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 
 class Task extends Model
 {
+    use LogsActivity;
+
     public const STATUSES = [
         'open' => 'Açık',
         'doing' => 'Yapılıyor',
@@ -75,5 +78,16 @@ class Task extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function activityLabel(): string
+    {
+        return 'İş: '.$this->title;
+    }
+
+    /** @return array<int, string> */
+    public function activityOnly(): array
+    {
+        return ['status', 'note', 'due_on', 'show_in_report'];
     }
 }

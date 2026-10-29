@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WatchedPage extends Model
 {
+    use LogsActivity;
+
     public const FREQUENCIES = ['hourly' => 'Saatte bir', 'daily' => 'Günde bir'];
 
     /** At most this many critical pages per project, so checks stay light on shared hosting. */
@@ -48,5 +51,10 @@ class WatchedPage extends Model
         $every = $this->frequency === 'daily' ? 24 * 60 : 60;
 
         return $this->last_checked_at === null || $this->last_checked_at->lte(now()->subMinutes($every)->addMinutes(2));
+    }
+
+    public function activityLabel(): string
+    {
+        return 'Kritik sayfa: '.$this->url;
     }
 }
