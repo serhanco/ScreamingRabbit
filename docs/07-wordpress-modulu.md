@@ -69,7 +69,7 @@ Not: `/wp-json/` ve `xmlrpc.php` erişimi MVP'de "bilgilendirme" olarak vardı. 
 
 ### 2.4 Açık veritabanı kaynağı (WP-2)
 
-Envanteri bilinen açıklarla eşleştirmek için **Wordfence Intelligence Vulnerability Data Feed** kullanılır: ücretsiz (ticari kullanım ve anahtar koşulları WP-2 başında doğrulanır), tüm feed günde bir kez indirilip yerelde eşleştirilir (site başına istek yok). Ücretsiz API anahtarı gerekiyorsa Serhan bir kez alır, `.env`'e girilir. WPScan API'nin ücretsiz katmanı (günde 25 istek) bizim ölçeğimize yetmez, kullanılmaz.
+Envanteri bilinen açıklarla eşleştirmek için **WPVulnerability.net** API'si kullanılır (2026-10-29 kararı): ücretsiz, anahtar gerektirmez, bileşen başına sorgulanır (`/core/{sürüm}/`, `/plugin/{slug}/`, `/theme/{slug}/`) ve cevaplar 24 saat önbelleklenir; böylece paylaşımlı hostingde 100 MB'lık Wordfence feed'ini indirip işlemek gerekmez. Sorgu başarısız olursa önceki sonuç korunur. WPScan'in ücretsiz katmanı (günde 25 istek) yetmez, kullanılmaz.
 
 ## 3. Katman B: Bağlantı eklentisi
 
