@@ -210,7 +210,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Eşleştirme ekranı (proje → WordPress sayfasında tek kullanımlık, 30 dk geçerli bağlantı kodu; eklenti ZIP'i aynı sayfadan iner), HMAC imzalı istekler (zaman damgası ±5 dk, tek kullanımlık nonce, dakikada 60 istek)
 - ✓ Tam envanter: çekirdek, eklentiler, temalar, aktif/pasif, güncelleme durumu (günde bir ve "Şimdi yenile" ile)
 - ✓ Envanterden bulgular (eklenti bağlıysa dış tahminin yerine geçer): çekirdek/eklenti/tema güncellemesi, pasif eklentiler, arama motorlarını engelle, düz kalıcı bağlantı, WP_DEBUG, panelden dosya düzenleme, 3'ten fazla yönetici, desteği bitmiş PHP
-- ○ Açık veritabanı eşleştirmesi (Wordfence Intelligence feed, günlük)
+- ✓ Açık veritabanı eşleştirmesi: çekirdek, tüm eklenti ve temalar (pasifler dahil) WPVulnerability.net ile her envanter yenilemesinde (anahtarsız, bileşen başına günlük önbellek); etkilenen sürüm bulgu olur, ayrıntı ve düzeldiği sürüm WordPress sayfasında
 - ✓ Ortam ve kritik ayarlar (`blog_public`, `WP_DEBUG`, dosya düzenleyici, otomatik güncelleme, yönetici sayısı) ✓; Site Sağlığı sonuçları ✓ (dış istek atmayan kontroller; kritik olanlar bulgu, envanterle çakışanlar hariç)
 - ✓ Taslak/zamanlanmış içerik sayıları ✓; Yoast/Rank Math içerik türü noindex ve site haritası ayarı ✓ (yayında içeriği olan tür toptan noindex ise bulgu); çekirdek dosya bütünlüğü ✓ (wordpress.org sağlama toplamları, günde en fazla iki kez; değişen/eksik dosya bulgu)
 - ◐ Önbellek eklentisi tespiti ✓ (WordPress sayfasında); gereksiz baş etiketleri ○

@@ -94,6 +94,32 @@
                 </x-filament::section>
             @endif
 
+            @if ($connection->vulnerabilities_checked_at)
+                @php $vulnerable = $connection->vulnerabilities ?? []; @endphp
+                <x-filament::section heading="Bilinen güvenlik açıkları" :description="'WPVulnerability.net veritabanı, '.$connection->vulnerabilities_checked_at->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m.Y H:i').' kontrolü. Pasif eklentiler de dahil.'">
+                    @if ($vulnerable === [])
+                        <p class="text-sm text-success-600">Kurulu sürümlerde bilinen açık yok.</p>
+                    @else
+                        <div class="space-y-3 text-sm">
+                            @foreach ($vulnerable as $component)
+                                <div>
+                                    <p class="font-medium text-danger-600">{{ $component['name'] }} {{ $component['version'] }}</p>
+                                    <ul class="list-disc ps-5">
+                                        @foreach ($component['items'] as $item)
+                                            <li>
+                                                @if ($item['link'])<a class="underline" href="{{ $item['link'] }}" target="_blank" rel="noopener">{{ $item['title'] }}</a>@else{{ $item['title'] }}@endif
+                                                @if ($item['severity']) · {{ $item['severity'] }}@if ($item['score']) ({{ number_format($item['score'], 1) }})@endif @endif
+                                                · {{ $item['fixed_in'] ? $item['fixed_in'].' sürümünde düzeldi' : ($item['unfixed'] ? 'düzeltme yok' : 'güncel sürüme geçin') }}
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </x-filament::section>
+            @endif
+
             @php
                 $plugins = collect($inv['plugins'] ?? [])->sortBy([['active', 'desc'], ['name', 'asc']]);
                 $updates = $plugins->whereNotNull('update')->count();

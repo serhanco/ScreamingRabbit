@@ -69,7 +69,7 @@ class WordPressConnectorTest extends TestCase
     {
         $project = Project::factory()->create(['base_url' => 'https://klinik.com']);
         $connection = WpConnection::create(['project_id' => $project->id, 'secret' => 'gizli', 'site_url' => 'https://klinik.com/', 'connected_at' => now()]);
-        Http::fake(['klinik.com/*' => Http::sequence()
+        Http::fake(['www.wpvulnerability.net/*' => Http::response(['data' => ['vulnerability' => null]]), 'klinik.com/*' => Http::sequence()
             ->push(['plugin_version' => '0.1.0', 'core' => ['version' => '6.8.1', 'update' => null], 'plugins' => []])
             ->push(['code' => 'sr_unauthorized', 'message' => 'bad_signature'], 401)]);
 
@@ -78,7 +78,7 @@ class WordPressConnectorTest extends TestCase
         Http::assertSent(function (Request $request) {
             $route = '/screamingrabbit/v1/inventory';
 
-            return $request['rest_route'] === $route && hash_equals(
+            return ($request->data()['rest_route'] ?? null) === $route && hash_equals(
                 Connector::sign('gizli', 'GET', $route, $request->header('X-SR-Timestamp')[0], $request->header('X-SR-Nonce')[0], ''),
                 $request->header('X-SR-Signature')[0],
             );
@@ -98,11 +98,14 @@ class WordPressConnectorTest extends TestCase
             'inventory' => ['core' => ['version' => '6.8.1', 'update' => '6.9'], 'environment' => ['php' => '8.2.1'], 'settings' => ['blog_public' => true, 'admins' => 2],
                 'plugins' => [['name' => 'Yoast SEO', 'version' => '25.0', 'active' => true, 'update' => '25.1', 'auto_update' => false]], 'themes' => [], 'content' => ['post' => ['publish' => 12, 'draft' => 3, 'future' => 0, 'private' => 0]],
                 'seo' => ['plugin' => 'Yoast SEO', 'noindex_types' => [], 'sitemap' => true], 'site_health' => [['test' => 'timezone', 'status' => 'recommended', 'label' => 'Saat dilimi ayarlı değil']],
-                'integrity' => ['version' => '6.8.1', 'modified' => ['wp-login.php'], 'modified_count' => 1, 'missing' => [], 'missing_count' => 0]]]);
+                'integrity' => ['version' => '6.8.1', 'modified' => ['wp-login.php'], 'modified_count' => 1, 'missing' => [], 'missing_count' => 0]],
+            'vulnerabilities' => [['type' => 'plugin', 'slug' => 'wordpress-seo', 'name' => 'Yoast SEO', 'version' => '25.0', 'items' => [['title' => 'Stored XSS', 'severity' => 'Orta', 'score' => 6.4, 'fixed_in' => '25.1', 'unfixed' => false, 'link' => null]]]],
+            'vulnerabilities_checked_at' => now()]);
 
         $this->actingAs($admin)->get(ProjectResource::getUrl('wordpress', ['record' => $project]))
             ->assertOk()->assertSee('6.9 güncellemesi var')->assertSee('Yoast SEO')->assertSee('25.1 var')
-            ->assertSee('site haritası açık')->assertSee('Saat dilimi ayarlı değil')->assertSee('wp-login.php');
+            ->assertSee('site haritası açık')->assertSee('Saat dilimi ayarlı değil')->assertSee('wp-login.php')
+            ->assertSee('Stored XSS')->assertSee('25.1 sürümünde düzeldi');
 
         Livewire::actingAs($admin)->test(ProjectWordPress::class, ['record' => $project->id])
             ->callAction('code')->assertSet('code', fn (string $code) => str_starts_with($code, 'SR1.'));
