@@ -179,7 +179,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Schema.org sözlüğüne göre doğrulama (resmi sürüm 29.3): bilinmeyen tür/özellik, türüne ait olmayan özellik, metin beklenen yerde nesne; eksik zorunlu alanlar Google kurallarıyla ayrıca
 - ✓ Google zengin sonuç gereksinimleri: Article (+ BlogPosting, NewsArticle), Product (+ Offer, Review, AggregateRating), BreadcrumbList/ListItem, FAQPage/Question/Answer, Recipe, Event, LocalBusiness (+ Dentist, MedicalClinic vb. alt türler), Organization, VideoObject, JobPosting; zorunlu eksik (orta) ve önerilen eksik (düşük, yalnızca ana şemalarda) ayrı bulgu. HowTo Google'da kaldırıldığı için yok
 - ✓ Şema ↔ sayfa tutarlılığı: makale başlığı / ürün adı sayfanın title veya H1'ine benziyor mu ✓, teklif fiyatı sayfada yazıyor mu (1.500,00 ve 1,500.00 biçimleri) ✓, sayfa içi kırık `@id` bağlantıları ✓, tarih karşılaştırması (şemadaki yayın/güncelleme tarihi sayfadaki meta ve `<time>` ile aynı mı, ters veya ileri tarih) ✓
-- ✓ Yinelenen ana şemalar (örn. hem Yoast hem tema Organization basıyor); çelişen değerler ○
+- ✓ Yinelenen ana şemalar (örn. hem Yoast hem tema Organization basıyor) ve farklı ad veren kopyalar
 - ✓ WordPress: SEO eklentisinin şema grafiği (Yoast/Rank Math) kontrolü — ana sayfada WebSite düğümü veya kurum logosu yoksa bulgu
 
 **Performans**
@@ -190,7 +190,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Güvenlik başlıkları (ana sayfada HSTS ve max-age, CSP, X-Content-Type-Options, X-Frame-Options veya CSP frame-ancestors, Referrer-Policy; Mozilla Observatory ölçütü)
 
 **AI arama görünürlüğü: GEO (generative engine) ve AEO (answer engine) denetimi** — GEO-1'in üzerine
-- ◐ Varlık (entity) sinyalleri: ana sayfa kurum şemasında `sameAs` yok ✓; şemadaki kurum adı/telefonun sayfalar arasında tutarlılığı ve telefonun sayfada görünmesi ✓; adres karşılaştırması ○ — Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
+- ✓ Varlık (entity) sinyalleri: ana sayfa kurum şemasında `sameAs` yok ✓; şemadaki kurum adı/telefonun sayfalar arasında tutarlılığı ve telefonun sayfada görünmesi ✓, adres karşılaştırması ✓ — Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
 - ◐ E-E-A-T sinyalleri: yazılarda tarih ve yazar eksikliği ✓, hakkımızda/iletişim/gizlilik-KVKK sayfası yokluğu ✓, yazar sayfasına link yok ✓, yazar sayfasında Person/ProfilePage şeması yok ✓ — yazar kutusu ve yazar sayfası, Person şeması, yayın/güncelleme tarihi (görünür + `datePublished`/`dateModified`), hakkımızda/iletişim/politika sayfaları
 - ✓ Alıntılanabilirlik (AEO) — soru başlığının altında 20-60 kelimelik cevap yoksa, 800+ kelimede liste/tablo yoksa bulgu; SSS bölümü ve rakamlı ifadeler sayfa detayında: soru biçimli başlıklar, başlığın hemen altında kısa doğrudan cevap paragrafı, liste/tablo kullanımı, SSS bölümü, tanım cümleleri
 - ◐ Bölümleme ve okunabilirlik: başlık sırası ✓, 150 kelimeyi aşan paragraflar ✓, soru biçimli başlıklar sayılıyor (AI hazırlık skoruna girecek) — başlık hiyerarşisi, paragraf uzunluğu, anlamlı alt başlıklarla "parçalanabilir" içerik (LLM'lerin pasaj seçimi için)

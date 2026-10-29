@@ -34,7 +34,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, insecure_forms: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string, logo: bool}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int, quotes: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, insecure_forms: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string, logo: bool, address: ?string}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int, quotes: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -549,6 +549,26 @@ class HtmlParser
         };
         array_walk($blocks, fn ($block) => $walk($block));
 
+        // The same main entity printed twice (usually a theme and an SEO plugin) with different names: Google may pick either.
+        $names = [];
+        foreach ($blocks as $block) {
+            $roots = array_is_list($block) ? $block : (isset($block['@graph']) && is_array($block['@graph']) ? $block['@graph'] : [$block]);
+            foreach ($roots as $root) {
+                $name = is_array($root) ? ($root['name'] ?? $root['headline'] ?? null) : null;
+                foreach (is_string($name) && trim($name) !== '' ? (array) ($root['@type'] ?? []) : [] as $type) {
+                    $type = SchemaRules::ruleType(SchemaRules::shortType((string) $type));
+                    if ($type !== null && in_array($type, SchemaRules::SINGLE, true)) {
+                        $names[$type][mb_strtolower(trim($name))] ??= trim($name);
+                    }
+                }
+            }
+        }
+        foreach ($names as $type => $variants) {
+            if (count($variants) > 1) {
+                $problems[] = "İki {$type} şeması farklı ad veriyor: ".implode(' / ', array_map(fn (string $name) => '"'.mb_substr($name, 0, 40).'"', array_slice($variants, 0, 2)));
+            }
+        }
+
         foreach (array_keys(array_diff_key($referenced, $defined)) as $id) {
             // References to the site-wide nodes of another page's graph (e.g. https://site/#organization) are normal.
             if (str_starts_with($id, '#')) {
@@ -675,7 +695,7 @@ class HtmlParser
      * LocalBusiness), compared across pages for consistent NAP (name, address, phone).
      *
      * @param  array<int, array<mixed>>  $blocks
-     * @return array{name: ?string, phone: ?string, logo: bool}|null
+     * @return array{name: ?string, phone: ?string, logo: bool, address: ?string}|null
      */
     private static function entity(array $blocks): ?array
     {
@@ -690,6 +710,7 @@ class HtmlParser
                     'name' => is_string($node['name'] ?? null) ? mb_substr(trim($node['name']), 0, 120) : null,
                     'phone' => self::phone($node['telephone'] ?? null),
                     'logo' => ! empty($node['logo']) || ! empty($node['image']),
+                    'address' => self::address($node['address'] ?? null),
                 ];
 
                 return;
@@ -703,6 +724,18 @@ class HtmlParser
         array_walk($blocks, fn ($block) => $walk($block));
 
         return $found;
+    }
+
+    /** Street and postal code of a schema address, lower-cased with single spaces, for comparing pages; null when absent. */
+    public static function address(mixed $value): ?string
+    {
+        if (is_array($value) && array_is_list($value)) {
+            $value = $value[0] ?? null;
+        }
+        $text = is_string($value) ? $value : (is_array($value) ? implode(' ', array_filter([$value['streetAddress'] ?? null, $value['postalCode'] ?? null], 'is_string')) : '');
+        $text = trim(preg_replace('/[\s,.]+/u', ' ', mb_strtolower($text)));
+
+        return $text === '' ? null : mb_substr($text, 0, 120);
     }
 
     /** The last 10 digits of a phone number, so "+90 212 555 00 00" and "0212 555 00 00" match; null when too short. */
