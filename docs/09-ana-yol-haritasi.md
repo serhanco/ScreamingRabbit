@@ -184,7 +184,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **Performans**
 - ✓ PageSpeed Insights API + CrUX: her taramadan sonra 5 örnek sayfa (ana sayfa, her içerik türünün en güçlü sayfası, sonra Link Score), mobil; gerçek kullanıcı LCP/INP/CLS ve Lighthouse puanı bulguya dönüşür. Anahtarsız çalışır, isteğe bağlı API anahtarı Google ayarlarında
-- ○ CWV trendi ve şablon bazlı sorunlar
+- ✓ CWV trendi ve şablon bazlı sorunlar: son 8 taramada ortalama mobil puan, ana sayfa gerçek kullanıcı metrikleri ve kötü sayfa sayısı; örnek sayfalar türleriyle (ana sayfa, yazı, ürün…) gösterilir
 
 **Güvenlik**
 - ✓ Güvenlik başlıkları (ana sayfada HSTS ve max-age, CSP, X-Content-Type-Options, X-Frame-Options veya CSP frame-ancestors, Referrer-Policy; Mozilla Observatory ölçütü)
