@@ -21,7 +21,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -39,10 +39,16 @@ class HtmlParser
         $generator = self::meta($xpath, 'generator');
 
         $canonical = null;
+        $hreflang = [];
         foreach ($xpath->query('//link[@href]') as $link) {
-            if (in_array('canonical', preg_split('/\s+/', strtolower($link->getAttribute('rel'))), true)) {
+            $rel = preg_split('/\s+/', strtolower($link->getAttribute('rel')));
+            if ($canonical === null && in_array('canonical', $rel, true)) {
                 $canonical = UrlNormalizer::resolve($link->getAttribute('href'), $pageUrl);
-                break;
+            } elseif (in_array('alternate', $rel, true) && trim($link->getAttribute('hreflang')) !== '') {
+                $url = UrlNormalizer::resolve($link->getAttribute('href'), $pageUrl);
+                if ($url !== null && count($hreflang) < 100) {
+                    $hreflang[] = ['lang' => trim($link->getAttribute('hreflang')), 'url' => $url];
+                }
             }
         }
 
@@ -152,6 +158,7 @@ class HtmlParser
             'description' => $description,
             'meta_robots' => $robots,
             'canonical' => $canonical,
+            'hreflang' => $hreflang,
             'h1' => $h1,
             'word_count' => $wordCount,
             'content_hash' => md5(trim($bodyText)),

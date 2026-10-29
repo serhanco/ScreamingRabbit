@@ -164,7 +164,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Türkçe uyarlanmış okunabilirlik
 
 **İndekslenebilirlik ve uluslararası**
-- ○ hreflang: dönüş etiketi, dil/bölge kodu, non-200 hedef, x-default
+- ✓ hreflang: karşılıklı (dönüş) etiket, ISO dil/bölge kodu, kendini listeleme, x-default, hatalı/noindex/başka canonical hedef; site içindeki dil sürümleri de taranır
 - ○ Canonical zincirleri, HTTP header canonical
 - ○ Sayfalama (rel next/prev bilgilendirme)
 

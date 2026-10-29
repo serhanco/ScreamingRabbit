@@ -251,6 +251,14 @@ class CrawlRunner
                 'generic_anchor_texts' => $parsed['generic_anchors'] === [] ? null : mb_substr(implode(' | ', $parsed['generic_anchors']), 0, 250),
             ];
 
+            $update['hreflang'] = $parsed['hreflang'] === [] ? null : $parsed['hreflang'];
+            // Language versions are crawled like links so their return tags can be checked.
+            foreach ($parsed['hreflang'] as $alternate) {
+                if (UrlNormalizer::isInternal($alternate['url'], $page->url) && ! UrlNormalizer::isAsset($alternate['url'])) {
+                    $this->addPage($alternate['url'], $page->depth + 1);
+                }
+            }
+
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
             $this->storeImages($page, $parsed['images']);
             $this->storeExternal($page, $parsed['links']);

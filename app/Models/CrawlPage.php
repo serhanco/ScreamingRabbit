@@ -19,6 +19,7 @@ class CrawlPage extends Model
             'wordpress_hint' => 'boolean',
             'js_shell' => 'boolean',
             'schema_problems' => 'array',
+            'hreflang' => 'array',
             'fetched_at' => 'datetime',
         ];
     }
