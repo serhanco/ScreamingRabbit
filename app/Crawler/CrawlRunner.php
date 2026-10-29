@@ -233,6 +233,7 @@ class CrawlRunner
                 'h2_count' => $parsed['h2_count'],
                 'question_headings' => $parsed['question_headings'],
                 'long_paragraphs' => $parsed['long_paragraphs'],
+                'readability' => $parsed['readability'],
                 'is_article' => $parsed['is_article'],
                 'published_at' => $parsed['published_at'],
                 'modified_at' => $parsed['modified_at'],

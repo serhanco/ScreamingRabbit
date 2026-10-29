@@ -2,6 +2,7 @@
 
 namespace App\Crawler;
 
+use App\Audit\Readability;
 use App\Audit\SchemaRules;
 use App\Audit\SimHash;
 use DOMDocument;
@@ -32,7 +33,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -213,6 +214,14 @@ class HtmlParser
         foreach ($xpath->query('//text()') as $node) {
             $mainText[] = $node->nodeValue;
         }
+        // Readability is measured on running text (paragraphs and list items), where sentences end with punctuation.
+        $prose = [];
+        foreach ($xpath->query('//p|//li[not(.//p)]') as $node) {
+            $sentence = trim(preg_replace('/\s+/u', ' ', $node->textContent));
+            $prose[] = preg_match('/[.!?…:;]$/u', $sentence) ? $sentence : $sentence.'.';
+        }
+        $prose = implode(' ', $prose);
+        $readability = Readability::isTurkish($xpath->query('//html/@lang')->item(0)?->nodeValue, $prose) ? Readability::atesman($prose) : null;
 
         $wordpress = (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
             || ($generator !== null && stripos($generator, 'wordpress') !== false);
@@ -253,6 +262,7 @@ class HtmlParser
             'wordpress_hint' => $wordpress,
             'question_headings' => $questionHeadings,
             'long_paragraphs' => $longParagraphs,
+            'readability' => $readability,
             ...$authority,
             'wp_type' => $wordpress ? $wpType : null,
             'wp_category' => $wordpress ? $wpCategory : null,
