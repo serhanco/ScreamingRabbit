@@ -48,6 +48,8 @@ class PagesRelationManager extends RelationManager
                 TextColumn::make('word_count')->label('Kelime')->numeric()->sortable()->toggleable(),
                 TextColumn::make('depth')->label('Derinlik')->sortable()->toggleable(),
                 TextColumn::make('inlinks')->label('İç link')->numeric()->sortable()->toggleable(),
+                TextColumn::make('link_score')->label('Link puanı')->numeric()->placeholder('—')->sortable()->toggleable()
+                    ->tooltip('Sitenin iç link yapısına göre sayfanın önemi (1-100, PageRank benzeri)'),
                 TextColumn::make('response_ms')->label('Süre (ms)')->numeric()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('schema_types')->label('Şema')->limit(40)->placeholder('—')->toggleable(),
                 TextColumn::make('gsc_clicks')->label('Tıklama (28 g)')->numeric()->placeholder('0')->sortable()->visible($hasGsc),
@@ -56,7 +58,9 @@ class PagesRelationManager extends RelationManager
                     ->state(fn (CrawlPage $record): ?string => $record->gsc_impressions > 0 ? '%'.number_format($record->gsc_clicks / $record->gsc_impressions * 100, 1, ',', '.') : null)->placeholder('—'),
                 TextColumn::make('gsc_position')->label('Ort. pozisyon')->numeric(decimalPlaces: 1)->placeholder('—')->sortable()->visible($hasGsc)->toggleable(),
                 TextColumn::make('gsc_coverage')->label('Google indeksi')->badge()->limit(40)->placeholder('Denetlenmedi')->visible($hasGsc)->toggleable()
-                    ->color(fn (CrawlPage $record): string => match ($record->gsc_verdict) { 'PASS' => 'success', 'FAIL' => 'danger', 'NEUTRAL' => 'warning', default => 'gray' }),
+                    ->color(fn (CrawlPage $record): string => match ($record->gsc_verdict) {
+                        'PASS' => 'success', 'FAIL' => 'danger', 'NEUTRAL' => 'warning', default => 'gray'
+                    }),
                 IconColumn::make('in_sitemap')->label('Sitemap')->boolean()->toggleable(),
                 TextColumn::make('redirect_to')->label('Yönlendirme')->limit(50)->toggleable(isToggledHiddenByDefault: true),
             ])

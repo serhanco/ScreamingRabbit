@@ -170,7 +170,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **Linkleme ve mimari**
 - ✓ Anchor text analizi: metinsiz linkler ve "buraya tıklayın", "devamı" türü anlamsız metinler sayfa bazında bulgu olur (görsel alt metni ve aria-label link metni sayılır)
-- ○ İç Link Score (PageRank benzeri)
+- ✓ İç Link Score: site içi PageRank (nofollow geçmez, yönlendirme hedefe aktarır), 1-100 logaritmik; sayfa listesinde, sayfa detayında ve CSV'de
 - ✓ Taranamayan linkler (`href="javascript:…"`, `onclick` ile açılan `href`'siz linkler; menü açma düğmeleri sayılmaz)
 - ○ Dizin bazlı derinlik ve dağılım
 
