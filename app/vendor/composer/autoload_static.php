@@ -757,6 +757,7 @@ class ComposerStaticInit40eb6d041507a8d4a4ec877170c743c9
         'App\\Crawler\\RobotsTxt' => __DIR__ . '/../..' . '/app/Crawler/RobotsTxt.php',
         'App\\Crawler\\SiteComparison' => __DIR__ . '/../..' . '/app/Crawler/SiteComparison.php',
         'App\\Crawler\\SitemapReader' => __DIR__ . '/../..' . '/app/Crawler/SitemapReader.php',
+        'App\\Crawler\\StagingHost' => __DIR__ . '/../..' . '/app/Crawler/StagingHost.php',
         'App\\Crawler\\UrlFilter' => __DIR__ . '/../..' . '/app/Crawler/UrlFilter.php',
         'App\\Crawler\\UrlNormalizer' => __DIR__ . '/../..' . '/app/Crawler/UrlNormalizer.php',
         'App\\Crawler\\WordPressProbe' => __DIR__ . '/../..' . '/app/Crawler/WordPressProbe.php',

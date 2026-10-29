@@ -4,6 +4,7 @@ namespace App\Audit;
 
 use App\Crawler\CrawlRunner;
 use App\Crawler\HtmlParser;
+use App\Crawler\StagingHost;
 use App\Crawler\UrlNormalizer;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
@@ -52,6 +53,8 @@ class Auditor
 
     private ?bool $wholeSite = null;
 
+    private string $siteHost = '';
+
     public function run(Crawl $crawl): void
     {
         $this->crawl = $crawl;
@@ -75,6 +78,7 @@ class Auditor
         $this->staleArticles = [];
         $this->aiScores = [];
         $this->wholeSite = null;
+        $this->siteHost = (string) parse_url((string) $crawl->project->base_url, PHP_URL_HOST);
 
         $crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use (&$groups, &$redirects, $platform) {
             foreach ($pages as $page) {
@@ -96,6 +100,7 @@ class Auditor
         $this->auditSeoPlugins($platform);
         $this->auditImages();
         $this->auditExternalLinks();
+        $this->auditStagingLinks();
         $this->auditBotAccess();
         $this->auditAiReadiness();
         $this->auditPageSpeed();
@@ -189,6 +194,9 @@ class Auditor
         } elseif ($page->canonical !== $page->url) {
             $this->emit(self::isPaginated($page) ? 'pagination_canonical' : 'canonical_other', $page, $page->canonical);
             $this->canonicalTargets[$page->id] = sha1($page->canonical);
+        }
+        if ($page->canonical && StagingHost::is(parse_url($page->canonical, PHP_URL_HOST), $this->siteHost)) {
+            $this->emit('staging_link', $page, 'canonical: '.$page->canonical);
         }
         if ($page->canonical_conflict) {
             $this->emit('canonical_conflict', $page);
@@ -715,6 +723,22 @@ class Auditor
             $start = $this->crawl->pages()->orderBy('depth')->orderBy('id')->value('id');
             $this->emitFor('wp_multiple_seo_plugins', $start, implode(', ', array_keys($this->seoPlugins)));
         }
+    }
+
+    /**
+     * Links to the site's test copy. Search engines follow them and can index the staging site as a duplicate.
+     */
+    private function auditStagingLinks(): void
+    {
+        $links = DB::table('crawl_external_links')->where('crawl_id', $this->crawl->id)->pluck('url', 'id')
+            ->filter(fn (string $url) => StagingHost::is(parse_url($url, PHP_URL_HOST), $this->siteHost));
+        if ($links->isEmpty()) {
+            return;
+        }
+
+        DB::table('crawl_external_refs')->where('crawl_id', $this->crawl->id)->whereIn('link_id', $links->keys())
+            ->orderBy('id')->get(['page_id', 'link_id'])->groupBy('page_id')
+            ->each(fn ($refs, $pageId) => $this->emitFor('staging_link', (int) $pageId, $refs->count().' link: '.$links[$refs->first()->link_id]));
     }
 
     private function auditExternalLinks(): void

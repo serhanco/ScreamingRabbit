@@ -39,6 +39,7 @@ return array(
     'App\\Crawler\\RobotsTxt' => $baseDir . '/app/Crawler/RobotsTxt.php',
     'App\\Crawler\\SiteComparison' => $baseDir . '/app/Crawler/SiteComparison.php',
     'App\\Crawler\\SitemapReader' => $baseDir . '/app/Crawler/SitemapReader.php',
+    'App\\Crawler\\StagingHost' => $baseDir . '/app/Crawler/StagingHost.php',
     'App\\Crawler\\UrlFilter' => $baseDir . '/app/Crawler/UrlFilter.php',
     'App\\Crawler\\UrlNormalizer' => $baseDir . '/app/Crawler/UrlNormalizer.php',
     'App\\Crawler\\WordPressProbe' => $baseDir . '/app/Crawler/WordPressProbe.php',
