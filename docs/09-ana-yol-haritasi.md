@@ -183,7 +183,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ WordPress: SEO eklentisinin şema grafiği (Yoast/Rank Math) kontrolü
 
 **Performans**
-- ○ PageSpeed Insights API + CrUX: LCP, INP, CLS (ücretsiz API, şablon başına örnek sayfa)
+- ✓ PageSpeed Insights API + CrUX: her taramadan sonra 5 örnek sayfa (ana sayfa, her içerik türünün en güçlü sayfası, sonra Link Score), mobil; gerçek kullanıcı LCP/INP/CLS ve Lighthouse puanı bulguya dönüşür. Anahtarsız çalışır, isteğe bağlı API anahtarı Google ayarlarında
 - ○ CWV trendi ve şablon bazlı sorunlar
 
 **Güvenlik**

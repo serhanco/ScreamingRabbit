@@ -9,6 +9,7 @@ use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
 use App\Monitoring\Notifier;
 use App\Monitoring\PageWatcher;
+use App\Performance\PageSpeed;
 use App\Reports\MonthlyReports;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -35,6 +36,9 @@ Schedule::call(fn () => PageWatcher::runDue())->name('page-watch')->everyFiveMin
 
 // Search Console numbers: one short window per project each run, so the 16-month backfill spreads over many runs.
 Schedule::call(fn () => GscSync::runAll())->name('gsc-sync')->everyTenMinutes()->withoutOverlapping(10);
+
+// PageSpeed Insights: one sample page per finished crawl each run (a call takes 10-30 seconds).
+Schedule::call(fn () => PageSpeed::runDue())->name('pagespeed')->everyFiveMinutes()->withoutOverlapping(10);
 
 // Projects that asked for daily/weekly/monthly crawls get them started overnight.
 Schedule::call(fn () => CrawlScheduler::runDue())->name('crawl-schedule')->everyTenMinutes()->withoutOverlapping(10);

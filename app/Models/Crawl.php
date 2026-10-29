@@ -30,6 +30,7 @@ class Crawl extends Model
             'bot_access' => 'array',
             'llms_txt' => 'array',
             'wp_checks' => 'array',
+            'pagespeed' => 'array',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];
