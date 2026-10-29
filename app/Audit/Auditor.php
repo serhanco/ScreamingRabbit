@@ -151,6 +151,9 @@ class Auditor
             $this->emit('canonical_other', $page, $page->canonical);
             $this->canonicalTargets[$page->id] = sha1($page->canonical);
         }
+        if ($page->canonical_conflict) {
+            $this->emit('canonical_conflict', $page);
+        }
 
         if ($page->status_code === 200 && ! empty($page->hreflang)) {
             $this->hreflang[$page->id] = ['url' => $page->url, 'entries' => $page->hreflang];
@@ -190,6 +193,13 @@ class Auditor
                 $this->emit('meta_description_too_short', $page, "{$length} karakter");
             }
             $groups['meta_description'][md5(mb_strtolower($description))][] = $page->id;
+        }
+
+        if ($page->heading_skip !== null) {
+            $this->emit('headings_non_sequential', $page, $page->heading_skip);
+        }
+        if ($page->h2_count !== null && (int) $page->h2_count === 0 && $page->word_count >= RuleCatalog::threshold('low_word_count')) {
+            $this->emit('h2_missing', $page);
         }
 
         if ($page->h1_count === 0) {
@@ -376,7 +386,7 @@ class Auditor
 
         $targets = [];
         foreach (array_chunk(array_unique($this->canonicalTargets), 500) as $hashes) {
-            foreach ($this->crawl->pages()->whereIn('url_hash', $hashes)->get(['url_hash', 'url', 'state', 'status_code', 'meta_robots', 'x_robots']) as $target) {
+            foreach ($this->crawl->pages()->whereIn('url_hash', $hashes)->get(['url_hash', 'url', 'state', 'status_code', 'meta_robots', 'x_robots', 'canonical']) as $target) {
                 $targets[$target->url_hash] = $target;
             }
         }
@@ -390,6 +400,8 @@ class Auditor
             $noindex = str_contains(strtolower((string) $target->meta_robots.' '.(string) $target->x_robots), 'noindex');
             if ($target->status_code !== 200 || $noindex) {
                 $this->emitFor('canonical_target_bad', $pageId, $target->url.($target->status_code !== 200 ? ' → HTTP '.($target->status_code ?? 'yanıt yok') : ' → noindex'));
+            } elseif (filled($target->canonical) && $target->canonical !== $target->url) {
+                $this->emitFor('canonical_chain', $pageId, $target->url.' → '.$target->canonical);
             }
         }
     }

@@ -160,12 +160,12 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 **İçerik**
 - ✓ Yakın kopya: ana metnin (menü, header, footer hariç) SimHash parmak izi, en fazla 3 bit fark (~%95 benzer); binlerce sayfada bant eşleştirme ile hızlı. Birebir kopyalar ayrıca raporlanır
 - ○ Kaynak kodda metin/regex arama, custom extraction (XPath, CSS, regex)
-- ○ H2 ve başlık hiyerarşisi (sırasız başlıklar)
+- ✓ H2 ve başlık hiyerarşisi: atlanan başlık seviyesi (H2 → H4), uzun sayfada H2 yok
 - ○ Türkçe uyarlanmış okunabilirlik
 
 **İndekslenebilirlik ve uluslararası**
 - ✓ hreflang: karşılıklı (dönüş) etiket, ISO dil/bölge kodu, kendini listeleme, x-default, hatalı/noindex/başka canonical hedef; site içindeki dil sürümleri de taranır
-- ○ Canonical zincirleri, HTTP header canonical
+- ✓ Canonical zincirleri, HTTP header canonical (HTML yoksa kullanılır), çelişen canonical (birden fazla etiket veya HTML ↔ başlık)
 - ○ Sayfalama (rel next/prev bilgilendirme)
 
 **Linkleme ve mimari**

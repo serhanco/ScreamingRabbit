@@ -22,7 +22,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -40,11 +40,13 @@ class HtmlParser
         $generator = self::meta($xpath, 'generator');
 
         $canonical = null;
+        $canonicals = [];
         $hreflang = [];
         foreach ($xpath->query('//link[@href]') as $link) {
             $rel = preg_split('/\s+/', strtolower($link->getAttribute('rel')));
-            if ($canonical === null && in_array('canonical', $rel, true)) {
-                $canonical = UrlNormalizer::resolve($link->getAttribute('href'), $pageUrl);
+            if (in_array('canonical', $rel, true)) {
+                $canonicals[] = UrlNormalizer::resolve($link->getAttribute('href'), $pageUrl);
+                $canonical ??= end($canonicals);
             } elseif (in_array('alternate', $rel, true) && trim($link->getAttribute('hreflang')) !== '') {
                 $url = UrlNormalizer::resolve($link->getAttribute('href'), $pageUrl);
                 if ($url !== null && count($hreflang) < 100) {
@@ -56,6 +58,21 @@ class HtmlParser
         $h1 = [];
         foreach ($xpath->query('//h1') as $node) {
             $h1[] = self::text($node->textContent) ?? '';
+        }
+
+        // Heading outline: going down more than one level (H2 straight to H4) or opening with a lower heading than H1.
+        $levels = [];
+        foreach ($xpath->query('//h1|//h2|//h3|//h4|//h5|//h6') as $node) {
+            $levels[] = (int) substr($node->nodeName, 1);
+        }
+        $headingSkip = null;
+        foreach ($levels as $i => $level) {
+            // The first heading may be an H2 (themes often put the H1 lower down or leave it out; h1_missing covers that).
+            $previous = $i === 0 ? 1 : $levels[$i - 1];
+            if ($level > $previous + 1) {
+                $headingSkip = ($i === 0 ? 'başta' : 'H'.$previous).' → H'.$level;
+                break;
+            }
         }
 
         $metaRefresh = null;
@@ -168,6 +185,9 @@ class HtmlParser
             'description' => $description,
             'meta_robots' => $robots,
             'canonical' => $canonical,
+            'canonical_conflict' => count(array_unique($canonicals)) > 1,
+            'h2_count' => count(array_keys($levels, 2, true)),
+            'heading_skip' => $headingSkip,
             'hreflang' => $hreflang,
             'h1' => $h1,
             'word_count' => $wordCount,
