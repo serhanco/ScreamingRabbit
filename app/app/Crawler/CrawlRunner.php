@@ -539,6 +539,7 @@ class CrawlRunner
             'UPDATE crawl_pages SET inlinks = (SELECT COUNT(*) FROM crawl_links WHERE crawl_links.crawl_id = crawl_pages.crawl_id AND crawl_links.to_hash = crawl_pages.url_hash) WHERE crawl_id = ?',
             [$this->crawl->id],
         );
+        LinkScore::compute($this->crawl);
 
         $this->crawl->detected_platform = $this->crawl->pages()->where('wordpress_hint', true)->exists() ? 'wordpress' : null;
         $this->crawl->save();
