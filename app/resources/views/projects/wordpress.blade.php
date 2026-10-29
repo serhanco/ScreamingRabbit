@@ -138,7 +138,9 @@
                                     <tr class="align-top">
                                         <td class="pe-3 break-all">{{ $c->url }}</td>
                                         <td class="pe-3">{{ \App\Models\WpChange::FIELDS[$c->field] ?? $c->field }}@if ($c->reverts_id) <span class="opacity-70">(geri alma)</span>@endif</td>
-                                        <td class="pe-3"><span class="opacity-70">{{ $c->show($c->before) }}</span> → {{ $c->show($c->after) }}</td>
+                                        <td class="pe-3"><span class="opacity-70">{{ $c->show($c->before) }}</span> → {{ $c->show($c->after) }}@if (in_array($c->field, ['title', 'description']) && $c->after) <span class="text-xs opacity-70">({{ mb_strlen($c->after) }} karakter)</span>@endif
+                                            @if ($c->note)<div class="text-xs opacity-70 mt-1">{{ $c->note }}</div>@endif
+                                        </td>
                                         <td class="pe-3">
                                             <span @class(['text-success-600' => $c->status === 'applied', 'text-danger-600' => in_array($c->status, ['conflict', 'failed']), 'text-warning-600' => $c->status === 'proposed'])>{{ \App\Models\WpChange::STATUSES[$c->status] ?? $c->status }}</span>
                                             <div class="text-xs opacity-70">{{ $c->proposer?->name }}@if ($c->approver) · onay: {{ $c->approver->name }}@endif · {{ ($c->applied_at ?? $c->created_at)->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m H:i') }}</div>
@@ -147,6 +149,7 @@
                                         <td class="whitespace-nowrap">
                                             @if ($canManage && $c->status === 'proposed')
                                                 {{ ($this->applyChangeAction)(['change' => $c->id]) }}
+                                                @if (in_array($c->field, ['title', 'description', 'alt'])){{ ($this->editChangeAction)(['change' => $c->id]) }}@endif
                                                 {{ ($this->rejectChangeAction)(['change' => $c->id]) }}
                                             @elseif ($canManage && $c->status === 'applied' && ! $c->reverts_id)
                                                 {{ ($this->revertChangeAction)(['change' => $c->id]) }}

@@ -3371,6 +3371,7 @@ return array(
     'App\\Ai\\Drivers\\AnthropicDriver' => $baseDir . '/app/Ai/Drivers/AnthropicDriver.php',
     'App\\Ai\\Drivers\\GeminiDriver' => $baseDir . '/app/Ai/Drivers/GeminiDriver.php',
     'App\\Ai\\Drivers\\OpenAiCompatibleDriver' => $baseDir . '/app/Ai/Drivers/OpenAiCompatibleDriver.php',
+    'App\\Ai\\TitleMeta' => $baseDir . '/app/Ai/TitleMeta.php',
     'App\\Audit\\AiReadiness' => $baseDir . '/app/Audit/AiReadiness.php',
     'App\\Audit\\Auditor' => $baseDir . '/app/Audit/Auditor.php',
     'App\\Audit\\HealthScore' => $baseDir . '/app/Audit/HealthScore.php',

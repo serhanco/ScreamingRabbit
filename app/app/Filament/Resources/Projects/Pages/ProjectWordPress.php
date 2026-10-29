@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Projects\Pages;
 
+use App\Ai\Ai;
+use App\Ai\TitleMeta;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\WpChange;
 use App\Models\WpConnection;
@@ -80,6 +82,22 @@ class ProjectWordPress extends Page
                     }
                     Notification::make()->title('Öneri kaydedildi')->body('Aşağıdaki listeden onaylayınca siteye yazılır.')->success()->send();
                 }),
+            Action::make('aiTitleMeta')
+                ->label('AI ile başlık/meta öner')
+                ->icon(Heroicon::OutlinedSparkles)
+                ->color('gray')
+                ->visible(fn (): bool => $this->canManage() && ($this->connection()?->isConnected() ?? false)
+                    && collect(array_keys(Ai::PROVIDERS))->contains(fn (string $provider) => Ai::configured($provider)))
+                ->modalDescription('AI, sayfanın son taramadaki başlığına, açıklamasına ve H1\'ine, Search Console\'da sayfayı bulduran sorgulara bakarak yeni bir SEO başlığı ve meta açıklama yazar. Öneriler listeye düşer; düzenleyebilir, onaylayabilir veya reddedebilirsiniz.')
+                ->schema([TextInput::make('url')->label('Sayfa adresi')->url()->required()->maxLength(2048)->placeholder($this->record->base_url)])
+                ->action(function (array $data, Action $action): void {
+                    $result = TitleMeta::propose($this->record, $data['url'], auth()->user());
+                    if (is_string($result)) {
+                        Notification::make()->title('Öneri alınamadı')->body($result)->danger()->send();
+                        $action->halt();
+                    }
+                    Notification::make()->title('AI önerisi hazır')->body('Aşağıdaki listeden inceleyip onaylayın.')->success()->send();
+                }),
             Action::make('code')
                 ->label(fn (): string => $this->connection()?->isConnected() ? 'Yeniden bağla' : 'Bağlantı kodu al')
                 ->icon(Heroicon::OutlinedLink)
@@ -130,6 +148,24 @@ class ProjectWordPress extends Page
                 $change = Changes::apply($change, auth()->user());
                 Notification::make()->title($change->status === 'applied' ? 'Siteye yazıldı' : 'Uygulanamadı')->body($change->error)
                     ->{$change->status === 'applied' ? 'success' : 'danger'}()->send();
+            });
+    }
+
+    public function editChangeAction(): Action
+    {
+        return Action::make('editChange')
+            ->label('Düzenle')
+            ->size('sm')
+            ->color('gray')
+            ->visible(fn (): bool => $this->canManage())
+            ->fillForm(fn (array $arguments): array => ['after' => $this->change($arguments)?->after])
+            ->schema([Textarea::make('after')->label('Yeni değer')->rows(3)->maxLength(1000)
+                ->helperText('Başlık için en fazla '.TitleMeta::TITLE_MAX.', açıklama için en fazla '.TitleMeta::DESCRIPTION_MAX.' karakter önerilir.')])
+            ->action(function (array $arguments, array $data): void {
+                $change = $this->change($arguments);
+                if ($change !== null && $change->status === 'proposed' && in_array($change->field, ['title', 'description', 'alt'], true)) {
+                    $change->update(['after' => trim((string) $data['after']), 'proposed_by' => auth()->id()]);
+                }
             });
     }
 
