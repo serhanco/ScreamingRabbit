@@ -6,8 +6,10 @@ use App\Audit\HealthScore;
 use App\Audit\RuleCatalog;
 use App\Crawler\BotAccess;
 use App\Crawler\CrawlComparison;
+use App\Crawler\CrawlRunner;
 use App\Crawler\CustomExtraction;
 use App\Filament\Resources\Crawls\CrawlColors;
+use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Models\Crawl;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -41,6 +43,10 @@ class CrawlInfolist
                             ->hintIcon(Heroicon::OutlinedInformationCircle, tooltip: HealthScore::EXPLANATION),
                         TextEntry::make('started_at')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('finished_at')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('-'),
+                        TextEntry::make('crawl_mode')->label('Tarama türü')
+                            ->state(fn (Crawl $record): string => ProjectForm::MODES[CrawlRunner::mode($record->settings ?? [])])
+                            ->visible(fn (Crawl $record): bool => CrawlRunner::mode($record->settings ?? []) !== 'spider')
+                            ->columnSpanFull(),
                         TextEntry::make('robots_simulation')->label('robots.txt')
                             ->state('Bu tarama proje ayarlarındaki deneme robots.txt ile yapıldı (canlı dosya değil).')
                             ->color('warning')
