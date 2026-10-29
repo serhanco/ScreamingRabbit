@@ -55,7 +55,7 @@ class AiTitleMetaTest extends TestCase
         {
             public function __construct(private AiTitleMetaTest $test) {}
 
-            public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier): array
+            public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier, array $images = []): array
             {
                 return $this->test->answer($prompt);
             }

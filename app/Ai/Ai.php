@@ -53,8 +53,12 @@ class Ai
     /** A cached answer is reused for this many days. */
     private const CACHE_DAYS = 30;
 
-    /** Answer for $task; the cached answer when the same question was asked before. */
-    public static function ask(string $task, string $system, string $prompt, ?int $projectId = null, int $maxTokens = 2000): AiResult
+    /**
+     * Answer for $task; the cached answer when the same question was asked before.
+     *
+     * @param  list<array{mime: string, data: string}>  $images
+     */
+    public static function ask(string $task, string $system, string $prompt, ?int $projectId = null, int $maxTokens = 2000, array $images = []): AiResult
     {
         $tier = Setting::get("ai_task_tier_{$task}") ?: (self::TASKS[$task][1] ?? 'cheap');
         $providers = array_values(array_filter(
@@ -70,7 +74,7 @@ class Ai
         $errors = [];
         foreach ($providers as $provider) {
             $model = self::model($provider, $tier);
-            $key = hash('sha256', implode("\n", [$provider, $model, $maxTokens, $system, $prompt]));
+            $key = hash('sha256', implode("\n", [$provider, $model, $maxTokens, $system, $prompt, ...array_map(fn (array $image) => hash('sha256', $image['data']), $images)]));
             $cached = AiRequest::where('cache_key', $key)->where('status', 'ok')->where('created_at', '>=', now()->subDays(self::CACHE_DAYS))->latest('id')->first();
             if ($cached !== null) {
                 return new AiResult((string) $cached->response, $provider, $cached->model, 0.0, true, $cached->id);
@@ -78,7 +82,7 @@ class Ai
             self::checkBudget();
 
             try {
-                $answer = self::driver($provider)->complete($model, $system, $prompt, $maxTokens, $tier);
+                $answer = self::driver($provider)->complete($model, $system, $prompt, $maxTokens, $tier, $images);
             } catch (AiException $e) {
                 self::log($task, $provider, $model, $projectId, $key, 'error', error: $e->getMessage());
                 $errors[] = $e->getMessage();

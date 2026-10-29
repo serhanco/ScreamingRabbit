@@ -22,14 +22,19 @@ class AnthropicDriver implements Driver
 
     public function __construct(private readonly string $apiKey) {}
 
-    public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier): array
+    public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier, array $images = []): array
     {
+        $content = $prompt;
+        if ($images !== []) {
+            $content = array_map(fn (array $image) => ['type' => 'image', 'source' => ['type' => 'base64', 'mediaType' => $image['mime'], 'data' => $image['data']]], $images);
+            $content[] = ['type' => 'text', 'text' => $prompt];
+        }
         $client = new Client(apiKey: $this->apiKey, requestOptions: ['timeout' => 120, 'maxRetries' => 2]);
         $params = [
             'model' => $model,
             'maxTokens' => $maxTokens,
             'system' => $system,
-            'messages' => [['role' => 'user', 'content' => $prompt]],
+            'messages' => [['role' => 'user', 'content' => $content]],
         ];
         if (in_array($model, self::EFFORT_MODELS, true)) {
             $params['outputConfig'] = ['effort' => $tier === 'cheap' ? 'low' : 'medium'];

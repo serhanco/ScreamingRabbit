@@ -28,7 +28,7 @@ class AiLayerTest extends TestCase
 
             public function __construct(public array $script) {}
 
-            public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier): array
+            public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier, array $images = []): array
             {
                 $this->calls[] = compact('model', 'tier', 'prompt');
                 $next = array_shift($this->script);
