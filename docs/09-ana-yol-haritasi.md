@@ -190,12 +190,12 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Güvenlik başlıkları (ana sayfada HSTS ve max-age, CSP, X-Content-Type-Options, X-Frame-Options veya CSP frame-ancestors, Referrer-Policy; Mozilla Observatory ölçütü)
 
 **AI arama görünürlüğü: GEO (generative engine) ve AEO (answer engine) denetimi** — GEO-1'in üzerine
-- ○ Varlık (entity) sinyalleri: Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
-- ○ E-E-A-T sinyalleri: yazar kutusu ve yazar sayfası, Person şeması, yayın/güncelleme tarihi (görünür + `datePublished`/`dateModified`), hakkımızda/iletişim/politika sayfaları
+- ◐ Varlık (entity) sinyalleri: ana sayfa kurum şemasında `sameAs` yok ✓; tutarlı marka adı/NAP ○ — Organization/Person şeması, `sameAs` (Wikipedia, Wikidata, LinkedIn, sosyal), tutarlı marka adı/NAP
+- ◐ E-E-A-T sinyalleri: yazılarda tarih ve yazar eksikliği ✓, hakkımızda/iletişim/gizlilik-KVKK sayfası yokluğu ✓; yazar sayfası ve Person şeması ○ — yazar kutusu ve yazar sayfası, Person şeması, yayın/güncelleme tarihi (görünür + `datePublished`/`dateModified`), hakkımızda/iletişim/politika sayfaları
 - ○ Alıntılanabilirlik (AEO): soru biçimli başlıklar, başlığın hemen altında kısa doğrudan cevap paragrafı, liste/tablo kullanımı, SSS bölümü, tanım cümleleri
-- ○ Bölümleme ve okunabilirlik: başlık hiyerarşisi, paragraf uzunluğu, anlamlı alt başlıklarla "parçalanabilir" içerik (LLM'lerin pasaj seçimi için)
+- ◐ Bölümleme ve okunabilirlik: başlık sırası ✓, 150 kelimeyi aşan paragraflar ✓, soru biçimli başlıklar sayılıyor (AI hazırlık skoruna girecek) — başlık hiyerarşisi, paragraf uzunluğu, anlamlı alt başlıklarla "parçalanabilir" içerik (LLM'lerin pasaj seçimi için)
 - ○ Kaynak ve veri sinyalleri: dış kaynak linkleri, istatistik/rakam içeren cümleler, alıntılar
-- ○ Tazelik: eski tarihli ama trafiği olan sayfalar (GSC ile), "son güncelleme" eksikliği
+- ✓ Tazelik: 1 yıldan eski ama son 28 günde tıklama alan yazılar (GSC bağlıysa) — eski tarihli ama trafiği olan sayfalar (GSC ile), "son güncelleme" eksikliği
 - ○ AI botlarının gerçekten aldığı içerik: AI bot user-agent'larıyla örnek sayfa çekip içerik farkı (cloaking/engel tespiti)
 - ○ Sayfa başına "AI hazırlık skoru" ve site geneli özet, raporda ayrı bölüm
 

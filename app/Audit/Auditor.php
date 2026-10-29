@@ -2,6 +2,7 @@
 
 namespace App\Audit;
 
+use App\Crawler\HtmlParser;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\ProjectScore;
@@ -26,6 +27,11 @@ class Auditor
     /** @var array<int, array{url: string, entries: array<int, array{lang: string, url: string}>}> page id => its hreflang tags */
     private array $hreflang = [];
 
+    /** @var array<int, array{0: string, 1: string}> page id => [url hash, last update date] of articles older than a year */
+    private array $staleArticles = [];
+
+    private const STALE_DAYS = 365;
+
     /** @var array<string, int> SEO plugin key => a page id that shows it */
     private array $seoPlugins = [];
 
@@ -46,6 +52,7 @@ class Auditor
         $this->canonicalTargets = [];
         $this->seoPlugins = [];
         $this->hreflang = [];
+        $this->staleArticles = [];
 
         $crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use (&$groups, &$redirects, $platform) {
             foreach ($pages as $page) {
@@ -193,6 +200,22 @@ class Auditor
                 $this->emit('meta_description_too_short', $page, "{$length} karakter");
             }
             $groups['meta_description'][md5(mb_strtolower($description))][] = $page->id;
+        }
+
+        if ($page->is_article || $page->wp_type === 'post') {
+            if ($page->published_at === null && $page->modified_at === null) {
+                $this->emit('article_date_missing', $page);
+            }
+            if (! $page->has_author) {
+                $this->emit('article_author_missing', $page);
+            }
+            $updated = $page->modified_at ?? $page->published_at;
+            if ($updated !== null && $updated->lt(now()->subDays(self::STALE_DAYS))) {
+                $this->staleArticles[$page->id] = [$page->url_hash, $updated->format('d.m.Y')];
+            }
+        }
+        if ($page->long_paragraphs >= 2) {
+            $this->emit('long_paragraphs', $page, $page->long_paragraphs.' paragraf '.HtmlParser::LONG_PARAGRAPH_WORDS.' kelimeden uzun');
         }
 
         if ($page->heading_skip !== null) {
@@ -564,6 +587,28 @@ class Auditor
             $this->emit('home_missing_organization_schema', $home, $types === [] ? 'Şema yok' : 'Bulunan: '.implode(', ', $types));
         }
 
+        if ($home->same_as === 0 && collect($types)->contains(fn ($type) => preg_match(self::ENTITY_TYPES, $type))) {
+            $this->emit('entity_same_as_missing', $home);
+        }
+
+        $missing = [];
+        foreach (self::TRUST_PAGES as $label => [$title, $urls]) {
+            $found = $this->crawl->pages()->where('status_code', 200)->where(function ($query) use ($title, $urls) {
+                $query->where('title', 'like', "%{$title}%");
+                foreach ($urls as $fragment) {
+                    $query->orWhere('url', 'like', "%{$fragment}%");
+                }
+            })->exists();
+            if (! $found) {
+                $missing[] = $label;
+            }
+        }
+        if ($missing !== []) {
+            $this->emit('trust_pages_missing', $home, 'Bulunamayan: '.implode(', ', $missing));
+        }
+
+        $this->auditStaleArticles();
+
         $llms = $this->crawl->llms_txt['status'] ?? null;
         if ($llms === 'missing') {
             $this->emit('llms_txt_missing', $home);
@@ -597,6 +642,31 @@ class Auditor
             if (($result['score'] ?? null) !== null && $result['score'] < PageSpeed::POOR_SCORE) {
                 $lab = collect($result['lab'] ?? [])->filter(fn ($value) => $value !== null)->map(fn ($value, $metric) => PageSpeed::label($metric, $value))->implode(', ');
                 $this->emitFor('pagespeed_low_score', $pageId, "Mobil puan {$result['score']}/100".($lab ? " · {$lab}" : ''));
+            }
+        }
+    }
+
+    /** Trust pages, found by a title fragment or one of the URL fragments. */
+    private const TRUST_PAGES = [
+        'hakkımızda' => ['Hakkımızda', ['hakkimizda', 'hakkinda', 'about', 'kurumsal', 'biz-kimiz']],
+        'iletişim' => ['İletişim', ['iletisim', 'contact', 'bize-ulasin']],
+        'gizlilik / KVKK' => ['Gizlilik', ['gizlilik', 'kvkk', 'privacy', 'cerez', 'cookie']],
+    ];
+
+    /**
+     * Articles not updated for a year that still bring Search Console clicks: worth refreshing before they slip.
+     */
+    private function auditStaleArticles(): void
+    {
+        if ($this->staleArticles === [] || blank($this->crawl->project->gsc_property)) {
+            return;
+        }
+
+        $clicks = DB::table('gsc_page_days')->where('project_id', $this->crawl->project_id)->where('day', '>=', now()->subDays(28)->toDateString())
+            ->whereIn('page_hash', array_column($this->staleArticles, 0))->groupBy('page_hash')->selectRaw('page_hash, SUM(clicks) as clicks')->pluck('clicks', 'page_hash');
+        foreach ($this->staleArticles as $pageId => [$hash, $date]) {
+            if (($clicks[$hash] ?? 0) > 0) {
+                $this->emitFor('stale_content', $pageId, "Son güncelleme {$date}, son 28 günde {$clicks[$hash]} tıklama");
             }
         }
     }
