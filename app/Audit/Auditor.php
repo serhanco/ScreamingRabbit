@@ -22,6 +22,9 @@ class Auditor
     /** @var array<int, string> page id => sha1 of the canonical URL it points at */
     private array $canonicalTargets = [];
 
+    /** @var array<int, array{url: string, entries: array<int, array{lang: string, url: string}>}> page id => its hreflang tags */
+    private array $hreflang = [];
+
     /** @var array<string, int> SEO plugin key => a page id that shows it */
     private array $seoPlugins = [];
 
@@ -41,6 +44,7 @@ class Auditor
         $redirects = [];
         $this->canonicalTargets = [];
         $this->seoPlugins = [];
+        $this->hreflang = [];
 
         $crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use (&$groups, &$redirects, $platform) {
             foreach ($pages as $page) {
@@ -55,6 +59,7 @@ class Auditor
         $this->auditRedirects($redirects);
         $this->auditDuplicates($groups);
         $this->auditCanonicalTargets();
+        $this->auditHreflang();
         $this->auditSeoPlugins($platform);
         $this->auditImages();
         $this->auditExternalLinks();
@@ -142,6 +147,10 @@ class Auditor
         } elseif ($page->canonical !== $page->url) {
             $this->emit('canonical_other', $page, $page->canonical);
             $this->canonicalTargets[$page->id] = sha1($page->canonical);
+        }
+
+        if ($page->status_code === 200 && ! empty($page->hreflang)) {
+            $this->hreflang[$page->id] = ['url' => $page->url, 'entries' => $page->hreflang];
         }
 
         $this->auditUrl($page);
@@ -348,6 +357,71 @@ class Auditor
             $noindex = str_contains(strtolower((string) $target->meta_robots.' '.(string) $target->x_robots), 'noindex');
             if ($target->status_code !== 200 || $noindex) {
                 $this->emitFor('canonical_target_bad', $pageId, $target->url.($target->status_code !== 200 ? ' → HTTP '.($target->status_code ?? 'yanıt yok') : ' → noindex'));
+            }
+        }
+    }
+
+    /**
+     * Each language version must list itself and every other version, and each listed version must answer
+     * 200, be indexable and point back (Google: "Tell Google about localized versions of your page").
+     */
+    private function auditHreflang(): void
+    {
+        if ($this->hreflang === []) {
+            return;
+        }
+
+        $targetHashes = [];
+        foreach ($this->hreflang as $page) {
+            foreach ($page['entries'] as $entry) {
+                $targetHashes[sha1($entry['url'])] = true;
+            }
+        }
+        $targets = [];
+        foreach (array_chunk(array_keys($targetHashes), 500) as $hashes) {
+            foreach ($this->crawl->pages()->whereIn('url_hash', $hashes)->get(['id', 'url_hash', 'url', 'state', 'status_code', 'meta_robots', 'x_robots', 'canonical']) as $target) {
+                $targets[$target->url_hash] = $target;
+            }
+        }
+
+        foreach ($this->hreflang as $pageId => $page) {
+            $langs = array_map(fn (array $entry) => strtolower($entry['lang']), $page['entries']);
+            $urls = array_column($page['entries'], 'url');
+
+            $invalid = array_unique(array_filter(array_column($page['entries'], 'lang'), fn (string $lang) => ! Hreflang::isValid($lang)));
+            if ($invalid !== []) {
+                $this->emitFor('hreflang_invalid_code', $pageId, implode(', ', $invalid));
+            }
+            if (! in_array($page['url'], $urls, true)) {
+                $this->emitFor('hreflang_missing_self', $pageId);
+            }
+            if (! in_array('x-default', $langs, true)) {
+                $this->emitFor('hreflang_missing_x_default', $pageId);
+            }
+
+            $bad = [];
+            $noReturn = [];
+            foreach (array_unique($urls) as $url) {
+                $target = $targets[sha1($url)] ?? null;
+                if ($url === $page['url'] || $target === null || $target->state !== 'done') {
+                    continue;
+                }
+                $noindex = str_contains(strtolower((string) $target->meta_robots.' '.(string) $target->x_robots), 'noindex');
+                if ($target->status_code !== 200) {
+                    $bad[] = $url.' → HTTP '.($target->status_code ?? 'yanıt yok');
+                } elseif ($noindex) {
+                    $bad[] = $url.' → noindex';
+                } elseif (filled($target->canonical) && $target->canonical !== $url) {
+                    $bad[] = $url.' → canonical başka adres';
+                } elseif (! in_array($page['url'], array_column($this->hreflang[$target->id]['entries'] ?? [], 'url'), true)) {
+                    $noReturn[] = $url;
+                }
+            }
+            if ($bad !== []) {
+                $this->emitFor('hreflang_target_bad', $pageId, implode(', ', $bad));
+            }
+            if ($noReturn !== []) {
+                $this->emitFor('hreflang_missing_return', $pageId, implode(', ', $noReturn));
             }
         }
     }
