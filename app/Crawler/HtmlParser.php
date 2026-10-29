@@ -11,8 +11,17 @@ class HtmlParser
     /** Below this many words in the raw HTML, a JavaScript app shell has no readable content without rendering. */
     private const JS_SHELL_WORDS = 50;
 
+    /** Link texts that say nothing about the target page (Google: "write good anchor text", Lighthouse "link-text" audit). */
+    public const GENERIC_ANCHORS = [
+        'buraya tıklayın', 'buraya tıklayınız', 'buraya tıkla', 'tıklayın', 'tıklayınız', 'tıkla', 'buraya', 'burada', 'burası',
+        'devamı', 'devamını oku', 'devamını okuyun', 'devamını okuyunuz', 'devamı için tıklayın', 'daha fazla', 'daha fazlası',
+        'daha fazla bilgi', 'detay', 'detaylar', 'detaylı bilgi', 'ayrıntılar', 'incele', 'göz at', 'link', 'bağlantı', 'git',
+        'click here', 'click', 'here', 'read more', 'more', 'learn more', 'more info', 'details', 'this', 'this page', 'go',
+        'continue', 'right here',
+    ];
+
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -50,10 +59,32 @@ class HtmlParser
         }
 
         $links = [];
+        $emptyAnchors = 0;
+        $genericAnchors = [];
         foreach ($xpath->query('//a[@href]') as $a) {
             $url = UrlNormalizer::resolve($a->getAttribute('href'), $pageUrl);
             if ($url !== null) {
                 $links[] = ['url' => $url, 'nofollow' => str_contains(strtolower($a->getAttribute('rel')), 'nofollow')];
+
+                $anchor = self::anchorText($xpath, $a);
+                if ($anchor === '') {
+                    $emptyAnchors++;
+                } elseif (in_array(preg_replace('/^[\s\p{P}\p{S}]+|[\s\p{P}\p{S}]+$/u', '', mb_strtolower($anchor)), self::GENERIC_ANCHORS, true)) {
+                    $genericAnchors[] = $anchor;
+                }
+            }
+        }
+
+        $uncrawlableLinks = 0;
+        foreach ($xpath->query('//a[starts-with(normalize-space(translate(@href, "JAVSCRIPT", "javscript")), "javascript:")]') as $a) {
+            // javascript:void(0) and javascript:; are menu toggles, not links to content.
+            if (! preg_match('/^javascript:\s*(void\s*\(?\s*0\s*\)?\s*;?|;|)\s*$/i', trim($a->getAttribute('href')))) {
+                $uncrawlableLinks++;
+            }
+        }
+        foreach ($xpath->query('//a[not(@href) or normalize-space(@href)="" or normalize-space(@href)="#"][@onclick]') as $a) {
+            if (preg_match('#location|window\.open|https?:|[\'"]/#i', $a->getAttribute('onclick'))) {
+                $uncrawlableLinks++;
             }
         }
 
@@ -125,6 +156,10 @@ class HtmlParser
             'word_count' => $wordCount,
             'content_hash' => md5(trim($bodyText)),
             'links' => $links,
+            'uncrawlable_links' => $uncrawlableLinks,
+            'empty_anchors' => $emptyAnchors,
+            'generic_anchors' => array_values(array_unique($genericAnchors)),
+            'generic_anchor_count' => count($genericAnchors),
             'meta_refresh' => $metaRefresh,
             'generator' => $generator,
             'images_missing_alt' => $imagesMissingAlt,
@@ -284,6 +319,24 @@ class HtmlParser
         }
 
         return null;
+    }
+
+    /**
+     * What a search engine reads as the link's text: the visible text, else image alt text, else aria-label or title.
+     */
+    private static function anchorText(DOMXPath $xpath, \DOMElement $a): string
+    {
+        $text = self::text($a->textContent) ?? '';
+        if ($text !== '') {
+            return $text;
+        }
+        foreach ($xpath->query('.//img/@alt', $a) as $alt) {
+            if (($alt = self::text($alt->nodeValue)) !== '') {
+                return $alt;
+            }
+        }
+
+        return self::text($a->getAttribute('aria-label')) ?: (self::text($a->getAttribute('title')) ?? '');
     }
 
     private static function text(?string $value): ?string

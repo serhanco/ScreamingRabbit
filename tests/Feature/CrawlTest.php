@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Crawler\BotAccess;
 use App\Crawler\CrawlRunner;
 use App\Crawler\HtmlParser;
+use App\Crawler\LlmsTxt;
 use App\Crawler\RobotsTxt;
+use App\Crawler\UrlFilter;
 use App\Crawler\UrlNormalizer;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\Project;
+use App\Reports\CrawlReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -106,6 +111,7 @@ class CrawlTest extends TestCase
         $this->assertContains('h1_multiple', $rules('/b'));
         $this->assertContains('low_content', $rules('/b'));
         $this->assertContains('title_too_short', $rules('/'));
+        $this->assertStringContainsString('Strict-Transport-Security', $byPath('/')->issues()->where('rule', 'security_headers_missing')->value('detail'));
         $this->assertContains('sitemap_missing_indexable', $rules('/b'));
         $this->assertSame(['single_inlink'], $rules('/a'));
         $this->assertSame(1, $byPath('/a')->inlinks);
@@ -152,12 +158,12 @@ class CrawlTest extends TestCase
 
     public function test_url_filter_rules(): void
     {
-        $filter = new \App\Crawler\UrlFilter('', "\\?replytocom=\n#comments");
+        $filter = new UrlFilter('', "\\?replytocom=\n#comments");
 
         $this->assertTrue($filter->allows('https://example.com/post'));
         $this->assertFalse($filter->allows('https://example.com/post?replytocom=5'));
-        $this->assertNull(\App\Crawler\UrlFilter::firstInvalid("/blog/\n^https"));
-        $this->assertSame('(unclosed', \App\Crawler\UrlFilter::firstInvalid("/ok/\n(unclosed"));
+        $this->assertNull(UrlFilter::firstInvalid("/blog/\n^https"));
+        $this->assertSame('(unclosed', UrlFilter::firstInvalid("/ok/\n(unclosed"));
     }
 
     public function test_broken_and_large_images_are_reported(): void
@@ -203,7 +209,7 @@ class CrawlTest extends TestCase
         while ((new CrawlRunner($crawl->fresh()))->run()) {
         }
 
-        $this->assertSame(3, \Illuminate\Support\Facades\DB::table('crawl_external_links')->where('crawl_id', $crawl->id)->count());
+        $this->assertSame(3, DB::table('crawl_external_links')->where('crawl_id', $crawl->id)->count());
         $this->assertSame(['HTTP 404: https://gone.other.com/x'], $crawl->issues()->where('rule', 'external_link_broken')->pluck('detail')->all());
     }
 
@@ -238,14 +244,14 @@ class CrawlTest extends TestCase
         $this->assertTrue($crawl->bot_access['applebot-extended']['robots_allowed']);
         $this->assertSame('n/a', $crawl->bot_access['google-extended']['fetch']);
         $this->assertSame('refused', $crawl->bot_access['claudebot']['fetch']);
-        $this->assertSame([], \App\Crawler\BotAccess::pending($crawl->bot_access));
+        $this->assertSame([], BotAccess::pending($crawl->bot_access));
 
         $this->assertStringContainsString('Bingbot', $crawl->issues()->where('rule', 'search_bot_blocked')->value('detail'));
         $this->assertStringContainsString('PerplexityBot', $crawl->issues()->where('rule', 'ai_search_bot_blocked')->value('detail'));
         $this->assertStringContainsString('GPTBot', $crawl->issues()->where('rule', 'ai_training_bot_blocked')->value('detail'));
         $this->assertStringContainsString('ClaudeBot (Anthropic eğitim) (403)', $crawl->issues()->where('rule', 'bot_fetch_refused')->value('detail'));
 
-        $html = (new \App\Reports\CrawlReport($crawl))->html();
+        $html = (new CrawlReport($crawl))->html();
         $this->assertStringContainsString('AI arama görünürlüğü', $html);
     }
 
@@ -278,10 +284,10 @@ class CrawlTest extends TestCase
 
     public function test_llms_txt_format(): void
     {
-        $ok = \App\Crawler\LlmsTxt::analyze("# Hekim Dijital\n\n> Sağlık iletişimi ajansı.\n\n## Hizmetler\n- [SEO](https://example.com/seo): arama\n");
+        $ok = LlmsTxt::analyze("# Hekim Dijital\n\n> Sağlık iletişimi ajansı.\n\n## Hizmetler\n- [SEO](https://example.com/seo): arama\n");
         $this->assertSame(['status' => 'ok', 'title' => 'Hekim Dijital', 'summary' => true, 'links' => 1], $ok);
-        $this->assertSame('missing', \App\Crawler\LlmsTxt::analyze('<!DOCTYPE html><html></html>')['status']);
-        $this->assertSame('missing', \App\Crawler\LlmsTxt::analyze(null)['status']);
+        $this->assertSame('missing', LlmsTxt::analyze('<!DOCTYPE html><html></html>')['status']);
+        $this->assertSame('missing', LlmsTxt::analyze(null)['status']);
     }
 
     public function test_wordpress_external_checks(): void
