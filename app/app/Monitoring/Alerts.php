@@ -22,18 +22,21 @@ class Alerts
         'new_issue' => 'Taramada yeni yüksek önemli sorun',
         'gsc_drop' => 'Search Console tıklamalarında düşüş',
         'crawl_failed' => 'Tarama hata verdi',
+        'report_ready' => 'Aylık müşteri raporu onay bekliyor',
     ];
 
     /** Short names for lists. */
     public const LABELS = [
         'down' => 'Erişilemiyor', 'up' => 'Düzeldi', 'slow' => 'Yavaş', 'ssl' => 'SSL', 'page_change' => 'Kritik sayfa',
         'new_issue' => 'Yeni sorun', 'gsc_drop' => 'GSC düşüşü', 'crawl_failed' => 'Tarama hatası',
+        'report_ready' => 'Aylık rapor',
     ];
 
     /** Default severity of each kind (docs/08 §3.1); it decides the channels (Notifier). */
     public const SEVERITY = [
         'down' => 'critical', 'up' => 'critical', 'page_change' => 'critical',
         'slow' => 'high', 'ssl' => 'high', 'new_issue' => 'high', 'gsc_drop' => 'high', 'crawl_failed' => 'high',
+        'report_ready' => 'high',
     ];
 
     /** @var array<int, AlertEvent>|null alerts held back while collecting */

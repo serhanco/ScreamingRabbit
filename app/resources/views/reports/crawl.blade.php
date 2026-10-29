@@ -40,7 +40,7 @@
 <body>
 <div class="page">
     @unless ($forPdf)
-        <div class="actions"><a href="{{ url()->current() }}/pdf">PDF olarak indir</a></div>
+        <div class="actions"><a href="{{ $pdfUrl ?? url()->current().'/pdf' }}">PDF olarak indir</a></div>
     @endunless
 
     <table class="brandbar" style="width:100%"><tr>

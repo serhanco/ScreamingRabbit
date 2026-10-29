@@ -8,6 +8,7 @@ use App\Monitoring\Channels;
 use App\Monitoring\MonitorRunner;
 use App\Monitoring\Notifier;
 use App\Monitoring\PageWatcher;
+use App\Reports\MonthlyReports;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
@@ -38,6 +39,9 @@ Schedule::call(fn () => GscSync::runAll())->name('gsc-sync')->everyTenMinutes()-
 Schedule::call(fn () => CrawlScheduler::runDue())->name('crawl-schedule')->everyTenMinutes()->withoutOverlapping(10);
 
 Schedule::call(fn () => CrawlMaintenance::rescueStalled())->name('crawl-rescue')->everyFiveMinutes();
+
+// Monthly client reports: drafted in the first week of each month (05:00 UTC, after the nightly crawls), approved by hand.
+Schedule::call(fn () => MonthlyReports::generateDue())->name('monthly-reports')->dailyAt('05:00');
 
 Schedule::call(fn () => CrawlMaintenance::prune())->name('crawl-prune')->dailyAt('04:00');
 
