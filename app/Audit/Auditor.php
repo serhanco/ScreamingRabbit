@@ -2,6 +2,7 @@
 
 namespace App\Audit;
 
+use App\Crawler\CrawlRunner;
 use App\Crawler\HtmlParser;
 use App\Crawler\UrlNormalizer;
 use App\Models\Crawl;
@@ -1015,7 +1016,8 @@ class Auditor
 
     private function crawledWholeSite(): bool
     {
-        return $this->wholeSite ??= $this->crawl->pages()->count() < (int) ($this->crawl->settings['max_urls'] ?? PHP_INT_MAX);
+        return $this->wholeSite ??= CrawlRunner::mode($this->crawl->settings ?? []) === 'spider'
+            && $this->crawl->pages()->count() < (int) ($this->crawl->settings['max_urls'] ?? PHP_INT_MAX);
     }
 
     /**
