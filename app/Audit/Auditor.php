@@ -8,6 +8,7 @@ use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\ProjectScore;
 use App\Performance\PageSpeed;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -48,6 +49,8 @@ class Auditor
     /** @var array<string, int> SEO plugin key => a page id that shows it */
     private array $seoPlugins = [];
 
+    private ?bool $wholeSite = null;
+
     public function run(Crawl $crawl): void
     {
         $this->crawl = $crawl;
@@ -70,6 +73,7 @@ class Auditor
         $this->nap = ['name' => [], 'phone' => []];
         $this->staleArticles = [];
         $this->aiScores = [];
+        $this->wholeSite = null;
 
         $crawl->pages()->orderBy('id')->chunkById(500, function ($pages) use (&$groups, &$redirects, $platform) {
             foreach ($pages as $page) {
@@ -125,6 +129,10 @@ class Auditor
         }
 
         $inlinks = $page->inlinks > 0 ? $page->inlinks.' iç linkten erişiliyor' : null;
+        if ($status >= 400 && $inlinks) {
+            // Where the broken link sits, so it can be fixed at its source.
+            $inlinks .= ' (örn. '.$this->linkSources($page)->implode(', ').')';
+        }
 
         if ($status >= 500) {
             $this->emit('http_5xx', $page, "HTTP {$status}".($inlinks ? ', '.$inlinks : ''));
@@ -332,6 +340,12 @@ class Auditor
 
         if ($page->inlinks === 1 && $page->depth > 0) {
             $this->emit('single_inlink', $page);
+        }
+
+        // Found only through the sitemap: no crawled page links to it. A crawl stopped by the URL limit may have
+        // missed the pages that link to it, so it is only judged when the whole site was crawled.
+        if ($page->inlinks === 0 && $page->depth > 0 && $page->in_sitemap && $this->crawledWholeSite()) {
+            $this->emit('orphan_page', $page);
         }
 
         if ($wordpress && $page->page_type === 'attachment') {
@@ -997,6 +1011,26 @@ class Auditor
     private function emit(string $rule, CrawlPage $page, ?string $detail = null): void
     {
         $this->emitFor($rule, $page->id, $detail);
+    }
+
+    private function crawledWholeSite(): bool
+    {
+        return $this->wholeSite ??= $this->crawl->pages()->count() < (int) ($this->crawl->settings['max_urls'] ?? PHP_INT_MAX);
+    }
+
+    /**
+     * A few pages that link to the given page, as paths.
+     *
+     * @return Collection<int, string>
+     */
+    private function linkSources(CrawlPage $page): Collection
+    {
+        return $this->crawl->pages()
+            ->join('crawl_links', 'crawl_links.from_page_id', '=', 'crawl_pages.id')
+            ->where('crawl_links.to_hash', $page->url_hash)
+            ->distinct()->orderBy('crawl_pages.depth')->limit(3)
+            ->pluck('crawl_pages.url')
+            ->map(fn (string $url) => (parse_url($url, PHP_URL_PATH) ?: '/').(($query = parse_url($url, PHP_URL_QUERY)) ? '?'.$query : ''));
     }
 
     private function emitFor(string $rule, int $pageId, ?string $detail = null): void
