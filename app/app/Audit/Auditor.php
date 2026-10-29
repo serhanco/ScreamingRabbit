@@ -256,6 +256,9 @@ class Auditor
         if ($recommended->isNotEmpty()) {
             $this->emit('schema_missing_recommended', $page, mb_substr($recommended->map(fn (array $p) => $p['type'].': '.implode(', ', str_replace('|', ' veya ', $p['recommended'])))->implode(' · '), 0, 250));
         }
+        if (! empty($page->schema_mismatch)) {
+            $this->emit('schema_page_mismatch', $page, implode(' · ', $page->schema_mismatch));
+        }
         if (filled($page->schema_duplicates)) {
             $this->emit('schema_duplicate_type', $page, str_replace(',', ', ', $page->schema_duplicates).' birden fazla kez');
         }
