@@ -3,6 +3,7 @@
 namespace App\Crawler;
 
 use App\Audit\SchemaRules;
+use App\Audit\SimHash;
 use DOMDocument;
 use DOMXPath;
 
@@ -21,7 +22,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -150,6 +151,15 @@ class HtmlParser
         $bodyText = preg_replace('/\s+/u', ' ', implode(' ', $texts));
         $wordCount = (int) preg_match_all('/[\p{L}\p{N}]+/u', $bodyText);
 
+        // The near-duplicate fingerprint uses the main text only, so a shared menu and footer don't make pages look alike.
+        foreach ($xpath->query('//nav|//header|//footer|//aside|//form') as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+        $mainText = [];
+        foreach ($xpath->query('//text()') as $node) {
+            $mainText[] = $node->nodeValue;
+        }
+
         $wordpress = (bool) preg_match('#/wp-content/|/wp-json/|/wp-includes/#', $html)
             || ($generator !== null && stripos($generator, 'wordpress') !== false);
 
@@ -162,6 +172,7 @@ class HtmlParser
             'h1' => $h1,
             'word_count' => $wordCount,
             'content_hash' => md5(trim($bodyText)),
+            'simhash' => SimHash::of(implode(' ', $mainText)),
             'links' => $links,
             'uncrawlable_links' => $uncrawlableLinks,
             'empty_anchors' => $emptyAnchors,

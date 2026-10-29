@@ -158,7 +158,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ JS yönlendirmelerini yakalama **[VPS]**
 
 **İçerik**
-- ○ Yakın kopya (minhash, benzerlik %)
+- ✓ Yakın kopya: ana metnin (menü, header, footer hariç) SimHash parmak izi, en fazla 3 bit fark (~%95 benzer); binlerce sayfada bant eşleştirme ile hızlı. Birebir kopyalar ayrıca raporlanır
 - ○ Kaynak kodda metin/regex arama, custom extraction (XPath, CSS, regex)
 - ○ H2 ve başlık hiyerarşisi (sırasız başlıklar)
 - ○ Türkçe uyarlanmış okunabilirlik
