@@ -41,6 +41,11 @@ class CrawlInfolist
                             ->hintIcon(Heroicon::OutlinedInformationCircle, tooltip: HealthScore::EXPLANATION),
                         TextEntry::make('started_at')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('-'),
                         TextEntry::make('finished_at')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('-'),
+                        TextEntry::make('robots_simulation')->label('robots.txt')
+                            ->state('Bu tarama proje ayarlarındaki deneme robots.txt ile yapıldı (canlı dosya değil).')
+                            ->color('warning')
+                            ->visible(fn (Crawl $record): bool => filled($record->settings['robots_override'] ?? null))
+                            ->columnSpanFull(),
                         TextEntry::make('error')->label('Hata')->visible(fn (Crawl $record): bool => filled($record->error))->columnSpanFull(),
                     ]),
                 Section::make('İlerleme')

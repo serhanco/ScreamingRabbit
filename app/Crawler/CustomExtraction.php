@@ -5,6 +5,7 @@ namespace App\Crawler;
 use App\Models\Crawl;
 use DOMDocument;
 use DOMXPath;
+use Symfony\Component\CssSelector\CssSelectorConverter;
 
 /**
  * Project-defined searches run on every page's HTML source during the crawl: text that should or should not be
@@ -19,6 +20,7 @@ class CustomExtraction
         'not_contains' => 'Kaynakta geçmeyen sayfalar',
         'regex' => 'Regex ile çıkar (ilk eşleşme)',
         'xpath' => 'XPath ile çıkar (ilk değer)',
+        'css' => 'CSS seçici ile çıkar (ilk değer)',
     ];
 
     private const MAX_VALUE = 200;
@@ -37,6 +39,7 @@ class CustomExtraction
                 'not_contains' => mb_stripos($html, $rule['value']) === false,
                 'regex' => self::regex($rule['value'], $html),
                 'xpath' => self::xpath($xpath ??= self::dom($html), $rule['value']),
+                'css' => ($query = self::cssToXpath($rule['value'])) === null ? null : self::xpath($xpath ??= self::dom($html), $query),
             };
         }
 
@@ -66,6 +69,16 @@ class CustomExtraction
         libxml_use_internal_errors($previous);
 
         return $ok;
+    }
+
+    /** XPath for a CSS selector such as ".author-name" or "div.price > span"; null when the selector is invalid. */
+    public static function cssToXpath(string $selector): ?string
+    {
+        try {
+            return (new CssSelectorConverter)->toXPath($selector);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

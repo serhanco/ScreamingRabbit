@@ -101,6 +101,13 @@ class ProjectForm
                             ->label('Dış linkleri kontrol et')
                             ->helperText('Başka sitelere verilen linkler tarama sonunda bir kez kontrol edilir (en fazla '.$defaults['max_external'].').')
                             ->default($defaults['check_external']),
+                        Textarea::make('crawl_settings.robots_override')
+                            ->label('Deneme robots.txt (simülasyon)')
+                            ->rows(4)
+                            ->maxLength(100_000)
+                            ->columnSpanFull()
+                            ->placeholder("User-agent: *\nDisallow: /etiket/")
+                            ->helperText('Doluysa tarama sitedeki robots.txt yerine bunu uygular; canlı site değişmez. Değişikliği yayına almadan önce hangi sayfaların engelleneceğini görmek için kullanın, sonra boşaltın.'),
                         Textarea::make('crawl_settings.include')
                             ->label('Sadece şunları tara')
                             ->rows(3)
@@ -155,6 +162,9 @@ class ProjectForm
                                         }
                                         if ($get('type') === 'xpath' && ! CustomExtraction::isValidXpath((string) $value)) {
                                             $fail('Geçersiz XPath.');
+                                        }
+                                        if ($get('type') === 'css' && CustomExtraction::cssToXpath((string) $value) === null) {
+                                            $fail('Geçersiz CSS seçici.');
                                         }
                                     }),
                             ]),
