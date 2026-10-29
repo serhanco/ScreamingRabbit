@@ -172,7 +172,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Anchor text analizi: metinsiz linkler ve "buraya tıklayın", "devamı" türü anlamsız metinler sayfa bazında bulgu olur (görsel alt metni ve aria-label link metni sayılır)
 - ✓ İç Link Score: site içi PageRank (nofollow geçmez, yönlendirme hedefe aktarır), 1-100 logaritmik; sayfa listesinde, sayfa detayında ve CSV'de
 - ✓ Taranamayan linkler (`href="javascript:…"`, `onclick` ile açılan `href`'siz linkler; menü açma düğmeleri sayılmaz)
-- ○ Dizin bazlı derinlik ve dağılım
+- ✓ Dizin bazlı derinlik ve dağılım: tarama sayfasında "Dizin dağılımı" tablosu (sayfa, indekslenebilir, hatalı, ortalama/en fazla derinlik, ortalama link puanı, bulgu)
 
 **Yapısal veri**
 - ◐ JSON-LD ve Microdata türleri ✓, site geneli "Yapısal veri envanteri" tablosu (tür, sayfa sayısı, eksik alanlı sayfalar) ✓; RDFa ○
