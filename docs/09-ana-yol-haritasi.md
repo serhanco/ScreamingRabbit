@@ -180,7 +180,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Google zengin sonuç gereksinimleri: Article (+ BlogPosting, NewsArticle), Product (+ Offer, Review, AggregateRating), BreadcrumbList/ListItem, FAQPage/Question/Answer, Recipe, Event, LocalBusiness (+ Dentist, MedicalClinic vb. alt türler), Organization, VideoObject, JobPosting; zorunlu eksik (orta) ve önerilen eksik (düşük, yalnızca ana şemalarda) ayrı bulgu. HowTo Google'da kaldırıldığı için yok
 - ◐ Şema ↔ sayfa tutarlılığı: makale başlığı / ürün adı sayfanın title veya H1'ine benziyor mu ✓, teklif fiyatı sayfada yazıyor mu (1.500,00 ve 1,500.00 biçimleri) ✓, sayfa içi kırık `@id` bağlantıları ✓; tarih karşılaştırması ○
 - ✓ Yinelenen ana şemalar (örn. hem Yoast hem tema Organization basıyor); çelişen değerler ○
-- ○ WordPress: SEO eklentisinin şema grafiği (Yoast/Rank Math) kontrolü
+- ✓ WordPress: SEO eklentisinin şema grafiği (Yoast/Rank Math) kontrolü — ana sayfada WebSite düğümü veya kurum logosu yoksa bulgu
 
 **Performans**
 - ✓ PageSpeed Insights API + CrUX: her taramadan sonra 5 örnek sayfa (ana sayfa, her içerik türünün en güçlü sayfası, sonra Link Score), mobil; gerçek kullanıcı LCP/INP/CLS ve Lighthouse puanı bulguya dönüşür. Anahtarsız çalışır, isteğe bağlı API anahtarı Google ayarlarında

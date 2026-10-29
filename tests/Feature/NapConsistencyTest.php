@@ -20,7 +20,7 @@ class NapConsistencyTest extends TestCase
             .'<body><p>Bizi arayın: '.$visible.'</p></body></html>';
 
         $parsed = HtmlParser::parse($html('+90 212 555 00 00', '0 (212) 555 00 00'), 'https://example.com/');
-        $this->assertSame(['name' => 'Gülüş Diş', 'phone' => '2125550000'], $parsed['entity']);
+        $this->assertSame(['name' => 'Gülüş Diş', 'phone' => '2125550000', 'logo' => false], $parsed['entity']);
         $this->assertSame([], $parsed['schema_mismatch']);
 
         $parsed = HtmlParser::parse($html('+90 212 555 00 00', '0 (216) 444 11 11'), 'https://example.com/');
