@@ -56,6 +56,12 @@ class ProjectsTable
                     ->icon(Heroicon::OutlinedRectangleGroup)
                     ->color('gray')
                     ->url(fn (Project $record): string => ProjectResource::getUrl('segments', ['record' => $record])),
+                Action::make('wordpress')
+                    ->label('WordPress')
+                    ->icon(Heroicon::OutlinedPuzzlePiece)
+                    ->color('gray')
+                    ->visible(fn (Project $record): bool => $record->platform === 'wordpress')
+                    ->url(fn (Project $record): string => ProjectResource::getUrl('wordpress', ['record' => $record])),
                 EditAction::make(),
             ])
             ->toolbarActions([
