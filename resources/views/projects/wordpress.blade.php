@@ -125,6 +125,33 @@
                 </x-filament::section>
             @endif
 
+            @php $events = \App\Models\WpEvent::where('project_id', $connection->project_id)->latest('received_at')->limit(20)->get(); @endphp
+            @if ($events->isNotEmpty())
+                <x-filament::section heading="Son içerik değişiklikleri" description="Eklentinin bildirdiği yayınlama, güncelleme ve kaldırmalar; adres bir dakika sonra kontrol edilir, sorun varsa uyarı gelir.">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <tr class="text-left opacity-70"><th>Zaman</th><th>Olay</th><th>Adres</th><th>Kontrol</th></tr>
+                            @foreach ($events as $e)
+                                <tr class="align-top">
+                                    <td class="pe-3 whitespace-nowrap">{{ $e->received_at->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m H:i') }}</td>
+                                    <td class="pe-3">{{ \App\Models\WpEvent::EVENTS[$e->event] ?? $e->event }}</td>
+                                    <td class="pe-3 break-all">{{ $e->url }}</td>
+                                    <td>
+                                        @if (! $e->checked_at)
+                                            <span class="opacity-70">Bekliyor</span>
+                                        @elseif ($e->problems)
+                                            <span class="text-danger-600">{{ implode('; ', $e->problems) }}</span>
+                                        @else
+                                            <span class="text-success-600">Sorun yok</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </table>
+                    </div>
+                </x-filament::section>
+            @endif
+
             @php
                 $plugins = collect($inv['plugins'] ?? [])->sortBy([['active', 'desc'], ['name', 'asc']]);
                 $updates = $plugins->whereNotNull('update')->count();

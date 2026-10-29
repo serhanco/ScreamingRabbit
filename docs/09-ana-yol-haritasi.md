@@ -216,7 +216,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ◐ Önbellek eklentisi tespiti ✓ (WordPress sayfasında); gereksiz baş etiketleri ○
 
 **WP-3 · Olaylar ve onaylı yazma**
-- ○ İçerik yayınlandı/güncellendi → ilgili URL'yi öncelikli yeniden kontrol
+- ✓ İçerik yayınlandı/güncellendi/kaldırıldı → eklenti adresi imzalı olarak bildirir, uygulama bir dakika sonra kontrol eder: hata, yönlendirme, noindex, başka canonical; kaldırılan sayfaya hâlâ iç link varsa uyarı ("İçerik" uyarı türü), WordPress sayfasında son 20 değişiklik
 - ○ Onaylı değişiklikler: SEO title/meta, noindex, 301 yönlendirme, görsel alt metni
 - ○ Değişiklik günlüğü, çakışma koruması, tek tıkla geri alma
 - ✓ Eklentinin kendi güncelleme kontrolü: yeni sürüm WordPress'in Güncellemeler ekranına gelir (uygulamadan 12 saatte bir sorulur, paket bağlantısı sitenin anahtarıyla imzalı; yalnızca eşleşmiş siteler indirir)

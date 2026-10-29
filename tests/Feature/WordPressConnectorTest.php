@@ -7,6 +7,7 @@ use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\WpConnection;
+use App\Models\WpEvent;
 use App\WordPress\Connector;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -102,10 +103,12 @@ class WordPressConnectorTest extends TestCase
             'vulnerabilities' => [['type' => 'plugin', 'slug' => 'wordpress-seo', 'name' => 'Yoast SEO', 'version' => '25.0', 'items' => [['title' => 'Stored XSS', 'severity' => 'Orta', 'score' => 6.4, 'fixed_in' => '25.1', 'unfixed' => false, 'link' => null]]]],
             'vulnerabilities_checked_at' => now()]);
 
+        WpEvent::create(['project_id' => $project->id, 'event' => 'published', 'url' => 'https://klinik.com/yeni/', 'received_at' => now(), 'checked_at' => now(), 'problems' => ['Sayfa noindex: Google dizine almaz']]);
+
         $this->actingAs($admin)->get(ProjectResource::getUrl('wordpress', ['record' => $project]))
             ->assertOk()->assertSee('6.9 güncellemesi var')->assertSee('Yoast SEO')->assertSee('25.1 var')
             ->assertSee('site haritası açık')->assertSee('Saat dilimi ayarlı değil')->assertSee('wp-login.php')
-            ->assertSee('Bu seferlik ZIP')->assertSee('Stored XSS')->assertSee('25.1 sürümünde düzeldi');
+            ->assertSee('Bu seferlik ZIP')->assertSee('Sayfa noindex: Google dizine almaz')->assertSee('Stored XSS')->assertSee('25.1 sürümünde düzeldi');
 
         Livewire::actingAs($admin)->test(ProjectWordPress::class, ['record' => $project->id])
             ->callAction('code')->assertSet('code', fn (string $code) => str_starts_with($code, 'SR1.'));

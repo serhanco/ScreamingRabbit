@@ -34,6 +34,19 @@ class WordPressController extends Controller
         return $this->zip();
     }
 
+    /** A content change from the plugin (signed); the URL is re-checked a minute later by ContentChecks. */
+    public function event(Request $request): JsonResponse
+    {
+        $error = Connector::receiveEvent([
+            'site' => (string) $request->header('X-SR-Site'),
+            'timestamp' => (string) $request->header('X-SR-Timestamp'),
+            'nonce' => (string) $request->header('X-SR-Nonce'),
+            'signature' => (string) $request->header('X-SR-Signature'),
+        ], $request->getContent());
+
+        return $error === null ? response()->json(['ok' => true], 202) : response()->json(['message' => $error], $error === 'bad_payload' ? 422 : 401);
+    }
+
     /** Newest plugin version, asked by installed plugins twice a day for WordPress's update screen. */
     public function version(): JsonResponse
     {
