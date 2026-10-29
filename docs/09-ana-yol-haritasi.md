@@ -143,9 +143,9 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 
 **Raporlama**
 - ○ Markalı müşteri raporu (Serhan'ın logosu ve renkleri)
-- ○ Aylık rapor otomatik hazırlanır, Serhan onaylar ve gönderir
+- ✓ Aylık rapor otomatik hazırlanır (ayın ilk haftası, son 45 günde taranan projeler, Telegram/e-posta ile "onay bekliyor" uyarısı); "Müşteri raporları" sayfasında önizle, onayla, müşteriye e-postayla gönder; istenirse ay içinde elle hazırlanır
 - ○ Rapor bölümleri: sağlık skoru ve trend, yapılan işler ve etkisi, açık öncelikli aksiyonlar, GSC özeti, erişilebilirlik, WordPress güvenliği
-- ○ Rapor arşivi (müşteri geçmiş raporları linkten görür)
+- ✓ Rapor arşivi: onaylanan raporun dondurulmuş kopyası saklanır (eski taramalar silinse de açılır); müşteri proje başına tek bağlantıdan tüm geçmiş raporları ve PDF'lerini görür
 
 ## 6. Faz 5 · Derin teknik denetim (Screaming Frog eşitliği)
 
