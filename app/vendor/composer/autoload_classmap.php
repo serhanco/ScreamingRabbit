@@ -38,6 +38,7 @@ return array(
     'App\\Crawler\\WordPressProbe' => $baseDir . '/app/Crawler/WordPressProbe.php',
     'App\\Events\\MonitorAlert' => $baseDir . '/app/Events/MonitorAlert.php',
     'App\\Exports\\CrawlCsv' => $baseDir . '/app/Exports/CrawlCsv.php',
+    'App\\Exports\\CrawlSitemap' => $baseDir . '/app/Exports/CrawlSitemap.php',
     'App\\Filament\\Concerns\\ScopedToUserProjects' => $baseDir . '/app/Filament/Concerns/ScopedToUserProjects.php',
     'App\\Filament\\Pages\\GoogleSettings' => $baseDir . '/app/Filament/Pages/GoogleSettings.php',
     'App\\Filament\\Pages\\NotificationSettings' => $baseDir . '/app/Filament/Pages/NotificationSettings.php',

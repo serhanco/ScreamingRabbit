@@ -756,6 +756,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Crawler\\WordPressProbe' => __DIR__ . '/../..' . '/app/Crawler/WordPressProbe.php',
         'App\\Events\\MonitorAlert' => __DIR__ . '/../..' . '/app/Events/MonitorAlert.php',
         'App\\Exports\\CrawlCsv' => __DIR__ . '/../..' . '/app/Exports/CrawlCsv.php',
+        'App\\Exports\\CrawlSitemap' => __DIR__ . '/../..' . '/app/Exports/CrawlSitemap.php',
         'App\\Filament\\Concerns\\ScopedToUserProjects' => __DIR__ . '/../..' . '/app/Filament/Concerns/ScopedToUserProjects.php',
         'App\\Filament\\Pages\\GoogleSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/GoogleSettings.php',
         'App\\Filament\\Pages\\NotificationSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/NotificationSettings.php',
