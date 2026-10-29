@@ -17,11 +17,11 @@ Fazların sonunda ScreamingRabbit:
 | Faz | Ad | Müşteriye satılabilir çıktı | Durum |
 |---|---|---|---|
 | 0 | Araştırma, mimari, kurulum | — | ✓ |
-| 1 | Temel teknik denetim (MVP) | Teknik SEO denetim raporu | ◐ sürüyor |
-| 2 | Hızlı kazançlar: WordPress dış kontroller + uptime izleyici + AI arama temelleri | WordPress güvenlik/SEO kontrolü, 7/24 erişilebilirlik takibi, "AI botları sitenizi okuyabiliyor mu?" kontrolü | ○ |
-| 3 | GSC ve iş listesi | Trafiğe göre öncelikli aksiyon planı, kannibalizasyon/zombi sayfa analizi | ○ |
-| 4 | Otomasyon, değişiklik takibi, raporlama | Aylık otomatik rapor, "neyi düzelttik, ne bozuldu" | ○ |
-| 5 | Derin teknik denetim (Screaming Frog eşitliği) | Yapısal veri doğrulama, GEO/AEO denetimi, hreflang, Core Web Vitals | ○ |
+| 1 | Temel teknik denetim (MVP) | Teknik SEO denetim raporu | ✓ (liste modu ve 50.000 URL testi kaldı) |
+| 2 | Hızlı kazançlar: WordPress dış kontroller + uptime izleyici + AI arama temelleri | WordPress güvenlik/SEO kontrolü, 7/24 erişilebilirlik takibi, "AI botları sitenizi okuyabiliyor mu?" kontrolü | ✓ |
+| 3 | GSC ve iş listesi | Trafiğe göre öncelikli aksiyon planı, kannibalizasyon/zombi sayfa analizi | ✓ |
+| 4 | Otomasyon, değişiklik takibi, raporlama | Aylık otomatik rapor, "neyi düzelttik, ne bozuldu" | ✓ |
+| 5 | Derin teknik denetim (Screaming Frog eşitliği) | Yapısal veri doğrulama, GEO/AEO denetimi, hreflang, Core Web Vitals | ✓ (form girişi ve [VPS] işleri kaldı) |
 | 6 | WordPress bağlantı eklentisi | Site içinden tam envanter, açık taraması, tek tıkla düzeltme | ○ |
 | 7 | AI ve ileri analiz | AI destekli içerik/meta iyileştirme, log analizi, içerik kümeleri | ○ |
 
@@ -52,7 +52,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Görseller: boyut özniteliği (width/height) eksik, CLS riski
 - ✓ Mimari: tek iç linkli sayfa
 - ✓ Güvenlik: mixed content, HTTPS sayfadan HTTP'ye iç link
-- ○ Güvensiz form
+- ✓ Güvensiz form (http:// adrese gönderilen form, HTTP sayfada şifre alanı)
 - ✓ WordPress temel: ek sayfaları, ince arşivler, birden fazla SEO eklentisi
 
 **Ekranlar ve rapor**
@@ -70,7 +70,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ Eklenti/tema envanteri (HTML izlerinden) ve güncellik
 - ✓ Kullanıcı adı ifşası (`?author=`, REST users), `xmlrpc.php`, varsayılan dosyalar, `debug.log`, dizin listeleme, yapılandırma yedekleri, HTTP giriş sayfası
 - ✓ "Arama motorlarını engelle" açık, çift site haritası, iç arama indekslenebilir, `?replytocom`, varsayılan içerik, "Kategorilenmemiş"
-- ◐ Sayfalama canonical'ı ✓ (Faz 5); staging sızıntısı, SEOPress/The SEO Framework tespiti
+- ◐ Sayfalama canonical'ı ✓ (Faz 5), SEOPress/The SEO Framework tespiti ✓; staging sızıntısı ○
 - ✓ Raporda "WordPress" bölümü: sürüm, eklenti/tema, güvenlik kontrol listesi
 
 **AI arama ve yapısal veri temelleri (GEO-1)** — her taramada otomatik, ek istek neredeyse yok

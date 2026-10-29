@@ -34,7 +34,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string, logo: bool}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int, quotes: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, insecure_forms: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string, logo: bool}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int, quotes: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -149,6 +149,17 @@ class HtmlParser
             }
         }
 
+        // Forms whose data would travel unencrypted: posted to an http:// address, or a password field on an http page.
+        $insecureForms = 0;
+        foreach ($xpath->query('//form') as $form) {
+            $action = trim($form->getAttribute('action'));
+            $target = $action === '' ? $pageUrl : (UrlNormalizer::resolve($action, $pageUrl) ?? '');
+            $password = $xpath->query('.//input[translate(@type, "PASSWORD", "password")="password"]', $form)->length > 0;
+            if (stripos($target, 'http://') === 0 && (str_starts_with($pageUrl, 'https://') || $password)) {
+                $insecureForms++;
+            }
+        }
+
         $bodyClass = ' '.strtolower((string) $xpath->query('//body/@class')->item(0)?->nodeValue).' ';
         $pageType = match (true) {
             str_contains($bodyClass, ' attachment ') || str_contains($bodyClass, ' attachment-') => 'attachment',
@@ -183,7 +194,7 @@ class HtmlParser
         }
 
         $seoPlugins = [];
-        foreach (['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math', 'aioseo' => 'All in One SEO'] as $key => $needle) {
+        foreach (['yoast' => 'Yoast SEO', 'rankmath' => 'Rank Math', 'aioseo' => 'All in One SEO', 'seopress' => 'wp-seopress', 'tsf' => 'The SEO Framework'] as $key => $needle) {
             if (stripos($html, $needle) !== false) {
                 $seoPlugins[] = $key;
             }
@@ -257,6 +268,7 @@ class HtmlParser
             'images_missing_size' => $imagesMissingSize,
             'images' => $images,
             'mixed_content' => $mixedContent,
+            'insecure_forms' => $insecureForms,
             'page_type' => $pageType,
             'seo_plugin' => $seoPlugins === [] ? null : implode(',', $seoPlugins),
             'schema_types' => $schemaTypes,

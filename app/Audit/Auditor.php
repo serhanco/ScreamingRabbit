@@ -154,6 +154,9 @@ class Auditor
         if ($page->mixed_content > 0) {
             $this->emit('mixed_content', $page, $page->mixed_content.' HTTP kaynak');
         }
+        if ($page->insecure_forms > 0) {
+            $this->emit('insecure_form', $page, $page->insecure_forms.' form');
+        }
 
         if ($page->http_internal_links > 0) {
             $this->emit('https_to_http_link', $page, $page->http_internal_links.' HTTP iç link');
