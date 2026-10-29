@@ -34,11 +34,14 @@ class WordPressChangesTest extends TestCase
     /** What the plugin's /change route answers next. */
     private array $answer = [];
 
+    /** What the plugin's /meta route answers. */
+    private array $meta = ['post_id' => 12, 'seo_plugin' => 'yoast', 'writes_enabled' => true, 'redirect' => '', 'title' => 'Eski başlık', 'description' => '', 'noindex' => ''];
+
     private function fakeSite(array $body, int $status = 200): void
     {
         $this->answer = [$body, $status];
         Http::fake(fn (Request $request) => str_contains($request->url(), 'meta')
-            ? Http::response(['post_id' => 12, 'seo_plugin' => 'yoast', 'writes_enabled' => true, 'title' => 'Eski başlık', 'description' => '', 'noindex' => ''])
+            ? Http::response($this->meta)
             : Http::response(...$this->answer));
     }
 
@@ -77,6 +80,22 @@ class WordPressChangesTest extends TestCase
         $this->assertStringContainsString('Değişiklik izni', $change->fresh()->error);
 
         $this->assertSame('Yeni değer sitedekiyle aynı.', Changes::propose($this->project, 'https://klinik.com/hizmet/', 'title', 'Eski başlık', $this->admin));
+    }
+
+    public function test_alt_text_and_redirects(): void
+    {
+        $this->fakeSite(['before' => '', 'after' => 'https://klinik.com/yeni-sayfa']);
+
+        $this->assertSame('Bu adreste medya kütüphanesinde bir görsel yok.', Changes::propose($this->project, 'https://klinik.com/hizmet/', 'alt', 'Diş', $this->admin));
+        $this->assertSame('Yönlendirme aynı sitede başka bir adrese gitmeli.', Changes::propose($this->project, 'https://klinik.com/eski/', 'redirect', 'https://baska.com/', $this->admin));
+
+        $redirect = Changes::propose($this->project, 'https://klinik.com/eski/', 'redirect', 'https://klinik.com/yeni-sayfa', $this->admin);
+        $this->assertSame(['', 'https://klinik.com/yeni-sayfa', '(yönlendirme yok)'], [$redirect->before, $redirect->after, $redirect->show($redirect->before)]);
+        $this->assertSame('applied', Changes::apply($redirect, $this->admin)->status);
+
+        $this->meta = ['seo_plugin' => 'yoast', 'writes_enabled' => true, 'redirect' => '', 'attachment_id' => 40, 'alt' => ''];
+        $alt = Changes::propose($this->project, 'https://klinik.com/wp-content/uploads/implant.jpg', 'alt', 'İmplant tedavisi', $this->admin);
+        $this->assertSame([40, ''], [$alt->post_id, $alt->before]);
     }
 
     public function test_page_actions_propose_and_apply(): void

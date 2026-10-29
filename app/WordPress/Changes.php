@@ -8,7 +8,8 @@ use App\Models\WpChange;
 use App\Models\WpConnection;
 
 /**
- * Approved changes through the Connector plugin (docs/07 WP-3): SEO title, meta description and noindex of a page.
+ * Approved changes through the Connector plugin (docs/07 WP-3): SEO title, meta description and noindex of a page,
+ * an image's alt text and 301 redirects.
  * A change is proposed with the value it replaces read from the site, applied only when someone approves it, and
  * refused by the plugin when the site's value changed in between. Undo is a reverse change with the same checks.
  */
@@ -21,7 +22,11 @@ class Changes
         'sr_no_seo_plugin' => 'Sitede Yoast SEO veya Rank Math etkin değil; başlık ve açıklama yazılacak yer yok.',
         'sr_conflict' => 'Değer bu arada sitede değişmiş; güncel değerle yeniden önerin.',
         'sr_unauthorized' => 'Eklenti isteği reddetti; bağlantıyı yenileyin.',
-        'rest_no_route' => 'Sitedeki eklenti eski; 0.5.0 veya üstüne güncelleyin.',
+        'sr_not_an_image' => 'Bu adreste medya kütüphanesinde bir görsel yok.',
+        'sr_bad_target' => 'Yönlendirme aynı sitede başka bir adrese gitmeli.',
+        'sr_too_many_redirects' => 'Eklentinin yönlendirme sınırı (500) doldu.',
+        'sr_bad_request' => 'Sitedeki eklenti bu değişikliği tanımıyor; eklentiyi güncelleyin.',
+        'rest_no_route' => 'Sitedeki eklenti eski; WordPress panelinden güncelleyin.',
     ];
 
     /**
@@ -55,14 +60,21 @@ class Changes
         if (isset($current['error'])) {
             return $current['error'];
         }
+        $values = $current['values'];
+        if (! array_key_exists($field, $values)) {
+            return $field === 'alt' ? self::ERRORS['sr_not_an_image'] : ($field === 'redirect' ? self::ERRORS['sr_bad_request'] : self::ERRORS['sr_not_a_post']);
+        }
         $after = trim((string) $after);
-        $before = (string) ($current['values'][$field] ?? '');
+        if ($field === 'redirect' && $after !== '' && (! Connector::sameSite($after, $project->base_url) || rtrim($after, '/') === rtrim($url, '/'))) {
+            return self::ERRORS['sr_bad_target'];
+        }
+        $before = (string) $values[$field];
         if ($after === $before) {
             return 'Yeni değer sitedekiyle aynı.';
         }
 
         return WpChange::create([
-            'project_id' => $project->id, 'url' => $url, 'post_id' => $current['values']['post_id'] ?? null, 'field' => $field,
+            'project_id' => $project->id, 'url' => $url, 'post_id' => $values['post_id'] ?? $values['attachment_id'] ?? null, 'field' => $field,
             'before' => $before, 'after' => $after, 'status' => 'proposed', 'proposed_by' => $user->id,
         ]);
     }

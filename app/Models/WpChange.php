@@ -14,7 +14,7 @@ class WpChange extends Model
 {
     use LogsActivity;
 
-    public const FIELDS = ['title' => 'SEO başlığı', 'description' => 'Meta açıklama', 'noindex' => 'Arama motoru dizini'];
+    public const FIELDS = ['title' => 'SEO başlığı', 'description' => 'Meta açıklama', 'noindex' => 'Arama motoru dizini', 'alt' => 'Görsel alt metni', 'redirect' => '301 yönlendirme'];
 
     public const NOINDEX = ['' => 'Varsayılan (SEO eklentisinin ayarı)', 'index' => 'Dizine al (index)', 'noindex' => 'Dizine alma (noindex)'];
 
@@ -55,6 +55,12 @@ class WpChange extends Model
 
     public function show(?string $value): string
     {
-        return $this->field === 'noindex' ? (self::NOINDEX[(string) $value] ?? (string) $value) : ((string) $value === '' ? '(boş, SEO eklentisi varsayılanı)' : (string) $value);
+        return match (true) {
+            $this->field === 'noindex' => self::NOINDEX[(string) $value] ?? (string) $value,
+            (string) $value !== '' => (string) $value,
+            $this->field === 'redirect' => '(yönlendirme yok)',
+            $this->field === 'alt' => '(boş)',
+            default => '(boş, SEO eklentisi varsayılanı)',
+        };
     }
 }
