@@ -11,13 +11,16 @@ class GeminiDriver implements Driver
 {
     public function __construct(private readonly string $apiKey) {}
 
-    public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier): array
+    public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier, array $images = []): array
     {
+        $parts = array_map(fn (array $image) => ['inlineData' => ['mimeType' => $image['mime'], 'data' => $image['data']]], $images);
+        $parts[] = ['text' => $prompt];
+
         try {
             $response = Http::timeout(120)->acceptJson()->withHeaders(['x-goog-api-key' => $this->apiKey])
                 ->post('https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent', [
                     'systemInstruction' => ['parts' => [['text' => $system]]],
-                    'contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
+                    'contents' => [['role' => 'user', 'parts' => $parts]],
                     'generationConfig' => ['maxOutputTokens' => $maxTokens],
                 ]);
         } catch (\Throwable) {
