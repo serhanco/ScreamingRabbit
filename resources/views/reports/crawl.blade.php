@@ -1,6 +1,7 @@
 @php
     $color = fn (?int $s) => $s === null ? '#6b7280' : ($s >= 80 ? '#15803d' : ($s >= 50 ? '#b45309' : '#b91c1c'));
     $sevColor = ['high' => '#b91c1c', 'medium' => '#b45309', 'low' => '#1d4ed8', 'info' => '#6b7280'];
+    $branding = $report['branding'] ?? \App\Reports\ReportBranding::current();
     // Embedded so the PDF renderer, which never fetches remote files, shows it too.
     $logoFile = public_path('images/logo-mark.svg');
     $logo = is_file($logoFile) ? 'data:image/svg+xml;base64,'.base64_encode(file_get_contents($logoFile)) : null;
@@ -17,7 +18,7 @@
         body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 12px; color: #1f2937; margin: 0; padding: {{ $forPdf ? '0' : '24px' }}; background: {{ $forPdf ? '#fff' : '#f3f4f6' }}; }
         .page { max-width: 820px; margin: 0 auto; background: #fff; padding: {{ $forPdf ? '0' : '32px' }}; }
         h1 { font-size: 22px; margin: 0 0 4px; }
-        h2 { font-size: 15px; margin: 26px 0 8px; border-bottom: 2px solid #ea580c; padding-bottom: 4px; }
+        h2 { font-size: 15px; margin: 26px 0 8px; border-bottom: 2px solid {{ $branding['accent'] }}; padding-bottom: 4px; }
         .muted { color: #6b7280; }
         .meta td { padding: 2px 16px 2px 0; }
         .score { font-size: 44px; font-weight: bold; margin: 0; }
@@ -29,7 +30,7 @@
         .badge { display: inline-block; padding: 1px 7px; border-radius: 9px; color: #fff; font-size: 10px; }
         .urls { word-break: break-all; font-size: 10px; color: #4b5563; margin: 4px 0 0; padding-left: 16px; }
         .footer { margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 10px; color: #6b7280; }
-        a { color: #c2410c; }
+        a { color: {{ $branding['link'] }}; }
         .actions { margin-bottom: 14px; }
         .brandbar { border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 18px; }
         .brandbar td { vertical-align: middle; }
@@ -44,8 +45,15 @@
     @endunless
 
     <table class="brandbar" style="width:100%"><tr>
-        <td style="width:40px">@if ($logo)<img src="{{ $logo }}" width="34" height="34" alt="">@endif</td>
-        <td><span class="wordmark">Screaming<span style="color:#ea580c">Rabbit</span></span></td>
+        @if ($branding['logo'] || $branding['company'])
+            @if ($branding['logo'])<td style="width:1%;padding-right:10px"><img src="{{ $branding['logo'] }}" style="max-height:44px;max-width:180px" alt=""></td>@endif
+            <td>@if ($branding['company'])<span class="wordmark">{{ $branding['company'] }}</span>@endif
+                @if ($branding['contact'])<br><span class="muted" style="font-size:10px">{{ $branding['contact'] }}</span>@endif</td>
+        @else
+            <td style="width:40px">@if ($logo)<img src="{{ $logo }}" width="34" height="34" alt="">@endif</td>
+            <td><span class="wordmark">Screaming<span style="color:{{ $branding['accent'] }}">Rabbit</span></span>
+                @if ($branding['contact'])<br><span class="muted" style="font-size:10px">{{ $branding['contact'] }}</span>@endif</td>
+        @endif
         <td style="text-align:right" class="muted">Bir <a href="{{ $report['brand']['url'] }}">{{ $report['brand']['name'] }}</a> ürünü</td>
     </tr></table>
 
@@ -55,6 +63,10 @@
         <tr><td class="muted">Site</td><td>{{ $report['site'] }}</td></tr>
         <tr><td class="muted">Tarih</td><td>{{ $report['date'] }}</td></tr>
     </table>
+
+    @if ($branding['intro'])
+        <p style="margin:14px 0;line-height:1.5">{!! nl2br(e($branding['intro'])) !!}</p>
+    @endif
 
     <h2>Genel sağlık</h2>
     <table style="width:100%"><tr>

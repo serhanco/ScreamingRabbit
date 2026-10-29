@@ -142,7 +142,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 - ✓ İşlem günlüğü ("İşlem günlüğü" menüsü, 1 yıl saklanır): üyelerin proje, müşteri, ekip, ortak ayar, iş, rapor, izleme, kritik sayfa ve tarama değişiklikleri; gizli değerler yazılmaz; arka plan işleri kaydedilmez. Onaylı WP değişiklikleri ○ (Faz 6)
 
 **Raporlama**
-- ○ Markalı müşteri raporu (Serhan'ın logosu ve renkleri)
+- ✓ Markalı müşteri raporu: "Rapor görünümü" sayfasında logo (PNG/JPG/SVG, rapora gömülü), firma adı, vurgu rengi, iletişim satırı ve giriş metni; web, PDF ve aylık raporlarda geçerli. "Bir Serhan Demirel ürünü" satırı her zaman kalır
 - ✓ Aylık rapor otomatik hazırlanır (ayın ilk haftası, son 45 günde taranan projeler, Telegram/e-posta ile "onay bekliyor" uyarısı); "Müşteri raporları" sayfasında önizle, onayla, müşteriye e-postayla gönder; istenirse ay içinde elle hazırlanır
 - ✓ Rapor bölümleri: sağlık skoru ve trend, çalışma planı (yapılan işler ve 28 gün etkisi, planlananlar), Google arama performansı (28 gün tıklama/gösterim/CTR/sıra ve değişim, en çok tıklanan sayfalar ve aramalar), erişilebilirlik (30 gün çalışma oranı, kesinti sayısı/süresi, yanıt süresi), taranabilirlik, AI görünürlüğü, WordPress güvenliği
 - ✓ Rapor arşivi: onaylanan raporun dondurulmuş kopyası saklanır (eski taramalar silinse de açılır); müşteri proje başına tek bağlantıdan tüm geçmiş raporları ve PDF'lerini görür
