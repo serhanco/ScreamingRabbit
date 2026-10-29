@@ -140,6 +140,16 @@ class CrawlRunner
         $this->crawl->bot_access = BotAccess::fromRobots($robotsBody, $start);
         $this->crawl->llms_txt = LlmsTxt::analyze($this->fetchText($origin.'/llms.txt'))
             + ['full' => LlmsTxt::analyze($this->fetchText($origin.'/llms-full.txt'))['status'] !== 'missing'];
+        // The pages llms.txt points AI systems to are crawled too, so a broken one shows up.
+        $llmsUrls = [];
+        foreach ($this->crawl->llms_txt['urls'] as $url) {
+            $resolved = UrlNormalizer::resolve($url, $start);
+            if ($resolved && UrlNormalizer::isInternal($resolved, $start)) {
+                $llmsUrls[] = $resolved;
+                $this->addPage($resolved, 1);
+            }
+        }
+        $this->crawl->llms_txt = ['urls' => $llmsUrls] + $this->crawl->llms_txt;
 
         // List mode: only the pasted addresses (plus the start page, which the site-wide checks read).
         if ($mode === 'list') {
