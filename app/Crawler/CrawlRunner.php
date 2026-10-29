@@ -5,12 +5,14 @@ namespace App\Crawler;
 use App\Audit\Auditor;
 use App\Jobs\CrawlBatch;
 use App\Models\Crawl;
+use App\Models\CrawlImage;
 use App\Models\CrawlPage;
 use App\Models\Project;
 use App\Tasks\TaskBuilder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -149,7 +151,7 @@ class CrawlRunner
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, CrawlPage>  $pages
+     * @param  Collection<int, CrawlPage>  $pages
      */
     private function fetchBatch($pages): void
     {
@@ -239,6 +241,8 @@ class CrawlRunner
                 'seo_plugin' => $parsed['seo_plugin'],
                 'schema_types' => $parsed['schema_types'] === [] ? null : mb_substr(implode(',', $parsed['schema_types']), 0, 250),
                 'schema_errors' => $parsed['schema_errors'],
+                'schema_problems' => $parsed['schema_problems'] === [] ? null : array_slice($parsed['schema_problems'], 0, 20),
+                'schema_duplicates' => $parsed['schema_duplicates'] === [] ? null : implode(',', $parsed['schema_duplicates']),
             ];
 
             $update['http_internal_links'] = $this->storeLinks($page, $parsed['links']);
@@ -320,7 +324,7 @@ class CrawlRunner
     /**
      * HEAD requests are enough: the status code shows broken images and Content-Length shows their weight.
      *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\CrawlImage>  $images
+     * @param  Collection<int, CrawlImage>  $images
      */
     private function fetchImages($images): void
     {

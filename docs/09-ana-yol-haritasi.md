@@ -175,11 +175,11 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ○ Dizin bazlı derinlik ve dağılım
 
 **Yapısal veri**
-- ○ JSON-LD / Microdata / RDFa çıkarma, şema türü ve özellik envanteri (site geneli tablo)
+- ◐ JSON-LD ve Microdata türleri ✓, site geneli "Yapısal veri envanteri" tablosu (tür, sayfa sayısı, eksik alanlı sayfalar) ✓; RDFa ○
 - ○ Schema.org sözlüğüne göre doğrulama: bilinmeyen tür/özellik, yanlış değer tipi, eksik zorunlu alan
-- ○ Google zengin sonuç gereksinimleri: Article, Product (+ Offer, Review, AggregateRating), BreadcrumbList, FAQPage, HowTo, Recipe, Event, LocalBusiness, Organization, VideoObject, JobPosting; zorunlu/önerilen alan eksikleri
+- ✓ Google zengin sonuç gereksinimleri: Article (+ BlogPosting, NewsArticle), Product (+ Offer, Review, AggregateRating), BreadcrumbList/ListItem, FAQPage/Question/Answer, Recipe, Event, LocalBusiness (+ Dentist, MedicalClinic vb. alt türler), Organization, VideoObject, JobPosting; zorunlu eksik (orta) ve önerilen eksik (düşük, yalnızca ana şemalarda) ayrı bulgu. HowTo Google'da kaldırıldığı için yok
 - ○ Şema ↔ sayfa tutarlılığı: şemadaki başlık/fiyat/tarih sayfadakiyle uyuşuyor mu, `@id` ve `sameAs` bağlantıları
-- ○ Yinelenen veya çelişen şemalar (örn. hem Yoast hem tema aynı türü basıyor)
+- ✓ Yinelenen ana şemalar (örn. hem Yoast hem tema Organization basıyor); çelişen değerler ○
 - ○ WordPress: SEO eklentisinin şema grafiği (Yoast/Rank Math) kontrolü
 
 **Performans**

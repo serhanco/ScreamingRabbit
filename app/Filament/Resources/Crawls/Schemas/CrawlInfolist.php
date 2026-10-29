@@ -82,6 +82,14 @@ class CrawlInfolist
                     ->schema([
                         ViewEntry::make('comparison')->hiddenLabel()->view('crawls.comparison'),
                     ]),
+                Section::make('Yapısal veri envanteri')
+                    ->description('Sitede kullanılan şema türleri ve Google zengin sonuç kurallarına uygunluğu.')
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn (Crawl $record): bool => $record->status === 'completed')
+                    ->schema([
+                        ViewEntry::make('schema')->hiddenLabel()->view('crawls.schema'),
+                    ]),
                 Section::make('Arama motorları ve AI botları erişimi')
                     ->description('robots.txt kuralı ve ana sayfanın her botun kimliğiyle bir kez istenmesi sonucu.')
                     ->collapsible()
