@@ -764,6 +764,7 @@ class ComposerStaticInit220e80b56062911c756f75788240aa33
         'App\\Filament\\Pages\\GoogleSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/GoogleSettings.php',
         'App\\Filament\\Pages\\NotificationSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/NotificationSettings.php',
         'App\\Filament\\Pages\\ReportSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/ReportSettings.php',
+        'App\\Filament\\Pages\\RobotsTester' => __DIR__ . '/../..' . '/app/Filament/Pages/RobotsTester.php',
         'App\\Filament\\Resources\\ActivityLogs\\ActivityLogResource' => __DIR__ . '/../..' . '/app/Filament/Resources/ActivityLogs/ActivityLogResource.php',
         'App\\Filament\\Resources\\ActivityLogs\\Pages\\ListActivityLogs' => __DIR__ . '/../..' . '/app/Filament/Resources/ActivityLogs/Pages/ListActivityLogs.php',
         'App\\Filament\\Resources\\AlertEvents\\AlertEventResource' => __DIR__ . '/../..' . '/app/Filament/Resources/AlertEvents/AlertEventResource.php',

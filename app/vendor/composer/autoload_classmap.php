@@ -46,6 +46,7 @@ return array(
     'App\\Filament\\Pages\\GoogleSettings' => $baseDir . '/app/Filament/Pages/GoogleSettings.php',
     'App\\Filament\\Pages\\NotificationSettings' => $baseDir . '/app/Filament/Pages/NotificationSettings.php',
     'App\\Filament\\Pages\\ReportSettings' => $baseDir . '/app/Filament/Pages/ReportSettings.php',
+    'App\\Filament\\Pages\\RobotsTester' => $baseDir . '/app/Filament/Pages/RobotsTester.php',
     'App\\Filament\\Resources\\ActivityLogs\\ActivityLogResource' => $baseDir . '/app/Filament/Resources/ActivityLogs/ActivityLogResource.php',
     'App\\Filament\\Resources\\ActivityLogs\\Pages\\ListActivityLogs' => $baseDir . '/app/Filament/Resources/ActivityLogs/Pages/ListActivityLogs.php',
     'App\\Filament\\Resources\\AlertEvents\\AlertEventResource' => $baseDir . '/app/Filament/Resources/AlertEvents/AlertEventResource.php',
