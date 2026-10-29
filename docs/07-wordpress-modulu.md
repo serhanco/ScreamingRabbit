@@ -102,7 +102,7 @@ Envanteri bilinen açıklarla eşleştirmek için **WPVulnerability.net** API'si
 - Yazma işlemleri (yalnızca bu liste, genişletilmesi ayrı karar):
   - SEO title / meta description değiştir (aktif SEO eklentisinin alanına yazar)
   - `noindex` ekle/kaldır
-  - 301 yönlendirme ekle (Redirection veya Rank Math yönlendirme modülüne; ikisi de yoksa eklentinin kendi küçük tablosuna)
+  - 301 yönlendirme ekle (2026-10-29 kararı: her sitede aynı çalışsın ve geri alma güvenilir olsun diye eklentinin kendi listesine; Redirection/Rank Math kayıtlarına dokunulmaz, en fazla 500, eklentinin ayarlar sayfasında listelenir, yalnızca aynı siteye)
   - Görsel alt metni yaz
 - Her değişiklik: önce/sonra değeri iki tarafta da kayıtlı, **tek tıkla geri alma**.
 

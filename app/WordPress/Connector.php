@@ -241,7 +241,7 @@ class Connector
         return rtrim($connection->site_url ?: $connection->project->base_url, '/');
     }
 
-    private static function sameSite(string $siteUrl, string $baseUrl): bool
+    public static function sameSite(string $siteUrl, string $baseUrl): bool
     {
         $host = fn (string $url) => preg_replace('/^www\./i', '', strtolower((string) parse_url($url, PHP_URL_HOST)));
 

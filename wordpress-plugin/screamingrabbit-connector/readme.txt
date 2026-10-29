@@ -1,7 +1,7 @@
 === ScreamingRabbit Connector ===
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPL-2.0-or-later
 
 Connects a WordPress site to ScreamingRabbit (a Serhan Demirel product, https://serhandemirel.com).
@@ -15,7 +15,8 @@ adds nothing to visitor pages. Every request is signed with a per-site secret (H
 
 Changes: off by default. When an administrator ticks "ScreamingRabbit can apply approved changes" under
 Settings → ScreamingRabbit, the paired app can change a page's SEO title, meta description and noindex in Yoast SEO or
-Rank Math, one approved change at a time. Each change states the value it replaces and is refused if that value has
+Rank Math, an image's alt text in the media library, and add 301 redirects (kept by this plugin, listed on its
+settings page; deleting the plugin removes them), one approved change at a time. Each change states the value it replaces and is refused if that value has
 changed; the last 200 changes are logged on the site. Nothing else can be changed.
 
 When public content is published, updated or unpublished, the plugin sends that URL (and nothing else about the

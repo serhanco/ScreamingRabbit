@@ -49,18 +49,31 @@ class ProjectWordPress extends Page
                 ->label('Değişiklik öner')
                 ->icon(Heroicon::OutlinedPencilSquare)
                 ->visible(fn (): bool => $this->canManage() && ($this->connection()?->isConnected() ?? false))
-                ->modalDescription('Sayfanın SEO başlığı, meta açıklaması veya noindex ayarı. Öneri önce kaydedilir; siteye ancak listeden onaylanınca yazılır.')
+                ->modalDescription('Sayfanın SEO başlığı, meta açıklaması, noindex ayarı, bir görselin alt metni veya 301 yönlendirme. Öneri önce kaydedilir; siteye ancak listeden onaylanınca yazılır.')
                 ->schema([
-                    TextInput::make('url')->label('Sayfa adresi')->url()->required()->maxLength(2048)->placeholder($this->record->base_url),
+                    TextInput::make('url')->label(fn (Get $get): string => match ($get('field')) {
+                        'alt' => 'Görselin adresi (…/wp-content/uploads/…)',
+                        'redirect' => 'Yönlendirilecek eski adres',
+                        default => 'Sayfa adresi',
+                    })->url()->required()->maxLength(2048)->placeholder($this->record->base_url),
                     Select::make('field')->label('Ne değişsin?')->options(WpChange::FIELDS)->required()->live(),
                     Textarea::make('after')->label('Yeni değer')->rows(3)->maxLength(1000)
-                        ->helperText('Boş bırakılırsa SEO eklentisinin varsayılanı kullanılır. Yoast/Rank Math değişkenleri (%%title%% vb.) kullanılabilir.')
-                        ->visible(fn (Get $get): bool => in_array($get('field'), ['title', 'description'], true)),
+                        ->helperText(fn (Get $get): string => $get('field') === 'alt'
+                            ? 'Medya kütüphanesindeki alt metin değişir: öne çıkan görsellerde ve yeni eklemelerde kullanılır. Yazıların içine daha önce eklenmiş görsellerin alt metni yazının kendisinde durur.'
+                            : 'Boş bırakılırsa SEO eklentisinin varsayılanı kullanılır. Yoast/Rank Math değişkenleri (%%title%% vb.) kullanılabilir.')
+                        ->visible(fn (Get $get): bool => in_array($get('field'), ['title', 'description', 'alt'], true)),
+                    TextInput::make('target')->label('Yeni adres (301)')->url()->maxLength(2048)
+                        ->helperText('Aynı sitede olmalı. Boş bırakılırsa bu adresteki ScreamingRabbit yönlendirmesi kaldırılır.')
+                        ->visible(fn (Get $get): bool => $get('field') === 'redirect'),
                     Select::make('robots')->label('Yeni değer')->options(WpChange::NOINDEX)->selectablePlaceholder(false)->default('')
                         ->visible(fn (Get $get): bool => $get('field') === 'noindex'),
                 ])
                 ->action(function (array $data, Action $action): void {
-                    $result = Changes::propose($this->record, $data['url'], $data['field'], $data['field'] === 'noindex' ? ($data['robots'] ?? '') : ($data['after'] ?? ''), auth()->user());
+                    $result = Changes::propose($this->record, $data['url'], $data['field'], match ($data['field']) {
+                        'noindex' => $data['robots'] ?? '',
+                        'redirect' => $data['target'] ?? '',
+                        default => $data['after'] ?? '',
+                    }, auth()->user());
                     if (is_string($result)) {
                         Notification::make()->title('Öneri kaydedilemedi')->body($result)->danger()->send();
                         $action->halt();

@@ -217,7 +217,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **WP-3 · Olaylar ve onaylı yazma**
 - ✓ İçerik yayınlandı/güncellendi/kaldırıldı → eklenti adresi imzalı olarak bildirir, uygulama bir dakika sonra kontrol eder: hata, yönlendirme, noindex, başka canonical; kaldırılan sayfaya hâlâ iç link varsa uyarı ("İçerik" uyarı türü), WordPress sayfasında son 20 değişiklik
-- ◐ Onaylı değişiklikler: SEO title/meta ve noindex ✓ (Yoast SEO / Rank Math alanlarına; sitede "Değişiklik izni" açıkken, panelde öner → onayla); 301 yönlendirme, görsel alt metni ○
+- ✓ Onaylı değişiklikler: SEO title/meta ve noindex ✓ (Yoast SEO / Rank Math alanlarına; sitede "Değişiklik izni" açıkken, panelde öner → onayla); görsel alt metni ✓ (medya kütüphanesi; yazı içine önceden eklenmiş görseller hariç); 301 yönlendirme ✓ (eklentinin kendi listesi, en fazla 500, ayarlar sayfasında görünür, yalnızca aynı siteye)
 - ✓ Değişiklik günlüğü (panelde ve sitede son 200), çakışma koruması (beklenen eski değer tutmazsa reddedilir), tek tıkla geri alma
 - ✓ Eklentinin kendi güncelleme kontrolü: yeni sürüm WordPress'in Güncellemeler ekranına gelir (uygulamadan 12 saatte bir sorulur, paket bağlantısı sitenin anahtarıyla imzalı; yalnızca eşleşmiş siteler indirir)
 - ○ AI önerilerinin uygulayıcısı: Faz 7'de üretilen ve panelde onaylanan title/meta, alt metin, şema, SSS/kısa cevap bloğu, iç link önerilerini siteye yazar (LLM anahtarı eklentide değil, uygulamada durur)
