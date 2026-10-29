@@ -2,14 +2,18 @@
 
 namespace App\Filament\Resources\Reports;
 
+use App\Ai\Ai;
+use App\Ai\ReportSummary;
 use App\Filament\Concerns\ScopedToUserProjects;
 use App\Filament\Resources\Reports\Pages\ListReports;
 use App\Models\Report;
 use App\Monitoring\Channels;
 use App\Reports\CrawlReport;
+use App\Reports\MonthlyReports;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -77,6 +81,31 @@ class ReportResource extends Resource
                     ->icon(Heroicon::OutlinedEye)
                     ->color('gray')
                     ->url(fn (Report $record): string => route('filament.admin.reports.preview', $record), shouldOpenInNewTab: true),
+                Action::make('aiSummary')
+                    ->label(fn (Report $record): string => $record->summary ? 'AI özetini yenile' : 'AI ile özet yaz')
+                    ->icon(Heroicon::OutlinedSparkles)
+                    ->color('gray')
+                    ->visible(fn (Report $record): bool => $record->status === 'draft' && static::canEdit($record)
+                        && collect(array_keys(Ai::PROVIDERS))->contains(fn (string $provider) => Ai::configured($provider)))
+                    ->requiresConfirmation()
+                    ->modalDescription('AI, raporun kendi verilerinden (sağlık puanı, önemli sorunlar, Google arama ve erişilebilirlik) müşteriye yönelik kısa bir özet yazar ve raporun başına koyar. Onaylamadan önce önizleyip düzenleyebilirsiniz.')
+                    ->action(function (Report $record): void {
+                        $problem = ReportSummary::write($record);
+                        $problem === null
+                            ? Notification::make()->title('Özet yazıldı')->body('Önizleyip gerekirse "Özeti düzenle" ile değiştirin.')->success()->send()
+                            : Notification::make()->title('Özet yazılamadı')->body($problem)->danger()->send();
+                    }),
+                Action::make('editSummary')
+                    ->label('Özeti düzenle')
+                    ->icon(Heroicon::OutlinedPencilSquare)
+                    ->color('gray')
+                    ->visible(fn (Report $record): bool => $record->status === 'draft' && static::canEdit($record))
+                    ->fillForm(fn (Report $record): array => ['summary' => $record->summary])
+                    ->schema([Textarea::make('summary')->label('Raporun başındaki özet (boş bırakılırsa gösterilmez)')->rows(8)->maxLength(3000)])
+                    ->action(function (Report $record, array $data): void {
+                        MonthlyReports::setSummary($record, $data['summary'] ?? null);
+                        Notification::make()->title('Özet kaydedildi')->success()->send();
+                    }),
                 Action::make('approve')
                     ->label('Onayla')
                     ->icon(Heroicon::OutlinedCheckCircle)

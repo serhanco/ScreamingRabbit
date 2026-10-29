@@ -68,6 +68,11 @@
         <p style="margin:14px 0;line-height:1.5">{!! nl2br(e($branding['intro'])) !!}</p>
     @endif
 
+    @if (! empty($report['summary']))
+        <h2>Bu dönemin özeti</h2>
+        <p style="margin:0 0 14px;line-height:1.5">{!! nl2br(e($report['summary'])) !!}</p>
+    @endif
+
     <h2>Genel sağlık</h2>
     <table style="width:100%"><tr>
         <td style="width:200px">

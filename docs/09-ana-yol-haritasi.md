@@ -244,7 +244,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 - ✓ Eksik alt metni önerisi (görsel + bağlam; model görseli ve onu kullanan sayfaları görür, öneri onaylı değişiklik listesine düşer)
 - ○ İç link önerici (zayıf sayfalara, GSC fırsat sorgularıyla eşleşen kaynaklardan)
 - ○ WordPress'te onaylı uygulama (WP-4) ve GSC ile etki ölçümü
-- ○ Bulgu açıklamalarını müşteri diline çeviren rapor özeti
+- ✓ Bulgu açıklamalarını müşteri diline çeviren rapor özeti (aylık raporda "AI ile özet yaz", taslakta düzenlenir, onayla müşteriye gider)
 
 **AI görünürlük ölçümü (AEO-2)**
 - ○ Belirlenen sorgular için ChatGPT, Perplexity, Google AI Overviews / AI Mode, Claude cevaplarında sitenin alıntılanması ve marka geçişi takibi (resmî API'lerle, kullanım şartlarına uygun)
