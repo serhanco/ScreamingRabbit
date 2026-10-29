@@ -78,7 +78,7 @@ class BotAccess
     }
 
     /**
-     * Requests the start URL as each given bot and records whether it was turned away.
+     * Requests the start URL as each given bot and records whether it was turned away and how much text it got.
      *
      * @param  array<string, array<string, mixed>>  $rows
      * @param  array<int, string>  $tokens
@@ -101,6 +101,10 @@ class BotAccess
                 in_array($status, self::REFUSED, true) => 'refused',
                 default => 'ok',
             };
+            // How much readable text the bot got, to spot challenge pages and cloaking that still answer 200.
+            $rows[$token]['words'] = $status === 200 && str_contains(strtolower((string) $response->header('Content-Type')), 'html')
+                ? HtmlParser::parse(mb_strcut($response->body(), 0, 2_000_000), $startUrl)['word_count']
+                : null;
         }
 
         return $rows;
@@ -119,7 +123,7 @@ class BotAccess
             'kind' => self::KINDS[$row['kind']] ?? $row['kind'],
             'robots' => $row['robots_allowed'] ? 'İzinli' : 'Engelli',
             'fetch' => match ($row['fetch']) {
-                'ok' => 'Açıldı ('.$row['status'].')',
+                'ok' => 'Açıldı ('.$row['status'].(isset($row['words']) ? ', '.$row['words'].' kelime' : '').')',
                 'refused' => 'Reddedildi ('.$row['status'].')',
                 'error' => 'Yanıt yok',
                 'pending' => 'Bekliyor',
