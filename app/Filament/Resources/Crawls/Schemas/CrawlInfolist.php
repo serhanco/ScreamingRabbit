@@ -97,6 +97,14 @@ class CrawlInfolist
                     ->schema([
                         ViewEntry::make('custom')->hiddenLabel()->view('crawls.custom'),
                     ]),
+                Section::make('Dizin dağılımı')
+                    ->description('Sayfaların URL dizinlerine göre sayısı, derinliği ve hataları.')
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn (Crawl $record): bool => $record->status === 'completed')
+                    ->schema([
+                        ViewEntry::make('folders')->hiddenLabel()->view('crawls.folders'),
+                    ]),
                 Section::make('Yapısal veri envanteri')
                     ->description('Sitede kullanılan şema türleri ve Google zengin sonuç kurallarına uygunluğu.')
                     ->collapsible()
