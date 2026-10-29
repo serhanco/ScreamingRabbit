@@ -33,7 +33,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string}, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -204,6 +204,7 @@ class HtmlParser
         }
         $bodyText = preg_replace('/\s+/u', ' ', implode(' ', $texts));
         $schemaMismatch = self::schemaConsistency($ldBlocks, $title, $h1[0] ?? null, $bodyText);
+        $entity = self::entity($ldBlocks);
         $wordCount = (int) preg_match_all('/[\p{L}\p{N}]+/u', $bodyText);
 
         // The near-duplicate fingerprint uses the main text only, so a shared menu and footer don't make pages look alike.
@@ -258,6 +259,7 @@ class HtmlParser
             'schema_problems' => $schemaProblems,
             'schema_duplicates' => $schemaDuplicates,
             'schema_mismatch' => $schemaMismatch,
+            'entity' => $entity,
             'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
             'wordpress_hint' => $wordpress,
             'question_headings' => $questionHeadings,
@@ -438,8 +440,9 @@ class HtmlParser
         $defined = [];
         $referenced = [];
         $prices = self::visibleNumbers($bodyText);
+        $digits = preg_replace('/\D/', '', $bodyText);
 
-        $walk = function ($node) use (&$walk, &$problems, &$defined, &$referenced, $headings, $prices): void {
+        $walk = function ($node) use (&$walk, &$problems, &$defined, &$referenced, $headings, $prices, $digits): void {
             if (! is_array($node)) {
                 return;
             }
@@ -472,6 +475,10 @@ class HtmlParser
                     }
                 }
             }
+            $phone = self::phone($node['telephone'] ?? null);
+            if ($phone !== null && ! str_contains($digits, $phone)) {
+                $problems[] = 'Şemadaki telefon ('.$node['telephone'].') sayfada görünmüyor';
+            }
             foreach ($node as $key => $value) {
                 if (is_array($value) && $key !== '@context') {
                     $walk($value);
@@ -488,6 +495,48 @@ class HtmlParser
         }
 
         return array_slice(array_values(array_unique($problems)), 0, 5);
+    }
+
+    /**
+     * Name and phone of the site's own organisation in the structured data (Organization and its subtypes such as
+     * LocalBusiness), compared across pages for consistent NAP (name, address, phone).
+     *
+     * @param  array<int, array<mixed>>  $blocks
+     * @return array{name: ?string, phone: ?string}|null
+     */
+    private static function entity(array $blocks): ?array
+    {
+        $found = null;
+        $walk = function ($node) use (&$walk, &$found): void {
+            if ($found !== null || ! is_array($node)) {
+                return;
+            }
+            $types = array_map(fn ($type) => is_string($type) ? preg_replace('#^https?://schema\.org/#', '', $type) : '', (array) ($node['@type'] ?? []));
+            if (! array_is_list($node) && collect($types)->contains(fn (string $type) => in_array(SchemaRules::ruleType($type), ['Organization', 'LocalBusiness'], true)) && (is_string($node['name'] ?? null) || isset($node['telephone']))) {
+                $found = [
+                    'name' => is_string($node['name'] ?? null) ? mb_substr(trim($node['name']), 0, 120) : null,
+                    'phone' => self::phone($node['telephone'] ?? null),
+                ];
+
+                return;
+            }
+            foreach ($node as $key => $value) {
+                if (is_array($value) && $key !== '@context') {
+                    $walk($value);
+                }
+            }
+        };
+        array_walk($blocks, fn ($block) => $walk($block));
+
+        return $found;
+    }
+
+    /** The last 10 digits of a phone number, so "+90 212 555 00 00" and "0212 555 00 00" match; null when too short. */
+    public static function phone(mixed $value): ?string
+    {
+        $digits = is_string($value) ? preg_replace('/\D/', '', $value) : '';
+
+        return strlen($digits) >= 7 ? substr($digits, -10) : null;
     }
 
     private static function similar(string $a, string $b): bool
