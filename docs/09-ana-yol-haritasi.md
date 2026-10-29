@@ -153,7 +153,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **Tarama yetenekleri**
 - ○ Özel HTTP başlıkları ve çerezler, basic auth ve form girişiyle staging tarama
-- ○ Özel robots.txt ile simülasyon, robots.txt test aracı
+- ◐ robots.txt test aracı ✓ ("robots.txt testi" menüsü: siteden getir veya elle düzenle, adres listesini seçilen botlarla dene, karar veren kuralı gör); tarama sırasında özel robots.txt ile simülasyon ○
 - ○ JS render (sayfa bazlı, opsiyonel; render öncesi/sonrası farkı) **[VPS]**
 - ○ JS yönlendirmelerini yakalama **[VPS]**
 

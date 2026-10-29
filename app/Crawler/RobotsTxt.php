@@ -14,6 +14,9 @@ class RobotsTxt
     /** @var array<int, string> */
     public array $sitemaps = [];
 
+    /** The User-agent line whose group applies to this bot ("*" when only the general group matches), null when none does. */
+    public ?string $group = null;
+
     public function __construct(string $contents, string $agentToken = 'screamingrabbit')
     {
         $groups = [];
@@ -54,16 +57,26 @@ class RobotsTxt
                 }
             }
         }
+        $this->group = $chosen !== null ? strtolower($agentToken) : null;
         $chosen ??= collect($groups)->first(fn ($g) => in_array('*', $g['agents'], true));
+        $this->group ??= $chosen !== null ? '*' : null;
 
         $this->rules = $chosen['rules'] ?? [];
     }
 
     public function isAllowed(string $url): bool
     {
+        return $this->decide($url)['allowed'];
+    }
+
+    /**
+     * @return array{allowed: bool, rule: ?string} the verdict and the rule that decided it ("Disallow: /wp-admin/"), null when no rule matched
+     */
+    public function decide(string $url): array
+    {
         $path = (parse_url($url, PHP_URL_PATH) ?? '/').(($q = parse_url($url, PHP_URL_QUERY)) ? '?'.$q : '');
         $bestLength = -1;
-        $allowed = true;
+        $best = null;
 
         foreach ($this->rules as $rule) {
             if (! $this->matches($rule['pattern'], $path)) {
@@ -72,11 +85,14 @@ class RobotsTxt
             $length = strlen($rule['pattern']);
             if ($length > $bestLength || ($length === $bestLength && $rule['allow'])) {
                 $bestLength = $length;
-                $allowed = $rule['allow'];
+                $best = $rule;
             }
         }
 
-        return $allowed;
+        return [
+            'allowed' => $best['allow'] ?? true,
+            'rule' => $best === null ? null : ($best['allow'] ? 'Allow: ' : 'Disallow: ').$best['pattern'],
+        ];
     }
 
     private function matches(string $pattern, string $path): bool
