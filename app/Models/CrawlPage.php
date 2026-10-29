@@ -26,6 +26,7 @@ class CrawlPage extends Model
             'schema_problems' => 'array',
             'hreflang' => 'array',
             'custom' => 'array',
+            'schema_mismatch' => 'array',
             'fetched_at' => 'datetime',
         ];
     }

@@ -32,7 +32,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -153,6 +153,12 @@ class HtmlParser
         [$schemaTypes, $schemaErrors, $schemaProblems, $schemaDuplicates] = self::jsonLd($xpath);
         [$wpType, $wpCategory] = self::wordPressContent($xpath, $bodyClass);
         $authority = self::authority($xpath, $bodyClass);
+        $ldBlocks = [];
+        foreach ($xpath->query('//script[@type]') as $script) {
+            if (strtolower(trim($script->getAttribute('type'))) === 'application/ld+json' && is_array($block = json_decode(trim($script->textContent), true))) {
+                $ldBlocks[] = $block;
+            }
+        }
 
         // Answer-engine signals: headings phrased as questions, and paragraphs too long to quote as a passage.
         $questionHeadings = 0;
@@ -192,6 +198,7 @@ class HtmlParser
             $texts[] = $node->nodeValue;
         }
         $bodyText = preg_replace('/\s+/u', ' ', implode(' ', $texts));
+        $schemaMismatch = self::schemaConsistency($ldBlocks, $title, $h1[0] ?? null, $bodyText);
         $wordCount = (int) preg_match_all('/[\p{L}\p{N}]+/u', $bodyText);
 
         // The near-duplicate fingerprint uses the main text only, so a shared menu and footer don't make pages look alike.
@@ -236,6 +243,7 @@ class HtmlParser
             'schema_errors' => $schemaErrors,
             'schema_problems' => $schemaProblems,
             'schema_duplicates' => $schemaDuplicates,
+            'schema_mismatch' => $schemaMismatch,
             'js_shell' => $wordCount < self::JS_SHELL_WORDS && ($spaRoot || $noscriptJs),
             'wordpress_hint' => $wordpress,
             'question_headings' => $questionHeadings,
@@ -398,6 +406,107 @@ class HtmlParser
         $date = fn (?string $value) => $value === null ? null : rescue(fn () => Carbon::parse($value)->toDateString(), null, false);
 
         return ['is_article' => $isArticle, 'published_at' => $date($published), 'modified_at' => $date($modified), 'has_author' => $hasAuthor, 'same_as' => $sameAs];
+    }
+
+    /**
+     * Structured data that disagrees with the visible page: an article headline or product name unlike the page's
+     * title and H1, an offer price that appears nowhere on the page, or an @id reference to a node that is not there.
+     * Google's structured data guidelines require the markup to describe content visible to users.
+     *
+     * @param  array<int, array<mixed>>  $blocks  decoded JSON-LD blocks
+     * @return array<int, string>
+     */
+    private static function schemaConsistency(array $blocks, ?string $title, ?string $h1, string $bodyText): array
+    {
+        $headings = array_filter([$title, $h1]);
+        $problems = [];
+        $defined = [];
+        $referenced = [];
+        $prices = self::visibleNumbers($bodyText);
+
+        $walk = function ($node) use (&$walk, &$problems, &$defined, &$referenced, $headings, $prices): void {
+            if (! is_array($node)) {
+                return;
+            }
+            if (array_is_list($node)) {
+                array_walk($node, fn ($item) => $walk($item));
+
+                return;
+            }
+            if (is_string($node['@id'] ?? null)) {
+                if (count($node) === 1) {
+                    $referenced[$node['@id']] = true;
+                } else {
+                    $defined[$node['@id']] = true;
+                }
+            }
+            $types = array_map(fn ($type) => is_string($type) ? preg_replace('#^https?://schema\.org/#', '', $type) : '', (array) ($node['@type'] ?? []));
+            $name = match (true) {
+                array_intersect($types, self::ARTICLE_TYPES) !== [] => $node['headline'] ?? null,
+                in_array('Product', $types, true) => $node['name'] ?? null,
+                default => null,
+            };
+            if (is_string($name) && $headings !== [] && ! collect($headings)->contains(fn (string $heading) => self::similar($name, $heading))) {
+                $problems[] = 'Şemadaki başlık sayfada yok: "'.mb_substr($name, 0, 60).'"';
+            }
+            if (array_intersect($types, ['Offer', 'AggregateOffer']) !== []) {
+                foreach (['price', 'lowPrice'] as $key) {
+                    $price = is_numeric($node[$key] ?? null) ? (float) $node[$key] : null;
+                    if ($price !== null && $price > 0 && ! in_array(round($price, 2), $prices, true)) {
+                        $problems[] = "Şemadaki fiyat ({$node[$key]}) sayfada görünmüyor";
+                    }
+                }
+            }
+            foreach ($node as $key => $value) {
+                if (is_array($value) && $key !== '@context') {
+                    $walk($value);
+                }
+            }
+        };
+        array_walk($blocks, fn ($block) => $walk($block));
+
+        foreach (array_keys(array_diff_key($referenced, $defined)) as $id) {
+            // References to the site-wide nodes of another page's graph (e.g. https://site/#organization) are normal.
+            if (str_starts_with($id, '#')) {
+                $problems[] = "Kırık @id bağlantısı: {$id}";
+            }
+        }
+
+        return array_slice(array_values(array_unique($problems)), 0, 5);
+    }
+
+    private static function similar(string $a, string $b): bool
+    {
+        $a = mb_strtolower(trim($a));
+        $b = mb_strtolower(trim($b));
+        if ($a === '' || $b === '' || str_contains($a, $b) || str_contains($b, $a)) {
+            return true;
+        }
+        similar_text($a, $b, $percent);
+
+        return $percent >= 60;
+    }
+
+    /**
+     * Every number written on the page, read both as 1.500,00 (Turkish) and 1,500.00 (English).
+     *
+     * @return array<int, float>
+     */
+    private static function visibleNumbers(string $text): array
+    {
+        preg_match_all('/\d[\d.,\s]*\d|\d/u', $text, $match);
+        $numbers = [];
+        foreach ($match[0] as $raw) {
+            $raw = preg_replace('/\s+/u', '', $raw);
+            foreach ([['.', ','], [',', '.']] as [$thousands, $decimal]) {
+                $value = str_replace([$thousands, $decimal], ['', '.'], $raw);
+                if (is_numeric($value)) {
+                    $numbers[] = round((float) $value, 2);
+                }
+            }
+        }
+
+        return array_values(array_unique($numbers));
     }
 
     private static function wordPressContent(DOMXPath $xpath, string $bodyClass): array
