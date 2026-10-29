@@ -20,6 +20,10 @@ class TitleMeta
 
     public const DESCRIPTION_MAX = 155;
 
+    /** Findings that make a page worth a new title or description. */
+    public const RULES = ['title_missing', 'title_duplicate', 'title_too_long', 'title_too_short',
+        'meta_description_missing', 'meta_description_duplicate', 'meta_description_too_long', 'meta_description_too_short'];
+
     private const SYSTEM = <<<'TXT'
         You are an SEO specialist writing the HTML title and meta description for one web page.
         Write in the language the page is written in. Use only facts present in the page data; never invent prices, dates,
@@ -71,6 +75,32 @@ class TitleMeta
         }
 
         return $changes === [] ? implode(' ', $problems) : $changes;
+    }
+
+    /**
+     * Pages of the last crawl with a title or description finding, those that get the most Google impressions first,
+     * leaving out pages that already have a suggestion waiting.
+     *
+     * @return list<string>
+     */
+    public static function candidates(Project $project, int $limit): array
+    {
+        $crawl = $project->crawls()->where('status', 'completed')->latest('finished_at')->first();
+        if ($crawl === null) {
+            return [];
+        }
+        $waiting = WpChange::where('project_id', $project->id)->where('status', 'proposed')->whereIn('field', ['title', 'description'])->pluck('url')
+            ->map(fn (string $url) => UrlNormalizer::hash($url))->all();
+        $impressions = DB::table('gsc_page_days')->where('project_id', $project->id)->where('day', '>=', now()->subDays(28)->toDateString())
+            ->groupBy('page_hash')->selectRaw('page_hash, SUM(impressions) as impressions');
+
+        return DB::table('crawl_pages')
+            ->where('crawl_pages.crawl_id', $crawl->id)->where('crawl_pages.status_code', 200)
+            ->whereExists(fn ($q) => $q->from('crawl_issues')->whereColumn('crawl_issues.page_id', 'crawl_pages.id')->whereIn('crawl_issues.rule', self::RULES))
+            ->whereNotIn('crawl_pages.url_hash', $waiting)
+            ->leftJoinSub($impressions, 'gsc', 'gsc.page_hash', '=', 'crawl_pages.url_hash')
+            ->orderByRaw('COALESCE(gsc.impressions, 0) DESC')->orderBy('crawl_pages.id')
+            ->limit($limit)->pluck('crawl_pages.url')->all();
     }
 
     private static function prompt(Project $project, string $url): string

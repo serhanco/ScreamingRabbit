@@ -6,6 +6,7 @@ use App\Ai\AiException;
 use App\Ai\Driver;
 use App\Ai\TitleMeta;
 use App\Filament\Resources\Projects\Pages\ProjectWordPress;
+use App\Jobs\ProposeTitleMeta;
 use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\Project;
@@ -17,6 +18,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -111,5 +113,42 @@ class AiTitleMetaTest extends TestCase
             ->callAction('editChange', ['after' => 'Diş İmplantı Tedavisi | Klinik'], ['change' => $title->id])
             ->assertSee('Diş İmplantı Tedavisi | Klinik');
         $this->assertSame('Diş İmplantı Tedavisi | Klinik', $title->fresh()->after);
+    }
+
+    public function test_bulk_suggestions_start_with_the_most_seen_pages_and_can_be_approved_together(): void
+    {
+        $crawl = Crawl::sole();
+        $make = function (string $path, int $impressions, bool $issue) use ($crawl): string {
+            $url = 'https://klinik.com'.$path;
+            $page = CrawlPage::create(['crawl_id' => $crawl->id, 'url' => $url, 'url_hash' => sha1($url), 'state' => 'done', 'status_code' => 200, 'content_type' => 'text/html', 'title' => 'Sayfa']);
+            if ($issue) {
+                DB::table('crawl_issues')->insert(['crawl_id' => $crawl->id, 'page_id' => $page->id, 'rule' => 'meta_description_missing', 'severity' => 'medium']);
+            }
+            DB::table('gsc_page_days')->insert(['project_id' => $this->project->id, 'day' => now()->subDays(2)->toDateString(), 'page' => $url, 'page_hash' => sha1($url),
+                'clicks' => 1, 'impressions' => $impressions, 'position' => 5]);
+
+            return $url;
+        };
+        $quiet = $make('/az/', 10, true);
+        $busy = $make('/cok/', 5000, true);
+        $make('/sorunsuz/', 9000, false);
+        $this->assertSame([$busy, $quiet], TitleMeta::candidates($this->project, 10));
+
+        Queue::fake();
+        $this->reply = json_encode(['title' => 'Yeni başlık', 'description' => 'Yeni açıklama', 'reason' => 'Gösterim alan sorgular.']);
+        Livewire::actingAs($this->admin)->test(ProjectWordPress::class, ['record' => $this->project->id])
+            ->callAction('aiBulk', ['count' => 5])
+            ->assertNotified('Öneriler hazırlanıyor');
+        $this->assertSame([$busy], WpChange::distinct()->pluck('url')->all(), 'the first page is done at once');
+        Queue::assertPushed(ProposeTitleMeta::class, fn (ProposeTitleMeta $job) => $job->url === $quiet);
+        $this->assertSame([$quiet], TitleMeta::candidates($this->project, 10), 'pages with a waiting suggestion are skipped');
+
+        Http::fake(fn (Request $request) => str_contains($request->url(), 'meta')
+            ? Http::response(['post_id' => 7, 'seo_plugin' => 'yoast', 'writes_enabled' => true, 'redirect' => '', 'title' => '', 'description' => '', 'noindex' => ''])
+            : Http::response(['before' => '', 'after' => 'x']));
+        Livewire::actingAs($this->admin)->test(ProjectWordPress::class, ['record' => $this->project->id])
+            ->callAction('applyAll')
+            ->assertNotified('2 değişiklik siteye yazıldı');
+        $this->assertSame(0, WpChange::where('status', 'proposed')->count());
     }
 }
