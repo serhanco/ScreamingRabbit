@@ -282,10 +282,34 @@ class CrawlTest extends TestCase
         $this->assertSame(1, $crawl->issues()->where('rule', 'llms_txt_invalid')->count());
     }
 
+    public function test_broken_llms_txt_links_are_reported(): void
+    {
+        Http::fake([
+            '*/robots.txt' => Http::response('', 404),
+            '*/sitemap*.xml' => Http::response('', 404),
+            '*/wp-sitemap.xml' => Http::response('', 404),
+            '*/llms-full.txt' => Http::response('', 404),
+            '*/llms.txt' => Http::response("# Site\n\n## Sayfalar\n- [Hizmetler](https://example.com/hizmetler): liste\n- [Eski](/eski-sayfa)\n- [Dış](https://other.com/x)\n", 200, ['Content-Type' => 'text/plain']),
+            'example.com/eski-sayfa' => Http::response('', 404),
+            '*' => Http::response($this->page('Home', 'merhaba'), 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $project = Project::factory()->create(['base_url' => 'https://example.com', 'crawl_settings' => ['delay_ms' => 0]]);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'pending', 'settings' => $project->effectiveCrawlSettings()]);
+
+        while ((new CrawlRunner($crawl->fresh()))->run()) {
+        }
+        $crawl->refresh();
+
+        $this->assertSame(['https://example.com/hizmetler', 'https://example.com/eski-sayfa'], $crawl->llms_txt['urls']);
+        $this->assertSame('1 link: HTTP 404 https://example.com/eski-sayfa', $crawl->issues()->where('rule', 'llms_txt_broken_links')->value('detail'));
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'other.com'));
+    }
+
     public function test_llms_txt_format(): void
     {
         $ok = LlmsTxt::analyze("# Hekim Dijital\n\n> Sağlık iletişimi ajansı.\n\n## Hizmetler\n- [SEO](https://example.com/seo): arama\n");
-        $this->assertSame(['status' => 'ok', 'title' => 'Hekim Dijital', 'summary' => true, 'links' => 1], $ok);
+        $this->assertSame(['status' => 'ok', 'title' => 'Hekim Dijital', 'summary' => true, 'links' => 1, 'urls' => ['https://example.com/seo']], $ok);
         $this->assertSame('missing', LlmsTxt::analyze('<!DOCTYPE html><html></html>')['status']);
         $this->assertSame('missing', LlmsTxt::analyze(null)['status']);
     }
