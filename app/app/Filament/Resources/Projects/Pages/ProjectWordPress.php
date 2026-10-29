@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Ai\Ai;
+use App\Ai\AltText;
 use App\Ai\TitleMeta;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\WpChange;
@@ -86,12 +87,26 @@ class ProjectWordPress extends Page
                 ->label('AI ile başlık/meta öner')
                 ->icon(Heroicon::OutlinedSparkles)
                 ->color('gray')
-                ->visible(fn (): bool => $this->canManage() && ($this->connection()?->isConnected() ?? false)
-                    && collect(array_keys(Ai::PROVIDERS))->contains(fn (string $provider) => Ai::configured($provider)))
+                ->visible(fn (): bool => $this->canUseAi())
                 ->modalDescription('AI, sayfanın son taramadaki başlığına, açıklamasına ve H1\'ine, Search Console\'da sayfayı bulduran sorgulara bakarak yeni bir SEO başlığı ve meta açıklama yazar. Öneriler listeye düşer; düzenleyebilir, onaylayabilir veya reddedebilirsiniz.')
                 ->schema([TextInput::make('url')->label('Sayfa adresi')->url()->required()->maxLength(2048)->placeholder($this->record->base_url)])
                 ->action(function (array $data, Action $action): void {
                     $result = TitleMeta::propose($this->record, $data['url'], auth()->user());
+                    if (is_string($result)) {
+                        Notification::make()->title('Öneri alınamadı')->body($result)->danger()->send();
+                        $action->halt();
+                    }
+                    Notification::make()->title('AI önerisi hazır')->body('Aşağıdaki listeden inceleyip onaylayın.')->success()->send();
+                }),
+            Action::make('aiAlt')
+                ->label('AI ile alt metin öner')
+                ->icon(Heroicon::OutlinedPhoto)
+                ->color('gray')
+                ->visible(fn (): bool => $this->canUseAi())
+                ->modalDescription('AI görselin kendisine ve onu kullanan sayfalara bakarak alt metin yazar. Öneri listeye düşer; düzenleyip onaylayabilirsiniz. Görselin medya kütüphanesindeki adresini girin.')
+                ->schema([TextInput::make('url')->label('Görselin adresi (…/wp-content/uploads/…)')->url()->required()->maxLength(2048)])
+                ->action(function (array $data, Action $action): void {
+                    $result = AltText::propose($this->record, $data['url'], auth()->user());
                     if (is_string($result)) {
                         Notification::make()->title('Öneri alınamadı')->body($result)->danger()->send();
                         $action->halt();
@@ -219,6 +234,12 @@ class ProjectWordPress extends Page
     private function connection(): ?WpConnection
     {
         return $this->record->wpConnection()->first();
+    }
+
+    private function canUseAi(): bool
+    {
+        return $this->canManage() && ($this->connection()?->isConnected() ?? false)
+            && collect(array_keys(Ai::PROVIDERS))->contains(fn (string $provider) => Ai::configured($provider));
     }
 
     private function canManage(): bool

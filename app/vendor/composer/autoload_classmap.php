@@ -3367,6 +3367,7 @@ return array(
     'App\\Ai\\Ai' => $baseDir . '/app/Ai/Ai.php',
     'App\\Ai\\AiException' => $baseDir . '/app/Ai/AiException.php',
     'App\\Ai\\AiResult' => $baseDir . '/app/Ai/AiResult.php',
+    'App\\Ai\\AltText' => $baseDir . '/app/Ai/AltText.php',
     'App\\Ai\\Driver' => $baseDir . '/app/Ai/Driver.php',
     'App\\Ai\\Drivers\\AnthropicDriver' => $baseDir . '/app/Ai/Drivers/AnthropicDriver.php',
     'App\\Ai\\Drivers\\GeminiDriver' => $baseDir . '/app/Ai/Drivers/GeminiDriver.php',

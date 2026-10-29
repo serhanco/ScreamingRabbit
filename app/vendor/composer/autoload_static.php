@@ -4116,6 +4116,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Ai\\Ai' => __DIR__ . '/../..' . '/app/Ai/Ai.php',
         'App\\Ai\\AiException' => __DIR__ . '/../..' . '/app/Ai/AiException.php',
         'App\\Ai\\AiResult' => __DIR__ . '/../..' . '/app/Ai/AiResult.php',
+        'App\\Ai\\AltText' => __DIR__ . '/../..' . '/app/Ai/AltText.php',
         'App\\Ai\\Driver' => __DIR__ . '/../..' . '/app/Ai/Driver.php',
         'App\\Ai\\Drivers\\AnthropicDriver' => __DIR__ . '/../..' . '/app/Ai/Drivers/AnthropicDriver.php',
         'App\\Ai\\Drivers\\GeminiDriver' => __DIR__ . '/../..' . '/app/Ai/Drivers/GeminiDriver.php',

@@ -11,14 +11,20 @@ class OpenAiCompatibleDriver implements Driver
 {
     public function __construct(private readonly string $label, private readonly string $baseUrl, private readonly ?string $apiKey) {}
 
-    public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier): array
+    public function complete(string $model, string $system, string $prompt, int $maxTokens, string $tier, array $images = []): array
     {
+        $content = $prompt;
+        if ($images !== []) {
+            $content = array_map(fn (array $image) => ['type' => 'image_url', 'image_url' => ['url' => 'data:'.$image['mime'].';base64,'.$image['data']]], $images);
+            $content[] = ['type' => 'text', 'text' => $prompt];
+        }
+
         try {
             $response = Http::timeout(120)->acceptJson()->withToken((string) $this->apiKey)
                 ->post(rtrim($this->baseUrl, '/').'/chat/completions', [
                     'model' => $model,
                     'max_tokens' => $maxTokens,
-                    'messages' => [['role' => 'system', 'content' => $system], ['role' => 'user', 'content' => $prompt]],
+                    'messages' => [['role' => 'system', 'content' => $system], ['role' => 'user', 'content' => $content]],
                 ]);
         } catch (\Throwable $e) {
             throw new AiException("{$this->label}'e bağlanılamadı.");
