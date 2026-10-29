@@ -194,6 +194,17 @@ class Auditor
         if ($page->schema_errors > 0) {
             $this->emit('schema_invalid_json', $page, $page->schema_errors.' JSON-LD bloğu okunamadı');
         }
+        $required = collect($page->schema_problems ?? [])->filter(fn (array $p) => $p['required'] !== []);
+        if ($required->isNotEmpty()) {
+            $this->emit('schema_missing_required', $page, mb_substr($required->map(fn (array $p) => $p['type'].': '.implode(', ', str_replace('|', ' veya ', $p['required'])))->implode(' · '), 0, 250));
+        }
+        $recommended = collect($page->schema_problems ?? [])->filter(fn (array $p) => $p['recommended'] !== []);
+        if ($recommended->isNotEmpty()) {
+            $this->emit('schema_missing_recommended', $page, mb_substr($recommended->map(fn (array $p) => $p['type'].': '.implode(', ', str_replace('|', ' veya ', $p['recommended'])))->implode(' · '), 0, 250));
+        }
+        if (filled($page->schema_duplicates)) {
+            $this->emit('schema_duplicate_type', $page, str_replace(',', ', ', $page->schema_duplicates).' birden fazla kez');
+        }
 
         if ($page->images_missing_alt > 0) {
             $this->emit('images_missing_alt', $page, $page->images_missing_alt.' görselde alt yok');
