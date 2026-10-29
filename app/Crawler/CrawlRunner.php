@@ -222,12 +222,16 @@ class CrawlRunner
             }
             $update['size_bytes'] = strlen($body);
             $parsed = HtmlParser::parse($body, $page->url);
+            $headerCanonical = self::headerCanonical((string) $response->header('Link'), $page->url);
 
             $update += [
                 'title' => $parsed['title'],
                 'meta_description' => $parsed['description'],
                 'meta_robots' => $parsed['meta_robots'],
-                'canonical' => $parsed['canonical'],
+                'canonical' => $parsed['canonical'] ?? $headerCanonical,
+                'canonical_conflict' => $parsed['canonical_conflict'] || ($headerCanonical !== null && $parsed['canonical'] !== null && $headerCanonical !== $parsed['canonical']),
+                'h2_count' => $parsed['h2_count'],
+                'heading_skip' => $parsed['heading_skip'],
                 'h1_count' => count($parsed['h1']),
                 'h1' => $parsed['h1'][0] ?? null,
                 'word_count' => $parsed['word_count'],
@@ -527,6 +531,21 @@ class CrawlRunner
         usleep(max(0, (int) $this->settings['delay_ms']) * 1000);
 
         return true;
+    }
+
+    /**
+     * The canonical URL from an HTTP Link header (Link: <https://example.com/a>; rel="canonical"), which Google
+     * reads like the HTML tag.
+     */
+    public static function headerCanonical(string $header, string $pageUrl): ?string
+    {
+        foreach (explode(',', $header) as $part) {
+            if (preg_match('/<([^>]+)>\s*;.*rel\s*=\s*"?([^";]*)/i', $part, $match) && in_array('canonical', preg_split('/\s+/', strtolower(trim($match[2]))), true)) {
+                return UrlNormalizer::resolve(trim($match[1]), $pageUrl);
+            }
+        }
+
+        return null;
     }
 
     private function filter(): UrlFilter

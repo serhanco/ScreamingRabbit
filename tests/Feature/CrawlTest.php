@@ -74,7 +74,7 @@ class CrawlTest extends TestCase
 
     public function test_a_crawl_finds_pages_and_reports_issues(): void
     {
-        $good = $this->page('A good page title that is long enough', '<h1>Good</h1>'.str_repeat('word ', 250));
+        $good = $this->page('A good page title that is long enough', '<h1>Good</h1><h2>Part</h2>'.str_repeat('word ', 250));
         $good = str_replace('<title>', '<meta name="description" content="'.str_repeat('d', 100).'"><link rel="canonical" href="https://example.com/a"><title>', $good);
 
         Http::fake([
