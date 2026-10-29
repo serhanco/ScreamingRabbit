@@ -17,6 +17,7 @@ return array(
     'App\\Audit\\Auditor' => $baseDir . '/app/Audit/Auditor.php',
     'App\\Audit\\HealthScore' => $baseDir . '/app/Audit/HealthScore.php',
     'App\\Audit\\Hreflang' => $baseDir . '/app/Audit/Hreflang.php',
+    'App\\Audit\\Readability' => $baseDir . '/app/Audit/Readability.php',
     'App\\Audit\\RuleCatalog' => $baseDir . '/app/Audit/RuleCatalog.php',
     'App\\Audit\\SchemaInventory' => $baseDir . '/app/Audit/SchemaInventory.php',
     'App\\Audit\\SchemaRules' => $baseDir . '/app/Audit/SchemaRules.php',

@@ -51,6 +51,9 @@ class PagesRelationManager extends RelationManager
                 TextColumn::make('ai_score')->label('AI hazırlık')->numeric()->placeholder('—')->sortable()->toggleable()
                     ->color(fn (?int $state): string => $state === null ? 'gray' : ($state >= 80 ? 'success' : ($state >= 50 ? 'warning' : 'danger')))
                     ->tooltip('AI aramalarında (Google AI özetleri, ChatGPT, Perplexity) okunup alıntılanmaya ne kadar hazır (0-100)'),
+                TextColumn::make('readability')->label('Okunabilirlik')->numeric()->placeholder('—')->sortable()->toggleable(isToggledHiddenByDefault: true)
+                    ->color(fn (?int $state): string => $state === null ? 'gray' : ($state >= 70 ? 'success' : ($state >= 50 ? 'warning' : 'danger')))
+                    ->tooltip('Türkçe metinler için Ateşman puanı: 70+ kolay, 50-69 orta, 50 altı zor'),
                 TextColumn::make('link_score')->label('Link puanı')->numeric()->placeholder('—')->sortable()->toggleable()
                     ->tooltip('Sitenin iç link yapısına göre sayfanın önemi (1-100, PageRank benzeri)'),
                 TextColumn::make('response_ms')->label('Süre (ms)')->numeric()->sortable()->toggleable(isToggledHiddenByDefault: true),

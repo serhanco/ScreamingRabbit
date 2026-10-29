@@ -11,6 +11,9 @@
             <dt class="font-medium">AI hazırlık ({{ $p->ai_score }}/100)</dt>
             <dd>@foreach (\App\Audit\AiReadiness::signals($p) as $signal => $met)<div @class(['opacity-60' => ! $met])>{{ $met ? '✓' : '✗' }} {{ \App\Audit\AiReadiness::SIGNALS[$signal][0] }}</div>@endforeach</dd>
         @endif
+        @if ($p->readability !== null)
+            <dt class="font-medium">Okunabilirlik (Ateşman)</dt><dd>{{ $p->readability }}/100 · {{ \App\Audit\Readability::label($p->readability) }}</dd>
+        @endif
         <dt class="font-medium">Kelime / Yanıt</dt><dd>{{ $p->word_count ?? '—' }} / {{ $p->response_ms ? $p->response_ms.' ms' : '—' }}</dd>
     </dl>
 
