@@ -231,6 +231,7 @@ class CrawlRunner
                 'h1' => $parsed['h1'][0] ?? null,
                 'word_count' => $parsed['word_count'],
                 'content_hash' => $parsed['content_hash'],
+                'simhash' => $parsed['simhash'],
                 'wordpress_hint' => $parsed['wordpress_hint'],
                 'images_missing_alt' => $parsed['images_missing_alt'],
                 'images_missing_size' => $parsed['images_missing_size'],

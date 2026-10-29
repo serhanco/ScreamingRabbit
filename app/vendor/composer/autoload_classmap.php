@@ -20,6 +20,7 @@ return array(
     'App\\Audit\\SchemaInventory' => $baseDir . '/app/Audit/SchemaInventory.php',
     'App\\Audit\\SchemaRules' => $baseDir . '/app/Audit/SchemaRules.php',
     'App\\Audit\\SecurityHeaders' => $baseDir . '/app/Audit/SecurityHeaders.php',
+    'App\\Audit\\SimHash' => $baseDir . '/app/Audit/SimHash.php',
     'App\\Crawler\\BotAccess' => $baseDir . '/app/Crawler/BotAccess.php',
     'App\\Crawler\\CrawlAlerts' => $baseDir . '/app/Crawler/CrawlAlerts.php',
     'App\\Crawler\\CrawlComparison' => $baseDir . '/app/Crawler/CrawlComparison.php',

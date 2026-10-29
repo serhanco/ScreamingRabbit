@@ -39,7 +39,7 @@ class Auditor
         $platform = $crawl->project->platform === 'wordpress' || $crawl->detected_platform === 'wordpress';
 
         /** @var array<string, array<string, array<int, int>>> $groups */
-        $groups = ['title' => [], 'meta_description' => [], 'h1' => [], 'content' => []];
+        $groups = ['title' => [], 'meta_description' => [], 'h1' => [], 'content' => [], 'simhash' => []];
         /** @var array<string, array{id: int, url: string, redirect_to: ?string}> $redirects */
         $redirects = [];
         $this->canonicalTargets = [];
@@ -58,6 +58,7 @@ class Auditor
 
         $this->auditRedirects($redirects);
         $this->auditDuplicates($groups);
+        $this->auditNearDuplicates($groups['simhash']);
         $this->auditCanonicalTargets();
         $this->auditHreflang();
         $this->auditSeoPlugins($platform);
@@ -259,6 +260,9 @@ class Auditor
         if ($page->word_count > 0 && $page->content_hash) {
             $groups['content'][$page->content_hash][] = $page->id;
         }
+        if ($page->simhash) {
+            $groups['simhash'][$page->id] = $page->simhash.$page->content_hash;
+        }
 
         if ($wordpress && preg_match('/(^|&)(p|page_id|attachment_id)=\d+/', (string) parse_url($page->url, PHP_URL_QUERY))
             && ($page->canonical === null || $page->canonical === '' || $page->canonical === $page->url)) {
@@ -332,6 +336,33 @@ class Auditor
                     $this->emitFor($rule, $id, count($ids).' sayfada aynı');
                 }
             }
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $pages  page id => simhash followed by the exact content hash
+     */
+    private function auditNearDuplicates(array $pages): void
+    {
+        $fingerprints = array_map(fn (string $value) => substr($value, 0, 16), $pages);
+        $matches = SimHash::nearDuplicates($fingerprints);
+        if ($matches === []) {
+            return;
+        }
+
+        // Exact copies are already reported as duplicate content.
+        foreach ($matches as $id => $others) {
+            $matches[$id] = array_values(array_filter($others, fn (int $other) => substr($pages[$other], 16) !== substr($pages[$id], 16)));
+        }
+        $matches = array_filter($matches);
+
+        $urls = [];
+        foreach (array_chunk(array_unique(array_merge(...array_values($matches))), 500) as $ids) {
+            $urls += $this->crawl->pages()->whereIn('id', $ids)->pluck('url', 'id')->all();
+        }
+        foreach ($matches as $id => $others) {
+            $detail = $urls[$others[0]].(count($others) > 1 ? ' ve '.(count($others) - 1).' sayfa daha' : '');
+            $this->emitFor('near_duplicate_content', $id, $detail);
         }
     }
 
