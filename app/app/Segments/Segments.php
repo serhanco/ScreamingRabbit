@@ -20,7 +20,7 @@ class Segments
     /** Upper bound of each internal link band; the last band is open-ended. */
     public const LINK_BANDS = [1 => '0-1', 5 => '2-5', 10 => '6-10', 25 => '11-25', 50 => '26-50', PHP_INT_MAX => '51+'];
 
-    private const TYPES = [
+    public const TYPES = [
         'home' => 'Ana sayfa', 'blog' => 'Blog ana sayfası', 'post' => 'Yazı', 'page' => 'Sayfa', 'product' => 'Ürün',
         'category' => 'Kategori arşivi', 'tag' => 'Etiket arşivi', 'author' => 'Yazar arşivi', 'date' => 'Tarih arşivi',
         'attachment' => 'Ek sayfası', 'search' => 'Arama sonucu', '404' => '404 sayfası',
