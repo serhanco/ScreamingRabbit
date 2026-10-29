@@ -34,7 +34,7 @@ class HtmlParser
     ];
 
     /**
-     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string, logo: bool}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
+     * @return array{title: ?string, description: ?string, meta_robots: ?string, canonical: ?string, canonical_conflict: bool, h2_count: int, heading_skip: ?string, hreflang: array<int, array{lang: string, url: string}>, pagination: array{next: ?string, prev: ?string}, h1: array<int, string>, word_count: int, content_hash: string, simhash: ?string, links: array<int, array{url: string, nofollow: bool}>, uncrawlable_links: int, empty_anchors: int, generic_anchors: array<int, string>, generic_anchor_count: int, meta_refresh: ?string, generator: ?string, wordpress_hint: bool, images_missing_alt: int, images_missing_size: int, images: array<int, string>, mixed_content: int, page_type: ?string, seo_plugin: ?string, schema_types: array<int, string>, schema_errors: int, schema_problems: array<int, array{type: string, required: array<int, string>, recommended: array<int, string>}>, schema_duplicates: array<int, string>, schema_mismatch: array<int, string>, entity: ?array{name: ?string, phone: ?string, logo: bool}, schema_vocabulary: array<int, string>, js_shell: bool, wp_type: ?string, wp_category: ?string, question_headings: int, long_paragraphs: int, readability: ?int, aeo: array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int, quotes: int}, is_article: bool, published_at: ?string, modified_at: ?string, has_author: bool, same_as: int, author_url: ?string, person_schema: bool}
      */
     public static function parse(string $html, string $pageUrl): array
     {
@@ -601,9 +601,9 @@ class HtmlParser
     /**
      * How quotable the main content is for answer engines (Google AI Overviews, ChatGPT, Perplexity): question
      * headings followed straight away by a short answer paragraph (20-60 words), lists and tables, an FAQ section,
-     * links to outside sources and sentences with figures. Runs on the main content (menus and footer removed).
+     * links to outside sources, sentences with figures and quotations (expert or source quotes in blockquote/q). Runs on the main content (menus and footer removed).
      *
-     * @return array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int}
+     * @return array{questions: int, answered: int, lists: int, tables: int, faq: bool, sources: int, numbers: int, quotes: int}
      */
     private static function answerSignals(DOMXPath $xpath, string $pageUrl, string $html): array
     {
@@ -645,11 +645,17 @@ class HtmlParser
             $numbers += preg_match_all('/(%\s?\d|\d[\d.,]*\s?(%|yüzde|percent|milyon|milyar|bin\b|million|billion))/iu', $node->textContent);
         }
 
+        // A quotation of at least five words; one-word <q> marks are usually typography, not a quoted source.
+        $quotes = 0;
+        foreach ($xpath->query('//blockquote|//q') as $node) {
+            $quotes += preg_match_all('/[\p{L}\p{N}]+/u', $node->textContent) >= 5 ? 1 : 0;
+        }
+
         $faq = stripos($html, '"FAQPage"') !== false || $xpath->query('//h2|//h3')->length > 0 && collect(iterator_to_array($xpath->query('//h2|//h3')))
             ->contains(fn ($node) => preg_match('/sıkça sorulan|sık sorulan|\bsss\b|\bfaq\b|frequently asked/iu', $node->textContent));
 
         return ['questions' => $questions, 'answered' => $answered, 'lists' => $lists, 'tables' => $xpath->query('//table')->length,
-            'faq' => $faq, 'sources' => count($sources), 'numbers' => $numbers];
+            'faq' => $faq, 'sources' => count($sources), 'numbers' => $numbers, 'quotes' => $quotes];
     }
 
     /**

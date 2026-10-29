@@ -23,9 +23,10 @@ class AnswerSignalsTest extends TestCase
             .'<h2>Fiyatlar</h2><table><tr><td>1</td></tr></table>'
             .'<ol><li>Bir</li><li>İki</li><li>Üç</li></ol>'
             .'<p>Hastaların %80\'i memnun (<a href="https://www.saglik.gov.tr/rapor">Sağlık Bakanlığı</a>, <a href="/iletisim">bize yazın</a>).</p>'
+            .'<blockquote>Beyazlatma diş minesine zarar vermez, doğru uygulanırsa güvenlidir.</blockquote><p><q>Harika</q></p>'
             .'<h3>Sıkça sorulan sorular</h3></body></html>';
 
-        $this->assertSame(['questions' => 2, 'answered' => 1, 'lists' => 1, 'tables' => 1, 'faq' => true, 'sources' => 1, 'numbers' => 1],
+        $this->assertSame(['questions' => 2, 'answered' => 1, 'lists' => 1, 'tables' => 1, 'faq' => true, 'sources' => 1, 'numbers' => 1, 'quotes' => 1],
             HtmlParser::parse($html, 'https://www.example.com/a/')['aeo']);
     }
 
