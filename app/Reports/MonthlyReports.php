@@ -50,11 +50,25 @@ class MonthlyReports
             'crawl_id' => $crawl->id,
             'status' => 'draft',
             'health_score' => $crawl->health_score,
+            'summary' => null,
             'html' => $source->html(false, Report::PDF_URL_PLACEHOLDER),
             'pdf_html' => $source->html(true),
             'token' => null,
             'approved_by' => null,
             'approved_at' => null,
         ]);
+    }
+
+    /** Sets a draft's summary and renders the draft again with it; approved reports stay as they were sent. */
+    public static function setSummary(Report $report, ?string $summary): bool
+    {
+        if ($report->status !== 'draft' || $report->crawl === null) {
+            return false;
+        }
+        $summary = trim((string) $summary) === '' ? null : mb_substr(trim((string) $summary), 0, 3000);
+        $source = new CrawlReport($report->crawl, $summary);
+        $report->update(['summary' => $summary, 'html' => $source->html(false, Report::PDF_URL_PLACEHOLDER), 'pdf_html' => $source->html(true)]);
+
+        return true;
     }
 }
