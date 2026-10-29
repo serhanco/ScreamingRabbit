@@ -14,6 +14,7 @@ class RuleCatalog
         'indexability' => 'İndekslenebilirlik',
         'onpage' => 'Sayfa içi',
         'url' => 'URL ve mimari',
+        'performance' => 'Hız ve Core Web Vitals',
         'security' => 'Güvenlik',
         'wordpress' => 'WordPress',
     ];
@@ -120,6 +121,11 @@ class RuleCatalog
             'hreflang_missing_x_default' => ['category' => 'indexability', 'severity' => 'low', 'title' => 'hreflang x-default yok', 'description' => 'Dil sürümlerinden hiçbiri ziyaretçinin diline uymadığında gösterilecek varsayılan sayfa (x-default) belirtilmemiş.', 'fix' => 'Varsayılan dil veya dil seçim sayfası için hreflang="x-default" ekleyin.'],
             'hreflang_target_bad' => ['category' => 'indexability', 'severity' => 'medium', 'title' => 'hreflang hatalı sayfayı gösteriyor', 'description' => 'Listelenen dil sürümü hata veriyor, yönleniyor, noindex ya da canonical ile başka adresi gösteriyor; Google bu dil eşleşmesini kullanmaz.', 'fix' => 'hreflang\'te yalnızca 200 dönen, indekslenebilir ve kendini canonical gösteren adresleri kullanın.'],
             'hreflang_missing_return' => ['category' => 'indexability', 'severity' => 'medium', 'title' => 'hreflang karşılıklı değil', 'description' => 'Bu sayfa başka bir dil sürümünü gösteriyor ama o sayfa bu sayfayı geri göstermiyor; Google karşılıksız hreflang eşleşmelerini yok sayar.', 'fix' => 'Her dil sürümü diğer tüm sürümleri listelemeli; çeviri eşleştirmesini çok dilli eklentide kontrol edin.'],
+
+            // Hız ve Core Web Vitals (PageSpeed Insights, örnek sayfalar)
+            'cwv_poor' => ['category' => 'performance', 'severity' => 'high', 'title' => 'Core Web Vitals kötü (gerçek kullanıcılar)', 'description' => 'Chrome kullanıcılarının son 28 günlük verisine göre sayfa mobilde çok yavaş yükleniyor, geç tepki veriyor veya kayıyor (LCP > 4 sn, INP > 500 ms ya da CLS > 0,25). Google bunu sıralamada sayfa deneyimi sinyali olarak kullanır ve ziyaretçi kaybettirir.', 'fix' => 'Büyük görselleri sıkıştırıp WebP yapın, önbellek eklentisi (LiteSpeed Cache, WP Rocket) kullanın, gereksiz eklenti ve scriptleri kaldırın; görsellere width/height verin.'],
+            'cwv_needs_improvement' => ['category' => 'performance', 'severity' => 'medium', 'title' => 'Core Web Vitals geçmiyor (gerçek kullanıcılar)', 'description' => 'Gerçek kullanıcı verisinde en az bir metrik "iyi" sınırını aşıyor (LCP 2,5 sn, INP 200 ms, CLS 0,1); sayfa Core Web Vitals değerlendirmesinden geçemiyor.', 'fix' => 'Ayrıntıdaki metriğe odaklanın: LCP için ana görseli ve sunucu yanıtını hızlandırın, INP için ağır JavaScript\'i azaltın, CLS için görsel/reklam alanlarına sabit boyut verin.'],
+            'pagespeed_low_score' => ['category' => 'performance', 'severity' => 'medium', 'title' => 'Mobil PageSpeed puanı düşük', 'description' => 'Lighthouse laboratuvar testinde mobil performans puanı 50\'nin altında (kırmızı bölge); sayfa yavaş telefonlarda geç açılıyor.', 'fix' => 'PageSpeed Insights\'taki öneriler sırasıyla: görselleri optimize edin, kullanılmayan CSS/JS\'i kaldırın, önbellek ve CDN kullanın.'],
 
             // Güvenlik
             'mixed_content' => ['category' => 'security', 'severity' => 'high', 'title' => 'Karışık içerik (HTTPS sayfada HTTP kaynak)', 'description' => 'Güvenli sayfa, güvenli olmayan HTTP kaynaklar yüklüyor; tarayıcı uyarısı ve engelleme riski var.', 'fix' => 'Görsel, script ve stil adreslerini https:// olarak güncelleyin.'],

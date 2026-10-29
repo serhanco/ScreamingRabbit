@@ -9,6 +9,7 @@ use App\Models\Crawl;
 use App\Models\CrawlImage;
 use App\Models\CrawlPage;
 use App\Models\Project;
+use App\Performance\PageSpeed;
 use App\Tasks\TaskBuilder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
@@ -549,6 +550,7 @@ class CrawlRunner
         $this->crawl->update(['status' => 'completed', 'finished_at' => now()]);
         CrawlAlerts::newIssues($this->crawl);
 
+        PageSpeed::prepare($this->crawl);
         TaskBuilder::sync($this->crawl->project);
     }
 
