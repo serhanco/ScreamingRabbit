@@ -57,7 +57,8 @@ class SR_Settings
 			<p>Yalnızca okur ve yalnızca bağlandığın ScreamingRabbit hesabına gönderir: WordPress, PHP ve MySQL sürümleri; eklenti ve
 				temaların adı, sürümü, etkinliği ve güncelleme durumu; SEO ve güvenlikle ilgili ayarlar (arama motoru görünürlüğü,
 				kalıcı bağlantılar, hata ayıklama, dosya düzenleyici, otomatik güncelleme, yönetici <em>sayısı</em>); içerik türlerine göre
-				yazı sayıları. Kullanıcı adı, e-posta, yorum, sipariş gibi kişisel veriler toplanmaz. Siteye hiçbir değişiklik yapmaz,
+				yazı sayıları; SEO eklentisinin içerik türü noindex ve site haritası ayarı; WordPress Site Sağlığı uyarıları; çekirdek
+				dosyalarının wordpress.org sürümüyle aynı olup olmadığı (değişen dosyaların <em>yolu</em>). Kullanıcı adı, e-posta, yorum, sipariş gibi kişisel veriler toplanmaz. Siteye hiçbir değişiklik yapmaz,
 				ziyaretçi sayfalarına kod eklemez.</p>
 		</div>
 		<?php

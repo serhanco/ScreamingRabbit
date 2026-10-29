@@ -96,10 +96,13 @@ class WordPressConnectorTest extends TestCase
         $project = Project::factory()->create(['base_url' => 'https://klinik.com', 'platform' => 'wordpress']);
         WpConnection::create(['project_id' => $project->id, 'secret' => 'gizli', 'site_url' => 'https://klinik.com/', 'connected_at' => now(), 'synced_at' => now(),
             'inventory' => ['core' => ['version' => '6.8.1', 'update' => '6.9'], 'environment' => ['php' => '8.2.1'], 'settings' => ['blog_public' => true, 'admins' => 2],
-                'plugins' => [['name' => 'Yoast SEO', 'version' => '25.0', 'active' => true, 'update' => '25.1', 'auto_update' => false]], 'themes' => [], 'content' => ['post' => ['publish' => 12, 'draft' => 3, 'future' => 0, 'private' => 0]]]]);
+                'plugins' => [['name' => 'Yoast SEO', 'version' => '25.0', 'active' => true, 'update' => '25.1', 'auto_update' => false]], 'themes' => [], 'content' => ['post' => ['publish' => 12, 'draft' => 3, 'future' => 0, 'private' => 0]],
+                'seo' => ['plugin' => 'Yoast SEO', 'noindex_types' => [], 'sitemap' => true], 'site_health' => [['test' => 'timezone', 'status' => 'recommended', 'label' => 'Saat dilimi ayarlı değil']],
+                'integrity' => ['version' => '6.8.1', 'modified' => ['wp-login.php'], 'modified_count' => 1, 'missing' => [], 'missing_count' => 0]]]);
 
         $this->actingAs($admin)->get(ProjectResource::getUrl('wordpress', ['record' => $project]))
-            ->assertOk()->assertSee('6.9 güncellemesi var')->assertSee('Yoast SEO')->assertSee('25.1 var');
+            ->assertOk()->assertSee('6.9 güncellemesi var')->assertSee('Yoast SEO')->assertSee('25.1 var')
+            ->assertSee('site haritası açık')->assertSee('Saat dilimi ayarlı değil')->assertSee('wp-login.php');
 
         Livewire::actingAs($admin)->test(ProjectWordPress::class, ['record' => $project->id])
             ->callAction('code')->assertSet('code', fn (string $code) => str_starts_with($code, 'SR1.'));

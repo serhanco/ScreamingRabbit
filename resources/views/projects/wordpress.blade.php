@@ -52,8 +52,47 @@
                     <dt class="font-medium">Çekirdek otomatik güncelleme</dt><dd>{{ ['all' => 'Tümü', 'minor' => 'Yalnızca küçük sürümler', 'off' => 'Kapalı'][$inv['settings']['auto_update_core'] ?? ''] ?? ($inv['settings']['auto_update_core'] ?? '—') }}</dd>
                     <dt class="font-medium">Herkes üye olabilir</dt><dd>{{ $yes($inv['settings']['users_can_register'] ?? false) }}</dd>
                     <dt class="font-medium">Yönetici sayısı</dt><dd>{{ $inv['settings']['admins'] ?? '—' }}</dd>
+                    <dt class="font-medium">Önbellek eklentisi</dt><dd>{{ implode(', ', \App\WordPress\Connector::cachePlugins($inv)) ?: 'Yok (sunucu önbelleği olabilir)' }}</dd>
+                    @if (array_key_exists('seo', $inv))
+                        <dt class="font-medium">SEO eklentisi</dt><dd>{{ $inv['seo']['plugin'] ?? 'Yok' }}@if (isset($inv['seo']['sitemap'])), site haritası {{ $inv['seo']['sitemap'] ? 'açık' : 'kapalı' }}@endif</dd>
+                        @if (! empty($inv['seo']['noindex_types']))
+                            <dt class="font-medium">Arama dışı içerik türleri</dt><dd class="text-warning-600">{{ implode(', ', $inv['seo']['noindex_types']) }}</dd>
+                        @endif
+                    @endif
                 </dl>
             </x-filament::section>
+
+            @if (array_key_exists('site_health', $inv) || array_key_exists('integrity', $inv))
+                @php $integrity = $inv['integrity'] ?? null; @endphp
+                <x-filament::section heading="Site Sağlığı ve çekirdek dosyaları">
+                    @if ($integrity)
+                        @if (($integrity['modified_count'] ?? 0) + ($integrity['missing_count'] ?? 0) === 0)
+                            <p class="text-sm text-success-600">Çekirdek dosyaları wordpress.org'daki {{ $integrity['version'] }} sürümüyle aynı.</p>
+                        @else
+                            <p class="text-sm text-danger-600">{{ $integrity['modified_count'] }} çekirdek dosyası değişmiş, {{ $integrity['missing_count'] }} dosya eksik.</p>
+                            <ul class="mt-1 list-disc ps-5 text-sm">
+                                @foreach (array_merge($integrity['modified'] ?? [], $integrity['missing'] ?? []) as $file)
+                                    <li><code>{{ $file }}</code></li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    @elseif (array_key_exists('integrity', $inv))
+                        <p class="text-sm opacity-70">Çekirdek dosya kontrolü yapılamadı (site wordpress.org'a bağlanamadı).</p>
+                    @endif
+                    @if (array_key_exists('site_health', $inv))
+                        @php $health = collect($inv['site_health'] ?? [])->sortBy(fn ($item) => $item['status'] === 'critical' ? 0 : 1); @endphp
+                        @if ($health->isEmpty())
+                            <p class="mt-3 text-sm text-success-600">Site Sağlığı'nda uyarı yok.</p>
+                        @else
+                            <ul class="mt-3 space-y-1 text-sm">
+                                @foreach ($health as $item)
+                                    <li><span @class(['font-medium', 'text-danger-600' => $item['status'] === 'critical', 'text-warning-600' => $item['status'] !== 'critical'])>{{ $item['status'] === 'critical' ? 'Kritik' : 'Önerilen' }}:</span> {{ $item['label'] }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    @endif
+                </x-filament::section>
+            @endif
 
             @php
                 $plugins = collect($inv['plugins'] ?? [])->sortBy([['active', 'desc'], ['name', 'asc']]);

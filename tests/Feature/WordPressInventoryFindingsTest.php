@@ -7,6 +7,7 @@ use App\Models\Crawl;
 use App\Models\CrawlPage;
 use App\Models\Project;
 use App\Models\WpConnection;
+use App\WordPress\Connector;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -55,6 +56,46 @@ class WordPressInventoryFindingsTest extends TestCase
             $this->assertTrue($issues->has($rule), $rule);
         }
         $this->assertSame(1, $home->issues()->where('rule', 'wp_core_outdated')->count(), 'the outside guess is not added on top');
+    }
+
+    public function test_core_integrity_site_health_and_hidden_post_types(): void
+    {
+        $issues = $this->audit([
+            'content' => ['post' => ['publish' => 120], 'product' => ['publish' => 0]],
+            'seo' => ['plugin' => 'Yoast SEO', 'noindex_types' => ['post', 'product'], 'sitemap' => true],
+            'site_health' => [
+                ['test' => 'php_version', 'status' => 'critical', 'label' => 'PHP eski'],
+                ['test' => 'background_updates', 'status' => 'critical', 'label' => 'Arka plan güncellemeleri çalışmıyor'],
+                ['test' => 'timezone', 'status' => 'recommended', 'label' => 'Saat dilimi'],
+            ],
+            'integrity' => ['version' => '6.8', 'modified' => ['wp-includes/load.php'], 'modified_count' => 1, 'missing' => [], 'missing_count' => 0],
+        ])->issues()->pluck('detail', 'rule');
+
+        $this->assertSame('1 değişmiş: wp-includes/load.php', $issues['wp_core_files_modified']);
+        $this->assertSame('Arka plan güncellemeleri çalışmıyor', $issues['wp_site_health_critical'], 'covered and recommended checks are left out');
+        $this->assertSame('Yoast SEO: post (120 yayında)', $issues['wp_post_type_noindex'], 'empty post types do not matter');
+    }
+
+    public function test_clean_inventory_adds_no_integrity_findings(): void
+    {
+        $issues = $this->audit([
+            'seo' => ['plugin' => 'Rank Math', 'noindex_types' => [], 'sitemap' => true],
+            'site_health' => [['test' => 'timezone', 'status' => 'recommended', 'label' => 'Saat dilimi']],
+            'integrity' => ['version' => '6.8', 'modified' => [], 'modified_count' => 0, 'missing' => [], 'missing_count' => 0],
+        ])->issues()->pluck('rule');
+
+        foreach (['wp_core_files_modified', 'wp_site_health_critical', 'wp_post_type_noindex'] as $rule) {
+            $this->assertNotContains($rule, $issues);
+        }
+    }
+
+    public function test_cache_plugins_are_recognised(): void
+    {
+        $this->assertSame(['LiteSpeed Cache'], Connector::cachePlugins(['plugins' => [
+            ['file' => 'litespeed-cache/litespeed-cache.php', 'name' => 'LiteSpeed Cache', 'active' => true],
+            ['file' => 'wp-rocket/wp-rocket.php', 'name' => 'WP Rocket', 'active' => false],
+            ['file' => 'akismet/akismet.php', 'name' => 'Akismet', 'active' => true],
+        ]]));
     }
 
     public function test_without_a_fresh_inventory_the_outside_checks_apply(): void
