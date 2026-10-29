@@ -71,7 +71,7 @@ class Auditor
         $this->hreflang = [];
         $this->pagination = [];
         $this->authorPages = [];
-        $this->nap = ['name' => [], 'phone' => []];
+        $this->nap = ['name' => [], 'phone' => [], 'address' => []];
         $this->staleArticles = [];
         $this->aiScores = [];
         $this->wholeSite = null;
@@ -195,7 +195,7 @@ class Auditor
         }
 
         if ($page->status_code === 200 && ! empty($page->entity)) {
-            foreach (['name', 'phone'] as $key) {
+            foreach (['name', 'phone', 'address'] as $key) {
                 if (filled($page->entity[$key] ?? null)) {
                     $this->nap[$key][$page->entity[$key]] = ($this->nap[$key][$page->entity[$key]] ?? 0) + 1;
                 }
@@ -623,6 +623,9 @@ class Auditor
         }
         if (count($this->nap['phone']) > 1) {
             $variants[] = 'Telefon: '.collect($this->nap['phone'])->map(fn ($count, $phone) => "…{$phone} ({$count} sayfa)")->implode(', ');
+        }
+        if (count($this->nap['address'] ?? []) > 1) {
+            $variants[] = 'Adres: '.collect($this->nap['address'])->map(fn ($count, $address) => '"'.mb_substr($address, 0, 40)."\" ({$count} sayfa)")->implode(', ');
         }
         if ($variants !== []) {
             $this->emit('nap_inconsistent', $home, mb_substr(implode(' · ', $variants), 0, 250));
