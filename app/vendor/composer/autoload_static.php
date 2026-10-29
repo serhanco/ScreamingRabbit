@@ -889,6 +889,7 @@ class ComposerStaticInit40eb6d041507a8d4a4ec877170c743c9
         'App\\Tasks\\TaskBuilder' => __DIR__ . '/../..' . '/app/Tasks/TaskBuilder.php',
         'App\\Team\\Invitations' => __DIR__ . '/../..' . '/app/Team/Invitations.php',
         'App\\WordPress\\Connector' => __DIR__ . '/../..' . '/app/WordPress/Connector.php',
+        'App\\WordPress\\Vulnerabilities' => __DIR__ . '/../..' . '/app/WordPress/Vulnerabilities.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'BladeUI\\Heroicons\\BladeHeroiconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-heroicons/src/BladeHeroiconsServiceProvider.php',
         'BladeUI\\Icons\\BladeIconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/BladeIconsServiceProvider.php',

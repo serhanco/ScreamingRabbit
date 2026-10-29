@@ -1110,6 +1110,15 @@ class Auditor
         if ($critical->isNotEmpty()) {
             $this->emit('wp_site_health_critical', $home, $critical->implode('; '));
         }
+        $vulnerable = collect($connection->vulnerabilities ?? [])->map(function (array $component) {
+            $fixedIn = collect($component['items'])->pluck('fixed_in')->filter()->sort(fn ($a, $b) => version_compare($b, $a))->first();
+            $more = count($component['items']) > 1 ? ' +'.(count($component['items']) - 1).' açık' : '';
+
+            return "{$component['name']} {$component['version']}: {$component['items'][0]['title']}{$more}".($fixedIn ? " ({$fixedIn} ile düzeldi)" : '');
+        });
+        if ($vulnerable->isNotEmpty()) {
+            $this->emit('wp_vulnerable_component', $home, $vulnerable->implode('; '));
+        }
         $hidden = collect($inv['seo']['noindex_types'] ?? [])
             ->mapWithKeys(fn (string $type) => [$type => (int) ($inv['content'][$type]['publish'] ?? 0)])
             ->filter()

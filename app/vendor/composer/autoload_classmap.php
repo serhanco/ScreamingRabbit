@@ -171,6 +171,7 @@ return array(
     'App\\Tasks\\TaskBuilder' => $baseDir . '/app/Tasks/TaskBuilder.php',
     'App\\Team\\Invitations' => $baseDir . '/app/Team/Invitations.php',
     'App\\WordPress\\Connector' => $baseDir . '/app/WordPress/Connector.php',
+    'App\\WordPress\\Vulnerabilities' => $baseDir . '/app/WordPress/Vulnerabilities.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'BladeUI\\Heroicons\\BladeHeroiconsServiceProvider' => $vendorDir . '/blade-ui-kit/blade-heroicons/src/BladeHeroiconsServiceProvider.php',
     'BladeUI\\Icons\\BladeIconsServiceProvider' => $vendorDir . '/blade-ui-kit/blade-icons/src/BladeIconsServiceProvider.php',

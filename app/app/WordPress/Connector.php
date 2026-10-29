@@ -104,6 +104,7 @@ class Connector
             'synced_at' => now(),
             'sync_error' => null,
         ]);
+        Vulnerabilities::check($connection);
 
         return true;
     }
@@ -133,7 +134,6 @@ class Connector
         ])->get(self::base($connection).'/', ['rest_route' => $route]);
     }
 
-    /** Same algorithm as the plugin's SR_Signature::sign(). */
     /**
      * Names of the active page cache plugins in an inventory.
      *
@@ -147,6 +147,7 @@ class Connector
             ->pluck('name')->values()->all();
     }
 
+    /** Same algorithm as the plugin's SR_Signature::sign(). */
     public static function sign(string $secret, string $method, string $route, string $timestamp, string $nonce, string $body): string
     {
         return hash_hmac('sha256', implode("\n", [strtoupper($method), $route, $timestamp, $nonce, hash('sha256', $body)]), $secret);
