@@ -240,7 +240,7 @@ Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **AI destekli aksiyonlar (AI-0 üzerinden, uygulamada çalışır)**
 - ✓ Title/meta yeniden yazım önerisi (son tarama + GSC sorguları; WordPress sayfasında "AI ile başlık/meta öner", öneri listede düzenlenip onaylanır)
-- ○ Toplu inceleme ekranı (birden çok sayfa için öneri)
+- ✓ Toplu inceleme: "Toplu AI başlık/meta" (sorunlu sayfalar, en çok gösterim alan önce, her sayfa ayrı kuyruk işi), bekleyenleri tek tıkla onaylama
 - ✓ Eksik alt metni önerisi (görsel + bağlam; model görseli ve onu kullanan sayfaları görür, öneri onaylı değişiklik listesine düşer)
 - ○ İç link önerici (zayıf sayfalara, GSC fırsat sorgularıyla eşleşen kaynaklardan)
 - ○ WordPress'te onaylı uygulama (WP-4) ve GSC ile etki ölçümü

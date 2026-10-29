@@ -6,6 +6,7 @@ use App\Ai\Ai;
 use App\Ai\AltText;
 use App\Ai\TitleMeta;
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Jobs\ProposeTitleMeta;
 use App\Models\WpChange;
 use App\Models\WpConnection;
 use App\WordPress\Changes;
@@ -19,6 +20,7 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * The project's link to the ScreamingRabbit Connector plugin: pairing, and what the plugin reports from inside
@@ -34,6 +36,9 @@ class ProjectWordPress extends Page
 
     /** The pairing code just made, shown once on the page. */
     public ?string $code = null;
+
+    /** Changes "approve all" sends in one click, so the request stays short on shared hosting. */
+    private const APPLY_ALL_MAX = 20;
 
     public function mount(int|string $record): void
     {
@@ -98,6 +103,30 @@ class ProjectWordPress extends Page
                     }
                     Notification::make()->title('AI önerisi hazır')->body('Aşağıdaki listeden inceleyip onaylayın.')->success()->send();
                 }),
+            Action::make('aiBulk')
+                ->label('Toplu AI başlık/meta')
+                ->icon(Heroicon::OutlinedQueueList)
+                ->color('gray')
+                ->visible(fn (): bool => $this->canUseAi())
+                ->modalDescription('Son taramada başlığı veya açıklaması eksik, kopya, çok uzun ya da çok kısa olan sayfalar için öneri hazırlanır; Google\'da en çok gösterim alanlar önce. Öneriler birkaç dakika içinde aşağıdaki listeye düşer, her biri ayrıca onaylanır.')
+                ->schema([Select::make('count')->label('Sayfa sayısı')->options([5 => '5 sayfa', 10 => '10 sayfa', 20 => '20 sayfa'])->default(10)->selectablePlaceholder(false)])
+                ->action(function (array $data, Action $action): void {
+                    $urls = TitleMeta::candidates($this->record, (int) $data['count']);
+                    if ($urls === []) {
+                        Notification::make()->title('Öneri gereken sayfa yok')->body('Son taramada başlık/açıklama sorunu olan, önerisi beklemeyen sayfa bulunmadı.')->warning()->send();
+                        $action->halt();
+                    }
+                    // The first page runs now, so a missing key or a full budget shows at once instead of failing in the background.
+                    $first = TitleMeta::propose($this->record, array_shift($urls), auth()->user());
+                    if (is_string($first) && ! str_contains($first, 'sitedekiyle aynı')) {
+                        Notification::make()->title('Öneri alınamadı')->body($first)->danger()->send();
+                        $action->halt();
+                    }
+                    foreach ($urls as $url) {
+                        ProposeTitleMeta::dispatch($this->record->id, $url, auth()->id());
+                    }
+                    Notification::make()->title('Öneriler hazırlanıyor')->body(count($urls) + 1 .' sayfa; kalanlar birkaç dakika içinde listeye düşer.')->success()->send();
+                }),
             Action::make('aiAlt')
                 ->label('AI ile alt metin öner')
                 ->icon(Heroicon::OutlinedPhoto)
@@ -112,6 +141,20 @@ class ProjectWordPress extends Page
                         $action->halt();
                     }
                     Notification::make()->title('AI önerisi hazır')->body('Aşağıdaki listeden inceleyip onaylayın.')->success()->send();
+                }),
+            Action::make('applyAll')
+                ->label(fn (): string => 'Bekleyenleri onayla ('.$this->waiting()->count().')')
+                ->icon(Heroicon::OutlinedCheckCircle)
+                ->color('success')
+                ->visible(fn (): bool => $this->canManage() && $this->waiting()->count() > 1)
+                ->requiresConfirmation()
+                ->modalDescription('Onay bekleyen değişikliklerin hepsi (bir seferde en fazla '.self::APPLY_ALL_MAX.') siteye yazılır. Her biri tek tek geri alınabilir; arada sitede değişen değerler çakışma olarak kalır.')
+                ->action(function (): void {
+                    $results = $this->waiting()->limit(self::APPLY_ALL_MAX)->get()->map(fn (WpChange $change) => Changes::apply($change, auth()->user())->status);
+                    $applied = $results->filter(fn (string $status) => $status === 'applied')->count();
+                    Notification::make()->title("{$applied} değişiklik siteye yazıldı")
+                        ->body($applied < $results->count() ? ($results->count() - $applied).' değişiklik uygulanamadı; listede nedenini görebilirsiniz.' : null)
+                        ->{$applied === $results->count() ? 'success' : 'warning'}()->send();
                 }),
             Action::make('code')
                 ->label(fn (): string => $this->connection()?->isConnected() ? 'Yeniden bağla' : 'Bağlantı kodu al')
@@ -214,6 +257,12 @@ class ProjectWordPress extends Page
             });
     }
 
+    /** @return Builder<WpChange> */
+    private function waiting()
+    {
+        return WpChange::where('project_id', $this->record->id)->where('status', 'proposed')->orderBy('id');
+    }
+
     /** @param  array<string, mixed>  $arguments */
     private function change(array $arguments): ?WpChange
     {
@@ -227,7 +276,8 @@ class ProjectWordPress extends Page
     {
         return [
             'connection' => $this->connection(), 'project' => $this->record, 'canManage' => $this->canManage(),
-            'changes' => WpChange::where('project_id', $this->record->id)->with(['proposer', 'approver'])->latest('id')->limit(30)->get(),
+            'changes' => WpChange::where('project_id', $this->record->id)->with(['proposer', 'approver'])
+                ->orderByRaw("CASE WHEN status = 'proposed' THEN 0 ELSE 1 END")->latest('id')->limit(60)->get(),
         ];
     }
 
