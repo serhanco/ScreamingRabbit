@@ -279,7 +279,7 @@ class HtmlParser
     }
 
     /**
-     * Structured data on the page: schema.org types from JSON-LD (including @graph and nested items) and Microdata,
+     * Structured data on the page: schema.org types from JSON-LD (including @graph and nested items), Microdata and RDFa,
      * the number of JSON-LD blocks that are not valid JSON, entities missing rich-result properties, and types printed
      * more than once (usually two plugins doing the same job).
      *
@@ -347,6 +347,22 @@ class HtmlParser
             foreach (preg_split('/\s+/', trim($item->getAttribute('itemtype'))) as $type) {
                 if (str_contains($type, 'schema.org/')) {
                     $types[] = SchemaRules::shortType(rtrim($type, '/'));
+                }
+            }
+        }
+
+        // RDFa Lite: typeof="Article" under vocab="https://schema.org/", or a full or schema:-prefixed type name.
+        foreach ($xpath->query('//*[@typeof]') as $item) {
+            $vocab = $xpath->query('ancestor-or-self::*[@vocab][1]/@vocab', $item)->item(0)?->nodeValue ?? '';
+            foreach (preg_split('/\s+/', trim($item->getAttribute('typeof'))) as $type) {
+                $type = match (true) {
+                    str_contains($type, 'schema.org/') => SchemaRules::shortType(rtrim($type, '/')),
+                    str_starts_with($type, 'schema:') => substr($type, 7),
+                    ! str_contains($type, ':') && str_contains($vocab, 'schema.org') => $type,
+                    default => '',
+                };
+                if (preg_match('/^[A-Z][A-Za-z0-9]+$/', $type)) {
+                    $types[] = $type;
                 }
             }
         }
