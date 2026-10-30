@@ -3425,6 +3425,7 @@ return array(
     'App\\Filament\\Resources\\Clients\\Pages\\ListClients' => $baseDir . '/app/Filament/Resources/Clients/Pages/ListClients.php',
     'App\\Filament\\Resources\\Clients\\Schemas\\ClientForm' => $baseDir . '/app/Filament/Resources/Clients/Schemas/ClientForm.php',
     'App\\Filament\\Resources\\Clients\\Tables\\ClientsTable' => $baseDir . '/app/Filament/Resources/Clients/Tables/ClientsTable.php',
+    'App\\Filament\\Resources\\Crawls\\CrawlActions' => $baseDir . '/app/Filament/Resources/Crawls/CrawlActions.php',
     'App\\Filament\\Resources\\Crawls\\CrawlColors' => $baseDir . '/app/Filament/Resources/Crawls/CrawlColors.php',
     'App\\Filament\\Resources\\Crawls\\CrawlResource' => $baseDir . '/app/Filament/Resources/Crawls/CrawlResource.php',
     'App\\Filament\\Resources\\Crawls\\Pages\\ListCrawls' => $baseDir . '/app/Filament/Resources/Crawls/Pages/ListCrawls.php',

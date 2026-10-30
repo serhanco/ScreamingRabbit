@@ -90,6 +90,7 @@ class PagesRelationManager extends RelationManager
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Kapat'),
             ])
+            ->emptyStateHeading('Henüz taranan sayfa yok')
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25);
     }

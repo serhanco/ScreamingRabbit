@@ -4174,6 +4174,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Filament\\Resources\\Clients\\Pages\\ListClients' => __DIR__ . '/../..' . '/app/Filament/Resources/Clients/Pages/ListClients.php',
         'App\\Filament\\Resources\\Clients\\Schemas\\ClientForm' => __DIR__ . '/../..' . '/app/Filament/Resources/Clients/Schemas/ClientForm.php',
         'App\\Filament\\Resources\\Clients\\Tables\\ClientsTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Clients/Tables/ClientsTable.php',
+        'App\\Filament\\Resources\\Crawls\\CrawlActions' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/CrawlActions.php',
         'App\\Filament\\Resources\\Crawls\\CrawlColors' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/CrawlColors.php',
         'App\\Filament\\Resources\\Crawls\\CrawlResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/CrawlResource.php',
         'App\\Filament\\Resources\\Crawls\\Pages\\ListCrawls' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Pages/ListCrawls.php',

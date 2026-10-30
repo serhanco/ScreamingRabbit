@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Crawls\Pages;
 use App\Crawler\CrawlRunner;
 use App\Exports\CrawlCsv;
 use App\Exports\CrawlSitemap;
+use App\Filament\Resources\Crawls\CrawlActions;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
 use App\Reports\CrawlReport;
@@ -110,13 +111,25 @@ class ViewCrawl extends ViewRecord
                 ->color('gray')
                 ->button()
                 ->visible(fn (): bool => ! $this->record->isActive()),
-            Action::make('cancel')
-                ->label('Taramayı durdur')
-                ->icon(Heroicon::OutlinedStop)
-                ->color('danger')
-                ->requiresConfirmation()
-                ->visible(fn (Crawl $record): bool => $record->isActive() && auth()->user()->canDo('crawl', $record->project_id))
-                ->action(fn (Crawl $record) => $record->update(['status' => 'cancelled', 'finished_at' => now()])),
+            CrawlActions::cancel()->label('Taramayı durdur'),
+            CrawlActions::delete(CrawlResource::getUrl('index'))->label('Taramayı sil')->color('gray')->iconButton()->tooltip('Taramayı sil'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return $this->record->project?->name ?? 'Tarama';
+    }
+
+    public function getSubheading(): ?string
+    {
+        $date = ($this->record->started_at ?? $this->record->created_at)?->timezone(config('screamingrabbit.alerts.timezone'))->format('d.m.Y H:i');
+
+        return 'Tarama #'.$this->record->id.($date ? ' · '.$date : '');
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return 'Tarama #'.$this->record->id;
     }
 }
