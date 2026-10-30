@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class FormLoginTest extends TestCase
@@ -72,7 +73,7 @@ class FormLoginTest extends TestCase
 
     public function test_the_crawl_logs_in_never_logs_out_and_keeps_the_session_to_its_own_host(): void
     {
-        $password = 'uye-'.'parola';
+        $password = Str::random(16);
         $this->fakeSite($password);
 
         $crawl = $this->crawl($password);
@@ -88,9 +89,9 @@ class FormLoginTest extends TestCase
 
     public function test_a_wrong_password_is_reported_and_the_crawl_goes_on_logged_out(): void
     {
-        $this->fakeSite('dogru');
+        $this->fakeSite(Str::random(16));
 
-        $crawl = $this->crawl('yanlis');
+        $crawl = $this->crawl(Str::random(16));
 
         $this->assertSame('completed', $crawl->status);
         $this->assertStringContainsString('kabul edilmedi', $crawl->login_result);
