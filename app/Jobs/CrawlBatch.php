@@ -42,7 +42,7 @@ class CrawlBatch implements ShouldQueue
         if ($crawl === null) {
             return;
         }
-        $crawl->update(['status' => 'failed', 'error' => mb_substr($exception->getMessage(), 0, 500), 'finished_at' => now()]);
+        $crawl->update(['status' => 'failed', 'error' => mb_substr($exception->getMessage(), 0, 500), 'finished_at' => now(), 'session_cookie' => null]);
         CrawlAlerts::failed($crawl);
     }
 }

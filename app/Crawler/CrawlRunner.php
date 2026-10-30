@@ -130,6 +130,8 @@ class CrawlRunner
         $this->crawl->update(['status' => 'running', 'started_at' => now()]);
         $this->pageCount = 0;
 
+        $this->login();
+
         $robotsBody = $this->fetchText($origin.'/robots.txt');
         $this->crawl->robots_txt = $robotsBody;
         $robots = new RobotsTxt((string) $robotsBody, 'screamingrabbit');
@@ -541,6 +543,10 @@ class CrawlRunner
         if ($depth > 0 && ! $this->filter()->allows($url)) {
             return;
         }
+        // Logged in, a crawler must not log itself out or open links that change something.
+        if ($depth > 0 && $this->crawl->session_cookie !== null && preg_match(FormLogin::UNSAFE, $url)) {
+            return;
+        }
 
         $hash = UrlNormalizer::hash($url);
 
@@ -659,7 +665,7 @@ class CrawlRunner
 
         (new Auditor)->run($this->crawl);
 
-        $this->crawl->update(['status' => 'completed', 'finished_at' => now()]);
+        $this->crawl->update(['status' => 'completed', 'finished_at' => now(), 'session_cookie' => null]);
         CrawlAlerts::newIssues($this->crawl);
 
         PageSpeed::prepare($this->crawl);
@@ -692,7 +698,31 @@ class CrawlRunner
         if ($this->access['user'] !== null) {
             $request->withBasicAuth($this->access['user'], (string) $this->access['password']);
         }
+        $headers = $this->access['headers'];
+        if ($this->crawl->session_cookie !== null) {
+            $cookie = collect($headers)->first(fn ($value, $name) => strtolower($name) === 'cookie');
+            $headers = collect($headers)->reject(fn ($value, $name) => strtolower($name) === 'cookie')->all()
+                + ['Cookie' => trim(($cookie !== null ? $cookie.'; ' : '').$this->crawl->session_cookie)];
+        }
 
-        return $this->access['headers'] === [] ? $request : $request->withHeaders($this->access['headers']);
+        return $headers === [] ? $request : $request->withHeaders($headers);
+    }
+
+    /**
+     * Logs in through the project's login form once, at the start of the crawl; the cookies are kept (encrypted) for
+     * the crawl's batches and removed when it finishes. A failed login is recorded and the crawl goes on logged out.
+     */
+    private function login(): void
+    {
+        $this->access ??= $this->crawl->project->crawlAccess();
+        $login = $this->access['login'] ?? null;
+        if ($login === null) {
+            return;
+        }
+        $result = FormLogin::login($login['url'], $login['user'], $login['password'], $login['field'], $this->crawl->project->base_url,
+            $this->settings['user_agent'], fn (PendingRequest $request, string $url) => $this->withAccess($request, $url));
+        $this->crawl->update(isset($result['cookie'])
+            ? ['session_cookie' => $result['cookie'], 'login_result' => 'Giriş yapıldı; tarama oturum açık olarak yapıldı.']
+            : ['session_cookie' => null, 'login_result' => $result['error']]);
     }
 }

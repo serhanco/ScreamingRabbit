@@ -21,7 +21,7 @@ Fazların sonunda ScreamingRabbit:
 | 2 | Hızlı kazançlar: WordPress dış kontroller + uptime izleyici + AI arama temelleri | WordPress güvenlik/SEO kontrolü, 7/24 erişilebilirlik takibi, "AI botları sitenizi okuyabiliyor mu?" kontrolü | ✓ |
 | 3 | GSC ve iş listesi | Trafiğe göre öncelikli aksiyon planı, kannibalizasyon/zombi sayfa analizi | ✓ |
 | 4 | Otomasyon, değişiklik takibi, raporlama | Aylık otomatik rapor, "neyi düzelttik, ne bozuldu" | ✓ |
-| 5 | Derin teknik denetim (Screaming Frog eşitliği) | Yapısal veri doğrulama, GEO/AEO denetimi, hreflang, Core Web Vitals | ✓ (form girişi ve [VPS] işleri kaldı) |
+| 5 | Derin teknik denetim (Screaming Frog eşitliği) | Yapısal veri doğrulama, GEO/AEO denetimi, hreflang, Core Web Vitals | ✓ ([VPS] işleri kaldı) |
 | 6 | WordPress bağlantı eklentisi | Site içinden tam envanter, açık taraması, tek tıkla düzeltme | ○ |
 | 7 | AI ve ileri analiz | AI destekli içerik/meta iyileştirme, log analizi, içerik kümeleri | ○ |
 
@@ -152,7 +152,7 @@ Sıra mantığı: önce Serhan'ın hemen satabileceği ve az emekle gelen işler
 Her madde bağımsız bir pakettir; talebe göre öne çekilir.
 
 **Tarama yetenekleri**
-- ◐ Staging tarama: basic auth ve en fazla 5 özel HTTP başlığı (çerez dahil) proje ayarlarında, şifreli saklanır ve yalnızca projenin alan adına gönderilir ✓; form girişi ○
+- ✓ Staging tarama: basic auth ve en fazla 5 özel HTTP başlığı (çerez dahil) proje ayarlarında, şifreli saklanır ve yalnızca projenin alan adına gönderilir ✓; form girişi ✓ (tarama başında giriş formu doldurulur, çerezler şifreli ve yalnızca tarama süresince tutulur, çıkış/wp-admin/işlem linkleri açılmaz)
 - ✓ robots.txt test aracı ✓ ("robots.txt testi" menüsü: siteden getir veya elle düzenle, adres listesini seçilen botlarla dene, karar veren kuralı gör); tarama sırasında özel robots.txt ile simülasyon ✓ (proje ayarlarında "Deneme robots.txt")
 - ○ JS render (sayfa bazlı, opsiyonel; render öncesi/sonrası farkı) **[VPS]**
 - ○ JS yönlendirmelerini yakalama **[VPS]**

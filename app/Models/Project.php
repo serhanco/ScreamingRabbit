@@ -55,7 +55,9 @@ class Project extends Model
     /**
      * Basic auth and extra headers for crawling a protected (staging) site; sent only to the project's own host.
      *
-     * @return array{user: ?string, password: ?string, headers: array<string, string>}
+     * The login form fields are for sites that need a form login (FormLogin) before crawling.
+     *
+     * @return array{user: ?string, password: ?string, headers: array<string, string>, login: ?array{url: string, user: string, password: string, field: ?string}}
      */
     public function crawlAccess(): array
     {
@@ -68,7 +70,11 @@ class Project extends Model
             }
         }
 
-        return ['user' => filled($auth['user'] ?? null) ? $auth['user'] : null, 'password' => $auth['password'] ?? null, 'headers' => $headers];
+        $login = filled($auth['login_url'] ?? null) && filled($auth['login_user'] ?? null) && filled($auth['login_password'] ?? null)
+            ? ['url' => trim($auth['login_url']), 'user' => (string) $auth['login_user'], 'password' => (string) $auth['login_password'], 'field' => filled($auth['login_field'] ?? null) ? trim($auth['login_field']) : null]
+            : null;
+
+        return ['user' => filled($auth['user'] ?? null) ? $auth['user'] : null, 'password' => $auth['password'] ?? null, 'headers' => $headers, 'login' => $login];
     }
 
     public function tasks(): HasMany

@@ -53,6 +53,7 @@ class CrawlInfolist
                             ->visible(fn (Crawl $record): bool => filled($record->settings['robots_override'] ?? null))
                             ->columnSpanFull(),
                         TextEntry::make('error')->label('Hata')->visible(fn (Crawl $record): bool => filled($record->error))->columnSpanFull(),
+                        TextEntry::make('login_result')->label('Giriş formu')->visible(fn (Crawl $record): bool => filled($record->login_result))->columnSpanFull(),
                     ]),
                 Section::make('İlerleme')
                     ->visible(fn (Crawl $record): bool => $record->isActive())
