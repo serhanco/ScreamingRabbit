@@ -22,6 +22,8 @@ class Crawl extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['session_cookie'];
+
     protected function casts(): array
     {
         return [
@@ -31,6 +33,7 @@ class Crawl extends Model
             'llms_txt' => 'array',
             'wp_checks' => 'array',
             'pagespeed' => 'array',
+            'session_cookie' => 'encrypted',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
         ];

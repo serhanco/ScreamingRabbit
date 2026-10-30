@@ -4142,6 +4142,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Crawler\\CrawlScheduler' => __DIR__ . '/../..' . '/app/Crawler/CrawlScheduler.php',
         'App\\Crawler\\CustomExtraction' => __DIR__ . '/../..' . '/app/Crawler/CustomExtraction.php',
         'App\\Crawler\\FolderStats' => __DIR__ . '/../..' . '/app/Crawler/FolderStats.php',
+        'App\\Crawler\\FormLogin' => __DIR__ . '/../..' . '/app/Crawler/FormLogin.php',
         'App\\Crawler\\HtmlParser' => __DIR__ . '/../..' . '/app/Crawler/HtmlParser.php',
         'App\\Crawler\\LinkScore' => __DIR__ . '/../..' . '/app/Crawler/LinkScore.php',
         'App\\Crawler\\LlmsTxt' => __DIR__ . '/../..' . '/app/Crawler/LlmsTxt.php',

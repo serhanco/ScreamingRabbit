@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Projects\Schemas;
 
 use App\Crawler\CrawlScheduler;
 use App\Crawler\CustomExtraction;
+use App\Crawler\FormLogin;
 use App\Crawler\UrlFilter;
 use App\Google\GoogleClient;
 use App\Models\Project;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class ProjectForm
@@ -162,6 +164,24 @@ class ProjectForm
                                 TextInput::make('name')->label('Ad')->required()->maxLength(60)->regex('/^[A-Za-z0-9-]+$/')->placeholder('Cookie'),
                                 TextInput::make('value')->label('Değer')->required()->maxLength(1000)->placeholder('staging_access=abc123'),
                             ]),
+                    ]),
+                Section::make('Giriş formuyla tarama')
+                    ->description('Üyelere özel veya giriş sayfasıyla korunan siteler için. Tarama başında bu formla giriş yapılır, çıkış ve yönetim paneli (wp-admin) linkleri açılmaz. Yalnızca bu iş için açılmış, yetkisi en düşük bir hesap kullanın (WordPress\'te "Abone"); asla yönetici hesabı girmeyin. Bilgiler şifreli saklanır, yalnızca projenin alan adına gönderilir.')
+                    ->columns(2)
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        TextInput::make('crawl_auth.login_url')->label('Giriş sayfası')->url()->maxLength(500)->columnSpanFull()
+                            ->placeholder('https://site.com/wp-login.php')
+                            ->rule(fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                if (filled($value) && filled($get('base_url')) && ! FormLogin::sameHost((string) $value, (string) $get('base_url'))) {
+                                    $fail('Giriş sayfası projenin alan adında olmalı.');
+                                }
+                            }),
+                        TextInput::make('crawl_auth.login_user')->label('Kullanıcı adı veya e-posta')->maxLength(200)->autocomplete(false),
+                        TextInput::make('crawl_auth.login_password')->label('Şifre')->password()->revealable()->maxLength(200)->autocomplete('new-password'),
+                        TextInput::make('crawl_auth.login_field')->label('Kullanıcı adı alanının adı (isteğe bağlı)')->maxLength(60)
+                            ->helperText('Boş bırakın; form otomatik tanınır. Tanınmazsa formdaki alanın name değerini yazın.'),
                     ]),
                 Section::make('Özel arama ve veri çıkarma')
                     ->description('Her sayfanın kaynak kodunda aranır. Örnekler: Google Analytics kodu olmayan sayfalar ("G-ABC123" geçmeyen), eski telefon numarası geçen sayfalar, yazar adı (XPath: //*[@class="author"]). Sonuçlar tarama sayfasında ve CSV\'de görünür; sonraki taramadan itibaren geçerli.')
