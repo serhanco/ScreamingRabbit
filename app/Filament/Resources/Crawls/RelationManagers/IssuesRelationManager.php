@@ -37,6 +37,8 @@ class IssuesRelationManager extends RelationManager
                     ->color(fn (string $state): string => CrawlColors::severity($state)),
                 TextColumn::make('rule')
                     ->label('Sorun')
+                    // Grouped by issue type (the default), the group heading already names the issue and its fix.
+                    ->hidden(fn ($livewire): bool => $livewire->getTableGrouping()?->getId() === 'rule')
                     ->formatStateUsing(fn (string $state): string => $catalog[$state]['title'] ?? $state)
                     ->description(fn (CrawlIssue $record): ?string => $catalog[$record->rule]['fix'] ?? null)
                     ->wrap(),
@@ -48,7 +50,10 @@ class IssuesRelationManager extends RelationManager
                 Group::make('rule')
                     ->label('Sorun türü')
                     ->getTitleFromRecordUsing(fn (CrawlIssue $record): string => $catalog[$record->rule]['title'] ?? $record->rule)
-                    ->getDescriptionFromRecordUsing(fn (CrawlIssue $record): ?string => $catalog[$record->rule]['description'] ?? null)
+                    ->getDescriptionFromRecordUsing(fn (CrawlIssue $record): ?string => implode(' ', array_filter([
+                        $catalog[$record->rule]['description'] ?? null,
+                        filled($catalog[$record->rule]['fix'] ?? null) ? 'Çözüm: '.$catalog[$record->rule]['fix'] : null,
+                    ])) ?: null)
                     ->collapsible(),
             ])
             ->defaultGroup('rule')
@@ -56,6 +61,8 @@ class IssuesRelationManager extends RelationManager
                 SelectFilter::make('severity')->label('Önem')->options(RuleCatalog::SEVERITIES),
                 SelectFilter::make('rule')->label('Sorun')->options(collect($catalog)->map(fn (array $rule) => $rule['title'])->all())->searchable(),
             ])
+            ->emptyStateHeading(fn (): string => $this->getOwnerRecord()->isActive() ? 'Bulgular tarama bitince hesaplanır' : 'Bulgu yok')
+            ->emptyStateDescription(fn (): ?string => $this->getOwnerRecord()->isActive() ? null : 'Bu taramada kurallara takılan bir sorun bulunmadı.')
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25);
     }

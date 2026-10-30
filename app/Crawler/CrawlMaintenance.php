@@ -65,17 +65,26 @@ class CrawlMaintenance
                 ->pluck('id');
 
             foreach ($old as $id) {
-                foreach (['crawl_links', 'crawl_issues', 'crawl_image_refs', 'crawl_images', 'crawl_external_refs', 'crawl_external_links', 'crawl_pages'] as $table) {
-                    do {
-                        $ids = DB::table($table)->where('crawl_id', $id)->limit(self::DELETE_CHUNK)->pluck('id');
-                        DB::table($table)->whereIn('id', $ids)->delete();
-                    } while ($ids->count() === self::DELETE_CHUNK);
-                }
-                Crawl::whereKey($id)->delete();
+                self::delete($id);
                 $deleted++;
             }
         });
 
         return $deleted;
+    }
+
+    /**
+     * Deletes a crawl and its rows in small chunks (one large cascading delete can exceed shared hosting limits). The
+     * health trend keeps its score; monthly reports keep their frozen copy.
+     */
+    public static function delete(int $id): void
+    {
+        foreach (['crawl_links', 'crawl_issues', 'crawl_image_refs', 'crawl_images', 'crawl_external_refs', 'crawl_external_links', 'crawl_pages'] as $table) {
+            do {
+                $ids = DB::table($table)->where('crawl_id', $id)->limit(self::DELETE_CHUNK)->pluck('id');
+                DB::table($table)->whereIn('id', $ids)->delete();
+            } while ($ids->count() === self::DELETE_CHUNK);
+        }
+        Crawl::whereKey($id)->delete();
     }
 }
