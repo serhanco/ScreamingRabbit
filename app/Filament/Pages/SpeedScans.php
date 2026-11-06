@@ -42,6 +42,21 @@ class SpeedScans extends Page implements HasTable
 
     public const MAX_URLS = 5000;
 
+    /** Shown wherever a crawl is started, so the two kinds are not confused. */
+    public const NORMAL_EXPLAINER = 'Normal tarama bir SEO denetimidir. Site, proje ayarlarındaki moda (link takibi, yalnızca sitemap ya da liste) ve sınırlara göre taranır. Başlık, meta, link, şema, indekslenebilirlik gibi tüm kontroller yapılır. Hız yalnızca 5 örnek sayfada ve mobilde ölçülür. Genelde birkaç dakikada biter. Her sayfanın hızını ölçmek için menüdeki "Hız taraması"nı kullanın.';
+
+    public const SPEED_EXPLAINER = 'Hız taraması, normal taramanın bütün SEO kontrollerini yapar ve ek olarak bulunan her sayfayı Google PageSpeed ile mobil ve/veya masaüstünde ölçer. Yazdığınız ana sayfa ya da sitemap adresinden başlar ve proje ayarlarındaki moddan bağımsız olarak aynı alan adındaki linkleri takip eder. Her sayfa tek tek ölçüldüğü için normal taramadan çok daha uzun sürer.';
+
+    /**
+     * Settings a speed scan is started again with: same address, limit and devices.
+     *
+     * @return array<string, mixed>
+     */
+    public static function restartSettings(Crawl $crawl): array
+    {
+        return array_intersect_key($crawl->settings ?? [], array_flip(['mode', 'start_url', 'sitemap_url', 'max_urls', 'speed_strategies']));
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
     protected static ?string $navigationLabel = 'Hız taraması';
@@ -66,7 +81,7 @@ class SpeedScans extends Page implements HasTable
             ->statePath('data')
             ->components([
                 Section::make()
-                    ->description(fn (): string => 'Site taranır, aynı alan adındaki her sayfa bir kez listelenir ve hepsi Google PageSpeed Insights ile ölçülür. '
+                    ->description(fn (): string => self::SPEED_EXPLAINER.' '
                         .'Dakikada yaklaşık '.SpeedScan::concurrency().' ölçüm yapılır; 500 sayfa mobil + masaüstü yaklaşık '.(int) ceil(1000 / SpeedScan::concurrency()).' dakika sürer.'
                         .(filled(Setting::get('pagespeed_api_key')) ? '' : ' Google ayarlarına ücretsiz PageSpeed API anahtarı eklerseniz ölçüm yaklaşık 4 kat hızlanır ve kota dolmaz.'))
                     ->columns(2)
@@ -166,8 +181,7 @@ class SpeedScans extends Page implements HasTable
 
                             return;
                         }
-                        $settings = array_intersect_key($record->settings ?? [], array_flip(['mode', 'start_url', 'sitemap_url', 'max_urls', 'speed_strategies']));
-                        $crawl = CrawlRunner::start($record->project, $settings, speedScan: true);
+                        $crawl = CrawlRunner::start($record->project, self::restartSettings($record), speedScan: true);
                         Notification::make()->title('Hız taraması yeniden başlatıldı')->success()->send();
                         $this->redirect(CrawlResource::getUrl('view', ['record' => $crawl]));
                     }),

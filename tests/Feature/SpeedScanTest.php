@@ -185,6 +185,20 @@ class SpeedScanTest extends TestCase
         $this->assertSame(['pending', 0], [$one->fresh()->state, $one->fresh()->attempts]);
     }
 
+    public function test_recrawl_of_a_speed_scan_is_a_speed_scan_again(): void
+    {
+        Queue::fake();
+        $this->actingAs(User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
+        $project = Project::factory()->create();
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'speed_scan' => true, 'finished_at' => now(),
+            'settings' => ['mode' => 'spider', 'sitemap_url' => 'https://example.com/s.xml', 'max_urls' => 50, 'speed_strategies' => ['desktop']]]);
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('recrawl');
+        $new = Crawl::latest('id')->first();
+        $this->assertTrue($new->speed_scan);
+        $this->assertSame(['https://example.com/s.xml', 50, ['desktop']], [$new->settings['sitemap_url'], $new->settings['max_urls'], $new->settings['speed_strategies']]);
+    }
+
     public function test_excel_export_has_a_summary_and_a_sheet_per_device(): void
     {
         $project = Project::factory()->create(['name' => 'Klinik Dent']);

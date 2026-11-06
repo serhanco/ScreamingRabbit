@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Crawls\Pages;
 
 use App\Crawler\CrawlRunner;
+use App\Filament\Pages\SpeedScans;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Project;
 use Filament\Actions\Action;
@@ -23,7 +24,7 @@ class ListCrawls extends ListRecords
                 ->icon(Heroicon::OutlinedPlay)
                 ->visible(fn (): bool => $this->projects() !== [])
                 ->modalHeading('Yeni tarama')
-                ->modalDescription('Site, proje ayarlarındaki sınırlara uyularak taranır. Sonuçlar dakikalar içinde dolmaya başlar.')
+                ->modalDescription(SpeedScans::NORMAL_EXPLAINER)
                 ->modalSubmitActionLabel('Taramayı başlat')
                 ->schema([Select::make('project_id')->label('Proje')->options(fn (): array => $this->projects())->required()->searchable()])
                 ->action(function (array $data): void {
