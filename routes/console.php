@@ -11,6 +11,7 @@ use App\Monitoring\MonitorRunner;
 use App\Monitoring\Notifier;
 use App\Monitoring\PageWatcher;
 use App\Performance\PageSpeed;
+use App\Performance\SpeedScan;
 use App\Reports\MonthlyReports;
 use App\WordPress\Connector;
 use App\WordPress\ContentChecks;
@@ -45,6 +46,9 @@ Schedule::call(fn () => RedirectChecker::runDue())->name('redirect-checks')->eve
 
 // PageSpeed Insights: one sample page per finished crawl each run (a call takes 10-30 seconds).
 Schedule::call(fn () => PageSpeed::runDue())->name('pagespeed')->everyFiveMinutes()->withoutOverlapping(10);
+
+// Site-wide speed scans: a few PageSpeed calls side by side each minute until every page is measured.
+Schedule::call(fn () => SpeedScan::runDue())->name('speed-scan')->everyMinute()->withoutOverlapping(5);
 
 // Projects that asked for daily/weekly/monthly crawls get them started overnight.
 // Inventory from the WordPress Connector plugin, refreshed daily per site (docs/07 §3).

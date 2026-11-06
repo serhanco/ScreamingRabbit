@@ -38,6 +38,12 @@ class CrawlInfolist
                     ->schema([
                         ViewEntry::make('comparison')->hiddenLabel()->view('crawls.comparison'),
                     ]),
+                Section::make('Site geneli hız taraması')
+                    ->description('Taranan her sayfa Google PageSpeed Insights ile ölçülür. Sayfa sayfa sonuçlar aşağıdaki "Hız (PageSpeed)" sekmesinde, Excel dosyası "Dışa aktar" menüsünde.')
+                    ->visible(fn (Crawl $record): bool => $record->speed_scan)
+                    ->schema([
+                        ViewEntry::make('speed_scan')->hiddenLabel()->view('crawls.speed-scan'),
+                    ]),
                 Section::make('Sayfa hızı (mobil)')
                     ->description('Google PageSpeed Insights ile örnek sayfalar: ana sayfa ve her içerik türünün en güçlü sayfası. Ölçümler tarama bittikten sonra birkaç dakikada tamamlanır.')
                     ->collapsible()

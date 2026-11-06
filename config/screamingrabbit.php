@@ -48,6 +48,15 @@ return [
         'max_external' => 500,
     ],
 
+    // Site-wide speed scan (PageSpeed Insights for every crawled page). Each scheduler minute measures this many pages
+    // side by side; Google's quota (400 calls per 100 seconds with a key) and the client site's load both stay low.
+    'speed_scan' => [
+        'concurrency' => (int) env('SPEED_SCAN_CONCURRENCY', 4),
+        'timeout' => 50,
+        // After a quota answer (429) the scan waits this long before trying again.
+        'backoff_minutes' => 15,
+    ],
+
     // Ready-made User-Agent strings offered in the project form; any other value can still be typed.
     'user_agents' => [
         'Googlebot (akıllı telefon)' => 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',

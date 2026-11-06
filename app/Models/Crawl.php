@@ -33,6 +33,7 @@ class Crawl extends Model
             'llms_txt' => 'array',
             'wp_checks' => 'array',
             'pagespeed' => 'array',
+            'speed_scan' => 'boolean',
             'session_cookie' => 'encrypted',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
@@ -57,6 +58,11 @@ class Crawl extends Model
     public function images(): HasMany
     {
         return $this->hasMany(CrawlImage::class);
+    }
+
+    public function speedResults(): HasMany
+    {
+        return $this->hasMany(SpeedResult::class);
     }
 
     public function isActive(): bool
