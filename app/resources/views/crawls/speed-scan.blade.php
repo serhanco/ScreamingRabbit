@@ -10,14 +10,20 @@
     @else
         <div>
             <div class="flex justify-between mb-1">
-                <span>{{ $summary['pending'] > 0 ? 'Ölçülüyor' : 'Ölçümler tamamlandı' }}: {{ number_format($summary['total'] - $summary['pending'], 0, ',', '.') }} / {{ number_format($summary['total'], 0, ',', '.') }}</span>
+                <span>{{ $summary['pending'] > 0 ? ($crawl->speed_paused ? 'Duraklatıldı' : 'Ölçülüyor') : ($summary['cancelled'] > 0 ? 'Durduruldu' : 'Ölçümler tamamlandı') }}: {{ number_format($summary['total'] - $summary['pending'], 0, ',', '.') }} / {{ number_format($summary['total'], 0, ',', '.') }}</span>
                 @if ($summary['pending'] > 0)
                     <span class="opacity-70">Kalan süre yaklaşık {{ $summary['minutes_left'] >= 60 ? floor($summary['minutes_left'] / 60).' sa '.($summary['minutes_left'] % 60).' dk' : $summary['minutes_left'].' dk' }}</span>
                 @endif
             </div>
             <div class="h-2 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden"><div class="h-2 bg-primary-500" style="width: {{ $summary['percent'] }}%"></div></div>
         </div>
-        @if ($summary['paused_until'])
+        @if ($crawl->speed_paused && $summary['pending'] > 0)
+            <p class="text-warning-600">Ölçüm duraklatıldı; "Hız ölçümü" menüsünden devam ettirebilirsiniz.</p>
+        @endif
+        @if ($summary['cancelled'] > 0)
+            <p class="opacity-70">{{ $summary['cancelled'] }} ölçüm durdurulduğu için yapılmadı.</p>
+        @endif
+        @if ($summary['paused_until'] && ! $crawl->speed_paused)
             <p class="text-warning-600">Google kotası doldu; ölçümler {{ \Illuminate\Support\Carbon::parse($summary['paused_until'])->timezone(config('screamingrabbit.alerts.timezone'))->format('H:i') }} civarı kendiliğinden devam eder.
                 @if (blank(\App\Models\Setting::get('pagespeed_api_key'))) Google ayarlarına PageSpeed API anahtarı ekleyin; kota 25.000/gün olur. @endif</p>
         @endif

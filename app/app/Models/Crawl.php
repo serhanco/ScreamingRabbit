@@ -34,6 +34,7 @@ class Crawl extends Model
             'wp_checks' => 'array',
             'pagespeed' => 'array',
             'speed_scan' => 'boolean',
+            'speed_paused' => 'boolean',
             'session_cookie' => 'encrypted',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',

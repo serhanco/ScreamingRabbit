@@ -49,9 +49,11 @@ return [
     ],
 
     // Site-wide speed scan (PageSpeed Insights for every crawled page). Each scheduler minute measures this many pages
-    // side by side; Google's quota (400 calls per 100 seconds with a key) and the client site's load both stay low.
+    // side by side. With an API key Google allows 400 calls per 100 seconds and 25,000 a day (free); without one the
+    // shared anonymous quota runs out quickly, so fewer calls are made.
     'speed_scan' => [
-        'concurrency' => (int) env('SPEED_SCAN_CONCURRENCY', 4),
+        'concurrency' => (int) env('SPEED_SCAN_CONCURRENCY', 15),
+        'concurrency_without_key' => (int) env('SPEED_SCAN_CONCURRENCY_WITHOUT_KEY', 4),
         'timeout' => 50,
         // After a quota answer (429) the scan waits this long before trying again.
         'backoff_minutes' => 15,

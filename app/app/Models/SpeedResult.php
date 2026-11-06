@@ -9,7 +9,7 @@ class SpeedResult extends Model
 {
     public const STRATEGIES = ['mobile' => 'Mobil', 'desktop' => 'Masaüstü'];
 
-    public const STATES = ['pending' => 'Sırada', 'running' => 'Ölçülüyor', 'done' => 'Tamam', 'failed' => 'Ölçülemedi'];
+    public const STATES = ['pending' => 'Sırada', 'running' => 'Ölçülüyor', 'done' => 'Tamam', 'failed' => 'Ölçülemedi', 'cancelled' => 'Durduruldu'];
 
     public const CWV = ['good' => 'İyi', 'needs' => 'İyileştirilmeli', 'poor' => 'Kötü'];
 
