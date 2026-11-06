@@ -29,6 +29,10 @@ class CrawlsTable
             ->columns([
                 TextColumn::make('project.name')->label('Proje')->searchable()->weight('semibold')
                     ->description(fn (Crawl $record): string => preg_replace('#^https?://(www\.)?#', '', rtrim((string) $record->project?->base_url, '/'))),
+                TextColumn::make('speed_scan')->label('Tür')->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Hız taraması' : 'Normal')
+                    ->color(fn (bool $state): string => $state ? 'primary' : 'gray')
+                    ->tooltip(fn (bool $state): string => $state ? 'Her sayfa PageSpeed ile ölçülür' : 'SEO denetimi; hız 5 örnek sayfada'),
                 ViewColumn::make('status')->label('Durum')->view('crawls.status-cell'),
                 TextColumn::make('health_score')->label('Sağlık')->placeholder('—')->badge()->alignCenter()
                     ->color(fn (?int $state): string => CrawlColors::health($state)),

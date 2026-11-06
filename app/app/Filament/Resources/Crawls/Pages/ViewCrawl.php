@@ -6,6 +6,7 @@ use App\Crawler\CrawlRunner;
 use App\Exports\CrawlCsv;
 use App\Exports\CrawlSitemap;
 use App\Exports\SpeedXlsx;
+use App\Filament\Pages\SpeedScans;
 use App\Filament\Resources\Crawls\CrawlActions;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
@@ -42,10 +43,14 @@ class ViewCrawl extends ViewRecord
                 ->label('Yeniden tara')
                 ->icon(Heroicon::OutlinedPlay)
                 ->requiresConfirmation()
-                ->modalDescription('Aynı proje için yeni bir tarama başlatılır; bu sonuçlar silinmez.')
+                ->modalDescription(fn (Crawl $record): string => ($record->speed_scan
+                    ? 'Aynı adres ve ayarlarla yeni bir hız taraması başlatılır. '.SpeedScans::SPEED_EXPLAINER
+                    : 'Aynı proje için yeni bir normal tarama başlatılır. '.SpeedScans::NORMAL_EXPLAINER).' Bu sonuçlar silinmez.')
                 ->visible(fn (Crawl $record): bool => ! $record->isActive() && auth()->user()->canDo('crawl', $record->project_id))
                 ->action(function (Crawl $record): void {
-                    $crawl = CrawlRunner::start($record->project);
+                    $crawl = $record->speed_scan
+                        ? CrawlRunner::start($record->project, SpeedScans::restartSettings($record), speedScan: true)
+                        : CrawlRunner::start($record->project);
                     Notification::make()->title('Yeni tarama başlatıldı')->success()->send();
                     $this->redirect(CrawlResource::getUrl('view', ['record' => $crawl]));
                 }),
