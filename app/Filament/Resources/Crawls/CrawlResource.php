@@ -7,6 +7,7 @@ use App\Filament\Resources\Crawls\Pages\ListCrawls;
 use App\Filament\Resources\Crawls\Pages\ViewCrawl;
 use App\Filament\Resources\Crawls\RelationManagers\IssuesRelationManager;
 use App\Filament\Resources\Crawls\RelationManagers\PagesRelationManager;
+use App\Filament\Resources\Crawls\RelationManagers\SpeedRelationManager;
 use App\Filament\Resources\Crawls\Schemas\CrawlInfolist;
 use App\Filament\Resources\Crawls\Tables\CrawlsTable;
 use App\Models\Crawl;
@@ -50,6 +51,7 @@ class CrawlResource extends Resource
         return [
             IssuesRelationManager::class,
             PagesRelationManager::class,
+            SpeedRelationManager::class,
         ];
     }
 

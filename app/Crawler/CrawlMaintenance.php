@@ -79,7 +79,7 @@ class CrawlMaintenance
      */
     public static function delete(int $id): void
     {
-        foreach (['crawl_links', 'crawl_issues', 'crawl_image_refs', 'crawl_images', 'crawl_external_refs', 'crawl_external_links', 'crawl_pages'] as $table) {
+        foreach (['speed_results', 'crawl_links', 'crawl_issues', 'crawl_image_refs', 'crawl_images', 'crawl_external_refs', 'crawl_external_links', 'crawl_pages'] as $table) {
             do {
                 $ids = DB::table($table)->where('crawl_id', $id)->limit(self::DELETE_CHUNK)->pluck('id');
                 DB::table($table)->whereIn('id', $ids)->delete();
