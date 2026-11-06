@@ -10,6 +10,7 @@ use App\Models\CrawlImage;
 use App\Models\CrawlPage;
 use App\Models\Project;
 use App\Performance\PageSpeed;
+use App\Performance\SpeedScan;
 use App\Tasks\TaskBuilder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -54,12 +55,16 @@ class CrawlRunner
         $this->settings = $crawl->settings ?? [];
     }
 
-    public static function start(Project $project): Crawl
+    /**
+     * @param  array<string, mixed>  $overrides  settings for this crawl only (speed scan: start_url, sitemap_url, speed_strategies…)
+     */
+    public static function start(Project $project, array $overrides = [], bool $speedScan = false): Crawl
     {
         $crawl = Crawl::create([
             'project_id' => $project->id,
             'status' => 'pending',
-            'settings' => $project->effectiveCrawlSettings(),
+            'settings' => array_merge($project->effectiveCrawlSettings(), $overrides),
+            'speed_scan' => $speedScan,
         ]);
 
         CrawlBatch::dispatch($crawl->id);
@@ -125,6 +130,11 @@ class CrawlRunner
     {
         $project = $this->crawl->project;
         $start = UrlNormalizer::resolve($project->base_url, $project->base_url);
+        // A start page typed for this crawl (speed scan) replaces the project's home page when it is on the same site.
+        $custom = filled($this->settings['start_url'] ?? null) ? UrlNormalizer::resolve((string) $this->settings['start_url'], $start) : null;
+        if ($custom !== null && UrlNormalizer::isInternal($custom, $start)) {
+            $start = $custom;
+        }
         $origin = parse_url($start, PHP_URL_SCHEME).'://'.parse_url($start, PHP_URL_HOST);
 
         $this->crawl->update(['status' => 'running', 'started_at' => now()]);
@@ -160,7 +170,13 @@ class CrawlRunner
             }
         }
 
-        $candidates = $mode === 'list' ? [] : ($robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml']);
+        // A sitemap address typed for this crawl (speed scan) is read instead of the ones robots.txt lists.
+        $given = filled($this->settings['sitemap_url'] ?? null) ? UrlNormalizer::resolve((string) $this->settings['sitemap_url'], $start) : null;
+        $candidates = match (true) {
+            $mode === 'list' => [],
+            $given !== null && UrlNormalizer::isInternal($given, $start) => [$given],
+            default => $robots->sitemaps ?: [$origin.'/sitemap.xml', $origin.'/sitemap_index.xml', $origin.'/wp-sitemap.xml'],
+        };
         $limit = (int) $this->settings['max_urls'];
 
         foreach ($candidates as $sitemap) {
@@ -669,6 +685,9 @@ class CrawlRunner
         CrawlAlerts::newIssues($this->crawl);
 
         PageSpeed::prepare($this->crawl);
+        if ($this->crawl->speed_scan) {
+            SpeedScan::prepare($this->crawl);
+        }
         TaskBuilder::sync($this->crawl->project);
     }
 

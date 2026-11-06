@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Crawls\Pages;
 use App\Crawler\CrawlRunner;
 use App\Exports\CrawlCsv;
 use App\Exports\CrawlSitemap;
+use App\Exports\SpeedXlsx;
 use App\Filament\Resources\Crawls\CrawlActions;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
@@ -100,6 +101,10 @@ class ViewCrawl extends ViewRecord
                 Action::make('csvIssues')
                     ->label('Sorunlar (CSV)')
                     ->action(fn (Crawl $record) => (new CrawlCsv($record))->issues()),
+                Action::make('speedXlsx')
+                    ->label('Hız raporu (Excel)')
+                    ->visible(fn (Crawl $record): bool => $record->speed_scan && $record->speedResults()->where('state', 'done')->exists())
+                    ->action(fn (Crawl $record) => (new SpeedXlsx($record))->download()),
                 Action::make('sitemap')
                     ->label('Site haritası (XML)')
                     ->tooltip('İndekslenebilir sayfalar ve görselleriyle; WordPress dışı siteler için veya kontrol amacıyla')

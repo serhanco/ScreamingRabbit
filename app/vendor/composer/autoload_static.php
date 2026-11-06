@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
+class ComposerStaticInit85e22ec6d7fe25e9c86262e941479bc9
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -4157,6 +4157,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Events\\MonitorAlert' => __DIR__ . '/../..' . '/app/Events/MonitorAlert.php',
         'App\\Exports\\CrawlCsv' => __DIR__ . '/../..' . '/app/Exports/CrawlCsv.php',
         'App\\Exports\\CrawlSitemap' => __DIR__ . '/../..' . '/app/Exports/CrawlSitemap.php',
+        'App\\Exports\\SpeedXlsx' => __DIR__ . '/../..' . '/app/Exports/SpeedXlsx.php',
         'App\\Filament\\Concerns\\ScopedToUserProjects' => __DIR__ . '/../..' . '/app/Filament/Concerns/ScopedToUserProjects.php',
         'App\\Filament\\Pages\\AiSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/AiSettings.php',
         'App\\Filament\\Pages\\GoogleSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/GoogleSettings.php',
@@ -4164,6 +4165,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Filament\\Pages\\ReportSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/ReportSettings.php',
         'App\\Filament\\Pages\\RobotsTester' => __DIR__ . '/../..' . '/app/Filament/Pages/RobotsTester.php',
         'App\\Filament\\Pages\\SiteCompare' => __DIR__ . '/../..' . '/app/Filament/Pages/SiteCompare.php',
+        'App\\Filament\\Pages\\SpeedScans' => __DIR__ . '/../..' . '/app/Filament/Pages/SpeedScans.php',
         'App\\Filament\\Resources\\ActivityLogs\\ActivityLogResource' => __DIR__ . '/../..' . '/app/Filament/Resources/ActivityLogs/ActivityLogResource.php',
         'App\\Filament\\Resources\\ActivityLogs\\Pages\\ListActivityLogs' => __DIR__ . '/../..' . '/app/Filament/Resources/ActivityLogs/Pages/ListActivityLogs.php',
         'App\\Filament\\Resources\\AlertEvents\\AlertEventResource' => __DIR__ . '/../..' . '/app/Filament/Resources/AlertEvents/AlertEventResource.php',
@@ -4181,6 +4183,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Filament\\Resources\\Crawls\\Pages\\ViewCrawl' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Pages/ViewCrawl.php',
         'App\\Filament\\Resources\\Crawls\\RelationManagers\\IssuesRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/RelationManagers/IssuesRelationManager.php',
         'App\\Filament\\Resources\\Crawls\\RelationManagers\\PagesRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/RelationManagers/PagesRelationManager.php',
+        'App\\Filament\\Resources\\Crawls\\RelationManagers\\SpeedRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/RelationManagers/SpeedRelationManager.php',
         'App\\Filament\\Resources\\Crawls\\Schemas\\CrawlInfolist' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Schemas/CrawlInfolist.php',
         'App\\Filament\\Resources\\Crawls\\Support\\PageDetail' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Support/PageDetail.php',
         'App\\Filament\\Resources\\Crawls\\Tables\\CrawlsTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Crawls/Tables/CrawlsTable.php',
@@ -4260,6 +4263,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Models\\RedirectCheck' => __DIR__ . '/../..' . '/app/Models/RedirectCheck.php',
         'App\\Models\\Report' => __DIR__ . '/../..' . '/app/Models/Report.php',
         'App\\Models\\Setting' => __DIR__ . '/../..' . '/app/Models/Setting.php',
+        'App\\Models\\SpeedResult' => __DIR__ . '/../..' . '/app/Models/SpeedResult.php',
         'App\\Models\\Task' => __DIR__ . '/../..' . '/app/Models/Task.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Models\\WatchedPage' => __DIR__ . '/../..' . '/app/Models/WatchedPage.php',
@@ -4275,6 +4279,7 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
         'App\\Monitoring\\SslCertificate' => __DIR__ . '/../..' . '/app/Monitoring/SslCertificate.php',
         'App\\Performance\\PageSpeed' => __DIR__ . '/../..' . '/app/Performance/PageSpeed.php',
         'App\\Performance\\PageSpeedTrend' => __DIR__ . '/../..' . '/app/Performance/PageSpeedTrend.php',
+        'App\\Performance\\SpeedScan' => __DIR__ . '/../..' . '/app/Performance/SpeedScan.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Providers\\Filament\\AdminPanelProvider' => __DIR__ . '/../..' . '/app/Providers/Filament/AdminPanelProvider.php',
         'App\\Reports\\CrawlReport' => __DIR__ . '/../..' . '/app/Reports/CrawlReport.php',
@@ -11437,10 +11442,10 @@ class ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit46b58eb5198a55c7f87ee15b89c2f3f1::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit85e22ec6d7fe25e9c86262e941479bc9::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit85e22ec6d7fe25e9c86262e941479bc9::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit85e22ec6d7fe25e9c86262e941479bc9::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit85e22ec6d7fe25e9c86262e941479bc9::$classMap;
 
         }, null, ClassLoader::class);
     }
