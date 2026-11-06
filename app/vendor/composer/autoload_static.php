@@ -4202,6 +4202,7 @@ class ComposerStaticInit85e22ec6d7fe25e9c86262e941479bc9
         'App\\Filament\\Resources\\Projects\\Pages\\ProjectSegments' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Pages/ProjectSegments.php',
         'App\\Filament\\Resources\\Projects\\Pages\\ProjectWordPress' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Pages/ProjectWordPress.php',
         'App\\Filament\\Resources\\Projects\\ProjectResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/ProjectResource.php',
+        'App\\Filament\\Resources\\Projects\\RelationManagers\\CrawlsRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/RelationManagers/CrawlsRelationManager.php',
         'App\\Filament\\Resources\\Projects\\RelationManagers\\MembersRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/RelationManagers/MembersRelationManager.php',
         'App\\Filament\\Resources\\Projects\\Schemas\\ProjectForm' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Schemas/ProjectForm.php',
         'App\\Filament\\Resources\\Projects\\Tables\\ProjectsTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Projects/Tables/ProjectsTable.php',

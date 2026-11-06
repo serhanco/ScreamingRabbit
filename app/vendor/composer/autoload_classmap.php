@@ -3453,6 +3453,7 @@ return array(
     'App\\Filament\\Resources\\Projects\\Pages\\ProjectSegments' => $baseDir . '/app/Filament/Resources/Projects/Pages/ProjectSegments.php',
     'App\\Filament\\Resources\\Projects\\Pages\\ProjectWordPress' => $baseDir . '/app/Filament/Resources/Projects/Pages/ProjectWordPress.php',
     'App\\Filament\\Resources\\Projects\\ProjectResource' => $baseDir . '/app/Filament/Resources/Projects/ProjectResource.php',
+    'App\\Filament\\Resources\\Projects\\RelationManagers\\CrawlsRelationManager' => $baseDir . '/app/Filament/Resources/Projects/RelationManagers/CrawlsRelationManager.php',
     'App\\Filament\\Resources\\Projects\\RelationManagers\\MembersRelationManager' => $baseDir . '/app/Filament/Resources/Projects/RelationManagers/MembersRelationManager.php',
     'App\\Filament\\Resources\\Projects\\Schemas\\ProjectForm' => $baseDir . '/app/Filament/Resources/Projects/Schemas/ProjectForm.php',
     'App\\Filament\\Resources\\Projects\\Tables\\ProjectsTable' => $baseDir . '/app/Filament/Resources/Projects/Tables/ProjectsTable.php',
