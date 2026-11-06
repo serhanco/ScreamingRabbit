@@ -89,7 +89,7 @@ class SpeedScan
     {
         $rows = SpeedResult::query()->where('state', 'pending')
             ->whereIn('crawl_id', Crawl::query()->select('id')->where('speed_scan', true)->where('status', 'completed'))
-            ->orderBy('crawl_id')->orderBy('id')->limit(max(1, (int) config('screamingrabbit.speed_scan.concurrency')))->get();
+            ->orderBy('crawl_id')->orderBy('id')->limit(self::concurrency())->get();
         if ($rows->isEmpty()) {
             return 0;
         }
@@ -213,7 +213,7 @@ class SpeedScan
             ];
         }
 
-        $perMinute = max(1, (int) config('screamingrabbit.speed_scan.concurrency'));
+        $perMinute = self::concurrency();
 
         return [
             'total' => $total,
@@ -225,6 +225,12 @@ class SpeedScan
             'paused_until' => $pending > 0 ? Cache::get(self::BACKOFF_KEY) : null,
             'strategies' => $strategies,
         ];
+    }
+
+    /** Pages measured side by side per round (about per minute): more with an API key, which has a much larger quota. */
+    public static function concurrency(): int
+    {
+        return max(1, (int) config(filled(Setting::get('pagespeed_api_key')) ? 'screamingrabbit.speed_scan.concurrency' : 'screamingrabbit.speed_scan.concurrency_without_key'));
     }
 
     /**

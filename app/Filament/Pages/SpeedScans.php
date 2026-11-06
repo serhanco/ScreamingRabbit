@@ -67,8 +67,8 @@ class SpeedScans extends Page implements HasTable
             ->components([
                 Section::make()
                     ->description(fn (): string => 'Site taranır, aynı alan adındaki her sayfa bir kez listelenir ve hepsi Google PageSpeed Insights ile ölçülür. '
-                        .'Dakikada yaklaşık '.(int) config('screamingrabbit.speed_scan.concurrency').' ölçüm yapılır; 500 sayfa mobil + masaüstü yaklaşık '.(int) ceil(1000 / max(1, (int) config('screamingrabbit.speed_scan.concurrency')) / 60).' saat sürer.'
-                        .(filled(Setting::get('pagespeed_api_key')) ? '' : ' Google ayarlarına PageSpeed API anahtarı eklemeden büyük sitelerde kota hızla dolar.'))
+                        .'Dakikada yaklaşık '.SpeedScan::concurrency().' ölçüm yapılır; 500 sayfa mobil + masaüstü yaklaşık '.(int) ceil(1000 / SpeedScan::concurrency()).' dakika sürer.'
+                        .(filled(Setting::get('pagespeed_api_key')) ? '' : ' Google ayarlarına ücretsiz PageSpeed API anahtarı eklerseniz ölçüm yaklaşık 4 kat hızlanır ve kota dolmaz.'))
                     ->columns(2)
                     ->schema([
                         TextInput::make('address')->label('Ana sayfa veya sitemap adresi')->url()->required()->columnSpanFull()
