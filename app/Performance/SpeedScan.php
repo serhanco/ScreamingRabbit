@@ -88,8 +88,8 @@ class SpeedScan
     public static function round(): int
     {
         $rows = SpeedResult::query()->where('state', 'pending')
-            ->whereIn('crawl_id', Crawl::query()->select('id')->where('speed_scan', true)->where('status', 'completed'))
-            ->orderBy('crawl_id')->orderBy('id')->limit(max(1, (int) config('screamingrabbit.speed_scan.concurrency')))->get();
+            ->whereIn('crawl_id', Crawl::query()->select('id')->where('speed_scan', true)->where('speed_paused', false)->where('status', 'completed'))
+            ->orderBy('crawl_id')->orderBy('id')->limit(self::concurrency())->get();
         if ($rows->isEmpty()) {
             return 0;
         }
@@ -185,15 +185,15 @@ class SpeedScan
     }
 
     /**
-     * @return array{total: int, done: int, failed: int, pending: int, percent: int, minutes_left: int, paused_until: ?string,
+     * @return array{total: int, done: int, failed: int, cancelled: int, pending: int, percent: int, minutes_left: int, paused_until: ?string,
      *     strategies: array<string, array{count: int, average: ?int, good: int, needs: int, poor: int, slow: int}>}
      */
     public static function summary(Crawl $crawl): array
     {
         $states = SpeedResult::query()->where('crawl_id', $crawl->id)->selectRaw('state, COUNT(*) as n')->groupBy('state')->pluck('n', 'state');
         $total = (int) $states->sum();
-        $finished = (int) (($states['done'] ?? 0) + ($states['failed'] ?? 0));
-        $pending = $total - $finished;
+        $pending = (int) (($states['pending'] ?? 0) + ($states['running'] ?? 0));
+        $finished = $total - $pending;
 
         $strategies = [];
         foreach (SpeedResult::STRATEGIES as $strategy => $label) {
@@ -213,18 +213,63 @@ class SpeedScan
             ];
         }
 
-        $perMinute = max(1, (int) config('screamingrabbit.speed_scan.concurrency'));
+        $perMinute = self::concurrency();
 
         return [
             'total' => $total,
             'done' => (int) ($states['done'] ?? 0),
             'failed' => (int) ($states['failed'] ?? 0),
+            'cancelled' => (int) ($states['cancelled'] ?? 0),
             'pending' => $pending,
             'percent' => $total > 0 ? (int) floor($finished / $total * 100) : 0,
             'minutes_left' => (int) ceil($pending / $perMinute),
             'paused_until' => $pending > 0 ? Cache::get(self::BACKOFF_KEY) : null,
             'strategies' => $strategies,
         ];
+    }
+
+    /** Stops measuring until resume(); pages already being measured still finish. */
+    public static function pause(Crawl $crawl): void
+    {
+        $crawl->update(['speed_paused' => true]);
+    }
+
+    public static function resume(Crawl $crawl): void
+    {
+        $crawl->update(['speed_paused' => false]);
+    }
+
+    /** Ends the scan: pages not measured yet are marked as stopped and keep no place in the queue. */
+    public static function stop(Crawl $crawl): int
+    {
+        $crawl->update(['speed_paused' => false]);
+
+        return $crawl->speedResults()->where('state', 'pending')->update(['state' => 'cancelled', 'updated_at' => now()]);
+    }
+
+    /**
+     * Puts pages back in the queue: all of them (measure the whole site again, e.g. after a speed fix), or only the
+     * ones that failed or were stopped. Old values stay visible until the new measurement replaces them.
+     */
+    public static function requeue(Crawl $crawl, bool $all = false): int
+    {
+        $crawl->update(['speed_paused' => false]);
+        $query = $crawl->speedResults()->whereIn('state', $all ? ['done', 'failed', 'cancelled'] : ['failed', 'cancelled']);
+
+        return $query->update(['state' => 'pending', 'attempts' => 0, 'error' => null, 'updated_at' => now()]);
+    }
+
+    public static function requeueOne(SpeedResult $result): void
+    {
+        if ($result->state !== 'running') {
+            $result->update(['state' => 'pending', 'attempts' => 0, 'error' => null]);
+        }
+    }
+
+    /** Pages measured side by side per round (about per minute): more with an API key, which has a much larger quota. */
+    public static function concurrency(): int
+    {
+        return max(1, (int) config(filled(Setting::get('pagespeed_api_key')) ? 'screamingrabbit.speed_scan.concurrency' : 'screamingrabbit.speed_scan.concurrency_without_key'));
     }
 
     /**

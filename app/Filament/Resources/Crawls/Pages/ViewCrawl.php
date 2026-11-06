@@ -9,6 +9,7 @@ use App\Exports\SpeedXlsx;
 use App\Filament\Resources\Crawls\CrawlActions;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
+use App\Performance\SpeedScan;
 use App\Reports\CrawlReport;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -94,6 +95,7 @@ class ViewCrawl extends ViewRecord
 
                     return response()->streamDownload(fn () => print ($report->pdf()), $report->filename(), ['Content-Type' => 'application/pdf']);
                 }),
+            $this->speedActions(),
             ActionGroup::make([
                 Action::make('csvPages')
                     ->label('URL listesi (CSV)')
@@ -119,6 +121,54 @@ class ViewCrawl extends ViewRecord
             CrawlActions::cancel()->label('Taramayı durdur'),
             CrawlActions::delete(CrawlResource::getUrl('index'))->label('Taramayı sil')->color('gray')->iconButton()->tooltip('Taramayı sil'),
         ];
+    }
+
+    /** Pause, resume, stop and re-measure a site-wide speed scan once its crawl has finished. */
+    private function speedActions(): ActionGroup
+    {
+        $pending = fn (Crawl $record): bool => $record->speedResults()->whereIn('state', ['pending', 'running'])->exists();
+        $done = fn (Crawl $record, $notification) => Notification::make()->title($notification)->success()->send();
+
+        return ActionGroup::make([
+            Action::make('speedPause')->label('Duraklat')->icon(Heroicon::OutlinedPause)
+                ->visible(fn (Crawl $record): bool => ! $record->speed_paused && $pending($record))
+                ->action(function (Crawl $record) use ($done) {
+                    SpeedScan::pause($record);
+                    $done($record, 'Ölçüm duraklatıldı');
+                }),
+            Action::make('speedResume')->label('Devam et')->icon(Heroicon::OutlinedPlay)
+                ->visible(fn (Crawl $record): bool => $record->speed_paused && $pending($record))
+                ->action(function (Crawl $record) use ($done) {
+                    SpeedScan::resume($record);
+                    $done($record, 'Ölçüm devam ediyor');
+                }),
+            Action::make('speedStop')->label('Durdur')->icon(Heroicon::OutlinedStop)->color('danger')
+                ->requiresConfirmation()->modalHeading('Ölçüm durdurulsun mu?')
+                ->modalDescription('Ölçülen sayfalar kalır; kalanlar ölçülmez. Sonra "Kalanları yeniden ölç" ile tamamlayabilirsiniz.')
+                ->visible($pending)
+                ->action(function (Crawl $record) use ($done) {
+                    SpeedScan::stop($record);
+                    $done($record, 'Ölçüm durduruldu');
+                }),
+            Action::make('speedRetry')->label('Ölçülemeyenleri ve kalanları yeniden ölç')->icon(Heroicon::OutlinedArrowPath)
+                ->visible(fn (Crawl $record): bool => $record->speedResults()->whereIn('state', ['failed', 'cancelled'])->exists())
+                ->action(function (Crawl $record) use ($done) {
+                    $done($record, SpeedScan::requeue($record).' sayfa yeniden sıraya alındı');
+                }),
+            Action::make('speedRestart')->label('Tüm sayfaları baştan ölç')->icon(Heroicon::OutlinedArrowPathRoundedSquare)
+                ->requiresConfirmation()->modalHeading('Tüm sayfalar yeniden ölçülsün mü?')
+                ->modalDescription('Site yeniden taranmaz; aynı URL listesi yeniden ölçülür (örneğin bir hız düzeltmesinden sonra). Eski değerler yenisi gelene kadar görünür. Yeni sayfaları da almak için yeni bir hız taraması başlatın.')
+                ->visible(fn (Crawl $record): bool => ! $pending($record))
+                ->action(function (Crawl $record) use ($done) {
+                    $done($record, SpeedScan::requeue($record, all: true).' ölçüm yeniden sıraya alındı');
+                }),
+        ])
+            ->label('Hız ölçümü')
+            ->icon(Heroicon::OutlinedBolt)
+            ->color('gray')
+            ->button()
+            ->visible(fn (): bool => $this->record->speed_scan && $this->record->status === 'completed' && $this->record->speedResults()->exists()
+                && (auth()->user()?->canDo('crawl', $this->record->project_id) ?? false));
     }
 
     public function getTitle(): string

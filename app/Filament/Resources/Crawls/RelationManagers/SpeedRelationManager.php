@@ -9,6 +9,7 @@ use App\Performance\PageSpeed;
 use App\Performance\SpeedScan;
 use App\Segments\Segments;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -75,6 +76,14 @@ class SpeedRelationManager extends RelationManager
                 SelectFilter::make('cwv')->label('Core Web Vitals')->options(SpeedResult::CWV),
                 SelectFilter::make('state')->label('Ölçüm durumu')->options(SpeedResult::STATES),
                 Filter::make('slow')->label('Puanı 50 altı')->query(fn ($query) => $query->where('score', '<', PageSpeed::POOR_SCORE)),
+            ])
+            ->recordActions([
+                Action::make('remeasure')->label('Yeniden ölç')->icon(Heroicon::OutlinedArrowPath)->iconButton()->tooltip('Bu sayfayı yeniden ölç')
+                    ->visible(fn (SpeedResult $record): bool => in_array($record->state, ['done', 'failed', 'cancelled'], true) && (auth()->user()?->canDo('crawl', $this->getOwnerRecord()->project_id) ?? false))
+                    ->action(function (SpeedResult $record): void {
+                        SpeedScan::requeueOne($record);
+                        Notification::make()->title('Sayfa yeniden ölçüm sırasına alındı')->body('Bir iki dakika içinde sonuç gelir.')->success()->send();
+                    }),
             ])
             ->headerActions([
                 Action::make('xlsx')->label('Excel indir')->icon(Heroicon::OutlinedArrowDownTray)->color('gray')
