@@ -87,6 +87,11 @@ class SpeedScan
      */
     public static function round(): int
     {
+        // Without a key the calls share Google's anonymous quota, which is used up most days: wait for a key instead.
+        if (! self::hasKey()) {
+            return 0;
+        }
+
         $rows = SpeedResult::query()->where('state', 'pending')
             ->whereIn('crawl_id', Crawl::query()->select('id')->where('speed_scan', true)->where('speed_paused', false)->where('status', 'completed'))
             ->orderBy('crawl_id')->orderBy('id')->limit(self::concurrency())->get();
@@ -266,10 +271,15 @@ class SpeedScan
         }
     }
 
+    public static function hasKey(): bool
+    {
+        return filled(Setting::get('pagespeed_api_key'));
+    }
+
     /** Pages measured side by side per round (about per minute): more with an API key, which has a much larger quota. */
     public static function concurrency(): int
     {
-        return max(1, (int) config(filled(Setting::get('pagespeed_api_key')) ? 'screamingrabbit.speed_scan.concurrency' : 'screamingrabbit.speed_scan.concurrency_without_key'));
+        return max(1, (int) config('screamingrabbit.speed_scan.concurrency'));
     }
 
     /**

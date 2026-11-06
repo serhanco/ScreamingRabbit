@@ -76,7 +76,7 @@ class GoogleSettings extends Page
                     ]),
                 Section::make('PageSpeed Insights')
                     ->visible(fn (): bool => GoogleClient::canManageClient(auth()->user()))
-                    ->description('İsteğe bağlı. Anahtarsız da çalışır; hız ölçümleri "kota doldu" hatası verirse aynı Google Cloud projesinde PageSpeed Insights API\'yi etkinleştirip bir API anahtarı oluşturun ve buraya yapıştırın.')
+                    ->description('Hız taraması için gerekli (ücretsiz, günde 25.000 ölçüm). Aynı Google Cloud projesinde PageSpeed Insights API\'yi etkinleştirin (console.cloud.google.com/apis/library/pagespeedonline.googleapis.com), Kimlik bilgileri sayfasında bir API anahtarı oluşturun (console.cloud.google.com/apis/credentials) ve buraya yapıştırın.')
                     ->schema([
                         TextInput::make('pagespeed_api_key')->label('API anahtarı')->password()->revealable(),
                     ]),

@@ -8,7 +8,6 @@ use App\Exports\SpeedXlsx;
 use App\Filament\Resources\Crawls\CrawlResource;
 use App\Models\Crawl;
 use App\Models\Project;
-use App\Models\Setting;
 use App\Performance\SpeedScan;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -28,6 +27,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 
 /**
  * Site-wide speed scan: a home page or sitemap address goes in, the site is crawled (same host only, every URL once)
@@ -82,8 +82,7 @@ class SpeedScans extends Page implements HasTable
             ->components([
                 Section::make()
                     ->description(fn (): string => self::SPEED_EXPLAINER.' '
-                        .'Dakikada yaklaşık '.SpeedScan::concurrency().' ölçüm yapılır; 500 sayfa mobil + masaüstü yaklaşık '.(int) ceil(1000 / SpeedScan::concurrency()).' dakika sürer.'
-                        .(filled(Setting::get('pagespeed_api_key')) ? '' : ' Google ayarlarına ücretsiz PageSpeed API anahtarı eklerseniz ölçüm yaklaşık 4 kat hızlanır ve kota dolmaz.'))
+                        .'Dakikada yaklaşık '.SpeedScan::concurrency().' ölçüm yapılır; 500 sayfa mobil + masaüstü yaklaşık '.(int) ceil(1000 / SpeedScan::concurrency()).' dakika sürer.')
                     ->columns(2)
                     ->schema([
                         TextInput::make('address')->label('Ana sayfa veya sitemap adresi')->url()->required()->columnSpanFull()
@@ -106,6 +105,17 @@ class SpeedScans extends Page implements HasTable
     public function content(Schema $schema): Schema
     {
         return $schema->components([
+            Section::make('Önce ücretsiz PageSpeed API anahtarı gerekli')
+                ->description('Anahtarsız ölçümler Google\'ın herkesle paylaşılan kotasını kullanır ve bu kota çoğu gün dolu olur. '
+                    .'1) Google Cloud\'da PageSpeed Insights API\'yi etkinleştirin, 2) Kimlik bilgileri sayfasında bir API anahtarı oluşturun, 3) Google ayarlarına yapıştırın. Ücretsizdir; günde 25.000 ölçüm hakkı verir.')
+                ->icon(Heroicon::OutlinedExclamationTriangle)
+                ->iconColor('danger')
+                ->visible(fn (): bool => ! SpeedScan::hasKey())
+                ->footerActions([
+                    Action::make('enableApi')->label('API\'yi etkinleştir')->url('https://console.cloud.google.com/apis/library/pagespeedonline.googleapis.com', shouldOpenInNewTab: true)->color('gray'),
+                    Action::make('createKey')->label('Anahtar oluştur')->url('https://console.cloud.google.com/apis/credentials', shouldOpenInNewTab: true)->color('gray'),
+                    Action::make('settings')->label('Google ayarlarına yapıştır')->url(fn (): string => GoogleSettings::getUrl()),
+                ]),
             Form::make([EmbeddedSchema::make('form')])
                 ->id('form')
                 ->livewireSubmitHandler('start')
@@ -119,6 +129,12 @@ class SpeedScans extends Page implements HasTable
         $state = $this->form->getState();
         $project = self::projects()->whereKey($state['project'])->first();
         abort_if($project === null || ! auth()->user()->canDo('crawl', $project->id), 403);
+
+        if (! SpeedScan::hasKey()) {
+            Notification::make()->title('Önce PageSpeed API anahtarı ekleyin')->body('Google ayarları sayfasındaki "PageSpeed Insights" alanına yapıştırın.')->danger()->send();
+
+            return;
+        }
 
         $address = UrlNormalizer::resolve(trim((string) $state['address']), $project->base_url);
         if ($address === null || ! UrlNormalizer::isInternal($address, $project->base_url)) {
@@ -202,6 +218,12 @@ class SpeedScans extends Page implements HasTable
         }
         $summary = self::summaryOf($crawl);
 
+        if ($summary['pending'] > 0 && ! SpeedScan::hasKey()) {
+            return 'API anahtarı gerekli';
+        }
+        if ($summary['pending'] > 0 && $summary['paused_until']) {
+            return 'Kota doldu, '.Carbon::parse($summary['paused_until'])->timezone(config('screamingrabbit.alerts.timezone'))->format('H:i').' civarı devam';
+        }
         if ($summary['pending'] > 0 && $crawl->speed_paused) {
             return 'Duraklatıldı %'.$summary['percent'];
         }
