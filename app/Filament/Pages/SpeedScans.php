@@ -155,6 +155,22 @@ class SpeedScans extends Page implements HasTable
             ])
             ->recordUrl(fn (Crawl $record): string => CrawlResource::getUrl('view', ['record' => $record]))
             ->recordActions([
+                Action::make('again')->label('Yeniden başlat')->icon(Heroicon::OutlinedArrowPath)->color('gray')
+                    ->tooltip('Aynı adres ve ayarlarla yeni bir hız taraması (site yeniden taranır)')
+                    ->requiresConfirmation()->modalHeading('Hız taraması yeniden başlatılsın mı?')
+                    ->modalDescription('Site aynı adres ve ayarlarla baştan taranır, sonra tüm sayfalar yeniden ölçülür. Bu sonuçlar silinmez.')
+                    ->visible(fn (Crawl $record): bool => ! $record->isActive() && (auth()->user()?->canDo('crawl', $record->project_id) ?? false))
+                    ->action(function (Crawl $record): void {
+                        if ($record->project->crawls()->whereIn('status', ['pending', 'running'])->exists()) {
+                            Notification::make()->title('Bu proje için bir tarama zaten sürüyor')->warning()->send();
+
+                            return;
+                        }
+                        $settings = array_intersect_key($record->settings ?? [], array_flip(['mode', 'start_url', 'sitemap_url', 'max_urls', 'speed_strategies']));
+                        $crawl = CrawlRunner::start($record->project, $settings, speedScan: true);
+                        Notification::make()->title('Hız taraması yeniden başlatıldı')->success()->send();
+                        $this->redirect(CrawlResource::getUrl('view', ['record' => $crawl]));
+                    }),
                 Action::make('xlsx')->label('Excel')->icon(Heroicon::OutlinedArrowDownTray)->color('gray')
                     ->visible(fn (Crawl $record): bool => $record->speedResults()->where('state', 'done')->exists())
                     ->action(fn (Crawl $record) => (new SpeedXlsx($record))->download()),
@@ -171,6 +187,13 @@ class SpeedScans extends Page implements HasTable
             return Crawl::STATUSES[$crawl->status] ?? $crawl->status;
         }
         $summary = self::summaryOf($crawl);
+
+        if ($summary['pending'] > 0 && $crawl->speed_paused) {
+            return 'Duraklatıldı %'.$summary['percent'];
+        }
+        if ($summary['pending'] === 0 && $summary['cancelled'] > 0) {
+            return 'Durduruldu ('.$summary['done'].' ölçüm)';
+        }
 
         return $summary['pending'] > 0 ? 'Ölçülüyor %'.$summary['percent'] : 'Tamamlandı ('.$summary['done'].' ölçüm)';
     }

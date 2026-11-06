@@ -150,6 +150,41 @@ class SpeedScanTest extends TestCase
         $this->assertSame(15, SpeedScan::concurrency());
     }
 
+    public function test_pause_stop_and_remeasure(): void
+    {
+        Http::fake([PageSpeed::ENDPOINT.'*' => Http::response($this->psi(0.9))]);
+        $this->actingAs(User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
+        $project = Project::factory()->create();
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'settings' => [], 'speed_scan' => true, 'finished_at' => now()]);
+        foreach (['/', '/a', '/b'] as $path) {
+            SpeedResult::create(['crawl_id' => $crawl->id, 'url' => 'https://example.com'.$path, 'url_hash' => sha1($path), 'strategy' => 'mobile']);
+        }
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedPause')->assertNotified('Ölçüm duraklatıldı');
+        $this->assertSame(0, SpeedScan::round(), 'a paused scan is skipped');
+        $this->assertSame('Duraklatıldı %0', SpeedScans::stateLabel($crawl->fresh()));
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedResume');
+        config(['screamingrabbit.speed_scan.concurrency_without_key' => 1]);
+        $this->assertSame(1, SpeedScan::round());
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedStop');
+        $this->assertSame(['done', 'cancelled', 'cancelled'], $crawl->speedResults()->orderBy('id')->pluck('state')->all());
+        $this->assertSame(0, SpeedScan::summary($crawl)['pending']);
+
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedRetry')->assertNotified('2 sayfa yeniden sıraya alındı');
+        $this->assertSame(['done', 'pending', 'pending'], $crawl->speedResults()->orderBy('id')->pluck('state')->all());
+
+        $crawl->speedResults()->update(['state' => 'done']);
+        Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedRestart')->assertNotified('3 ölçüm yeniden sıraya alındı');
+        $this->assertSame(3, $crawl->speedResults()->where('state', 'pending')->count());
+
+        $one = $crawl->speedResults()->first();
+        $one->update(['state' => 'failed', 'attempts' => 2]);
+        Livewire::test(SpeedRelationManager::class, ['ownerRecord' => $crawl, 'pageClass' => ViewCrawl::class])->callTableAction('remeasure', $one);
+        $this->assertSame(['pending', 0], [$one->fresh()->state, $one->fresh()->attempts]);
+    }
+
     public function test_excel_export_has_a_summary_and_a_sheet_per_device(): void
     {
         $project = Project::factory()->create(['name' => 'Klinik Dent']);
