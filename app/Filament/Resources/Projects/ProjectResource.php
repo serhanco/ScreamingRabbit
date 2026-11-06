@@ -9,6 +9,7 @@ use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ProjectInsights;
 use App\Filament\Resources\Projects\Pages\ProjectSegments;
 use App\Filament\Resources\Projects\Pages\ProjectWordPress;
+use App\Filament\Resources\Projects\RelationManagers\CrawlsRelationManager;
 use App\Filament\Resources\Projects\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
@@ -53,7 +54,7 @@ class ProjectResource extends Resource
 
     public static function getRelations(): array
     {
-        return [MembersRelationManager::class];
+        return [CrawlsRelationManager::class, MembersRelationManager::class];
     }
 
     public static function getWidgets(): array
