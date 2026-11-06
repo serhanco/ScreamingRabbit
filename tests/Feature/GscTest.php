@@ -75,7 +75,7 @@ class GscTest extends TestCase
 
     public function test_settings_page_includes_setup_guide(): void
     {
-        Livewire::test(GoogleSettings::class)->assertSee('Kurulum rehberi')->assertSee('Uygulamayı yayınla');
+        Livewire::test(GoogleSettings::class)->assertSee('Kurulum rehberi')->assertSee('Uygulamayı yayınla')->assertSee('Anahtar nasıl alınır?');
     }
 
     public function test_oauth_callback_stores_the_refresh_token(): void

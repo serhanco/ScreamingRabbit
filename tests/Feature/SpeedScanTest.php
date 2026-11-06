@@ -27,6 +27,12 @@ class SpeedScanTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Setting::put('pagespeed_api_key', 'test-key');
+    }
+
     private function psi(float $score, ?array $field = null): array
     {
         return [
@@ -83,7 +89,7 @@ class SpeedScanTest extends TestCase
         $this->assertSame(8, $crawl->speedResults()->count(), 'four pages, mobile and desktop, no duplicates');
         $this->assertSame(0, SpeedScan::prepare($crawl), 'preparing again adds nothing');
 
-        config(['screamingrabbit.speed_scan.concurrency_without_key' => 3]);
+        config(['screamingrabbit.speed_scan.concurrency' => 3]);
         for ($i = 0; $i < 5; $i++) {
             SpeedScan::round();
         }
@@ -115,7 +121,7 @@ class SpeedScanTest extends TestCase
             ->push(['error' => ['message' => 'Lighthouse returned error: NO_FCP']], 500)
             ->push(['error' => ['message' => '=HYPERLINK("x")']], 500)
             ->push(['error' => ['message' => 'Lighthouse timed out']], 500)]);
-        config(['screamingrabbit.speed_scan.concurrency_without_key' => 4]);
+        config(['screamingrabbit.speed_scan.concurrency' => 4]);
 
         $project = Project::factory()->create();
         $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'settings' => [], 'speed_scan' => true, 'finished_at' => now()]);
@@ -143,11 +149,25 @@ class SpeedScanTest extends TestCase
         $this->assertSame(68, $summary['strategies']['mobile']['average']);
     }
 
-    public function test_an_api_key_allows_more_measurements_side_by_side(): void
+    public function test_without_an_api_key_nothing_is_measured_and_no_scan_starts(): void
     {
-        $this->assertSame(4, SpeedScan::concurrency());
-        Setting::put('pagespeed_api_key', 'test-key');
-        $this->assertSame(15, SpeedScan::concurrency());
+        Http::fake();
+        Queue::fake();
+        Setting::put('pagespeed_api_key', null);
+        $this->actingAs(User::factory()->create(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP']));
+        $project = Project::factory()->create(['base_url' => 'https://klinikdent.com']);
+        $crawl = Crawl::create(['project_id' => $project->id, 'status' => 'completed', 'settings' => [], 'speed_scan' => true, 'finished_at' => now()]);
+        SpeedResult::create(['crawl_id' => $crawl->id, 'url' => 'https://klinikdent.com/', 'url_hash' => sha1('/'), 'strategy' => 'mobile']);
+
+        $this->assertSame(0, SpeedScan::round());
+        Http::assertNothingSent();
+        $this->assertSame('API anahtarı gerekli', SpeedScans::stateLabel($crawl));
+
+        Livewire::test(SpeedScans::class)->assertSee('Önce ücretsiz PageSpeed API anahtarı gerekli')
+            ->fillForm(['address' => 'https://klinikdent.com/', 'project' => $project->id, 'strategies' => ['mobile'], 'max_urls' => 10])
+            ->call('start')
+            ->assertNotified('Önce PageSpeed API anahtarı ekleyin');
+        $this->assertSame(1, Crawl::count());
     }
 
     public function test_pause_stop_and_remeasure(): void
@@ -165,7 +185,7 @@ class SpeedScanTest extends TestCase
         $this->assertSame('Duraklatıldı %0', SpeedScans::stateLabel($crawl->fresh()));
 
         Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedResume');
-        config(['screamingrabbit.speed_scan.concurrency_without_key' => 1]);
+        config(['screamingrabbit.speed_scan.concurrency' => 1]);
         $this->assertSame(1, SpeedScan::round());
 
         Livewire::test(ViewCrawl::class, ['record' => $crawl->id])->callAction('speedStop');

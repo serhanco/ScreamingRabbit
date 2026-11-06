@@ -17,13 +17,16 @@
             </div>
             <div class="h-2 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden"><div class="h-2 bg-primary-500" style="width: {{ $summary['percent'] }}%"></div></div>
         </div>
+        @if (! \App\Performance\SpeedScan::hasKey() && $summary['pending'] > 0)
+            <p class="text-danger-600 font-semibold">Ölçüm için PageSpeed API anahtarı gerekli. <a class="underline" href="{{ \App\Filament\Pages\GoogleSettings::getUrl() }}">Google ayarlarına</a> ücretsiz anahtarı ekleyin; ölçüm kendiliğinden başlar.</p>
+        @endif
         @if ($crawl->speed_paused && $summary['pending'] > 0)
             <p class="text-warning-600">Ölçüm duraklatıldı; "Hız ölçümü" menüsünden devam ettirebilirsiniz.</p>
         @endif
         @if ($summary['cancelled'] > 0)
             <p class="opacity-70">{{ $summary['cancelled'] }} ölçüm durdurulduğu için yapılmadı.</p>
         @endif
-        @if ($summary['paused_until'] && ! $crawl->speed_paused)
+        @if ($summary['paused_until'] && ! $crawl->speed_paused && \App\Performance\SpeedScan::hasKey())
             <p class="text-warning-600">Google kotası doldu; ölçümler {{ \Illuminate\Support\Carbon::parse($summary['paused_until'])->timezone(config('screamingrabbit.alerts.timezone'))->format('H:i') }} civarı kendiliğinden devam eder.
                 @if (blank(\App\Models\Setting::get('pagespeed_api_key'))) Google ayarlarına PageSpeed API anahtarı ekleyin; kota 25.000/gün olur. @endif</p>
         @endif

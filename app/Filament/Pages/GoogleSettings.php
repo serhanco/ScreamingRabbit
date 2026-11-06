@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\HtmlString;
 
 /**
  * Each admin connects their own Google account here; the primary admin also keeps the shared OAuth client.
@@ -46,6 +47,16 @@ class GoogleSettings extends Page
 
     /** @var array<string, mixed> */
     public ?array $data = [];
+
+    private const PAGESPEED_GUIDE = '<div style="margin-top:.25rem">'
+        .'<p style="font-weight:600">Anahtar nasıl alınır? (2-3 dakika, ücretsiz)</p>'
+        .'<ol style="list-style:decimal;padding-inline-start:1.25rem;line-height:1.6">'
+        .'<li><a style="text-decoration:underline;font-weight:600" target="_blank" rel="noopener" href="https://console.cloud.google.com/apis/library/pagespeedonline.googleapis.com">PageSpeed Insights API sayfasını açın</a>. Üst çubukta Search Console için kullandığınız projenin seçili olduğundan emin olun ve <b>Etkinleştir</b>\'e (Enable) basın.</li>'
+        .'<li><a style="text-decoration:underline;font-weight:600" target="_blank" rel="noopener" href="https://console.cloud.google.com/apis/credentials">Kimlik bilgileri sayfasını açın</a>. Üstteki <b>+ Kimlik bilgisi oluştur</b> (Create credentials) → <b>API anahtarı</b> (API key)\'na basın.</li>'
+        .'<li>Açılan pencerede görünen anahtarı (AIza ile başlar) <b>kopyalayın</b>.</li>'
+        .'<li>İsteğe bağlı ama önerilir: <b>Anahtarı düzenle</b> → "API kısıtlamaları" bölümünde <b>Anahtarı kısıtla</b>\'yı seçip yalnızca <b>PageSpeed Insights API</b>\'yi işaretleyin, <b>Kaydet</b>\'e basın.</li>'
+        .'<li>Anahtarı yukarıdaki alana yapıştırıp sayfanın altındaki <b>Kaydet</b>\'e basın. Bekleyen hız ölçümleri birkaç dakika içinde kendiliğinden başlar.</li>'
+        .'</ol></div>';
 
     public function mount(): void
     {
@@ -76,9 +87,10 @@ class GoogleSettings extends Page
                     ]),
                 Section::make('PageSpeed Insights')
                     ->visible(fn (): bool => GoogleClient::canManageClient(auth()->user()))
-                    ->description('İsteğe bağlı. Anahtarsız da çalışır; hız ölçümleri "kota doldu" hatası verirse aynı Google Cloud projesinde PageSpeed Insights API\'yi etkinleştirip bir API anahtarı oluşturun ve buraya yapıştırın.')
+                    ->description('Hız taraması için gerekli. Ücretsizdir ve günde 25.000 ölçüm hakkı verir. Nasıl alınacağı alanın altında adım adım yazıyor.')
                     ->schema([
-                        TextInput::make('pagespeed_api_key')->label('API anahtarı')->password()->revealable(),
+                        TextInput::make('pagespeed_api_key')->label('API anahtarı')->password()->revealable()
+                            ->helperText(new HtmlString(self::PAGESPEED_GUIDE)),
                     ]),
             ]);
     }
